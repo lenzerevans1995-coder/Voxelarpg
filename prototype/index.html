@@ -56,12 +56,17 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 .quest .ob{color:#fff}.quest .ob.ok{color:#8fdc7a}.quest .tip{color:#b9b2a5;font-size:9px;text-transform:none}.quest .t{font-size:16px;color:var(--gold)}
 .zone{color:#f0b24a;font-size:12px;font-weight:700}.adv{color:#8fdc7a}.lives{color:#ff6a5a}
 .chip{display:inline-block;font-size:9px;border:1px solid #6e3a8a;color:#d7b0f0;padding:0 4px;margin:2px 0 0 2px}
-.boss{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(420px,44vw);padding-left:44px;box-sizing:border-box}
-.boss .bp{position:absolute;left:4px;top:8px;width:30px;height:30px;transform:rotate(45deg);background:#1a0f0a;border:2px solid var(--gold);box-shadow:0 0 0 2px #000}.boss .bp i{position:absolute;inset:3px;transform:rotate(-45deg);background:center/100% no-repeat;image-rendering:pixelated}
-.boss .nm{font:700 22px var(--display);color:#f3c36a;text-shadow:2px 2px 0 #3a1408,-1px -1px 0 #3a1408,0 3px 0 #000;letter-spacing:.04em;margin-left:6px}
-.boss .bar{height:14px;border:0;box-shadow:none;background:#2a2630;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%)}.boss .bar>i{background:linear-gradient(#ff5a3a,#d8281e)}.boss .bar::after{display:none}
-.boss .hpn{position:absolute;left:44px;right:0;margin-top:-14px;line-height:14px;text-align:center;font-size:9px}
-.boss .wn{color:var(--gold);margin-top:3px;font-size:10px}.boss .wn .bar{height:6px;clip-path:none;margin-top:2px}.boss .wn .bar>i{background:var(--gold)}
+/* boss + enemy health bars, after the reference: gold slab-serif name, diamond portrait overlapping a navy track with a pointed end, red fill with a lit top band, white numbers centred */
+.boss{position:absolute;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(430px,46vw);padding-left:26px;box-sizing:border-box}
+.boss .bp{position:absolute;z-index:1;left:0;top:9px;width:34px;height:34px;transform:rotate(45deg);background:#3a1410;border:3px solid #f0b441;box-shadow:0 0 0 2px #2a1408,inset 0 0 0 2px #2a1408}.boss .bp i{position:absolute;inset:3px;transform:rotate(-45deg);background:center/100% no-repeat;image-rendering:pixelated}
+.boss .nm,.fb .nm{font-family:Rockwell,'Roboto Slab','Bookman Old Style',Georgia,serif;font-weight:900;text-transform:uppercase!important;color:#f5b83f;letter-spacing:.03em;text-shadow:-2px 0 #3a1608,2px 0 #3a1608,0 -2px #3a1608,0 2px #3a1608,-1px -1px #3a1608,1px 1px #3a1608,0 4px 0 #1a0a04!important}
+.boss .nm{font-size:21px;line-height:1.15;margin-left:26px}
+.boss .bar,.fb .bar{height:18px;border:0;padding:2px 12px 2px 2px;background:linear-gradient(#272a48,#1d1f38) content-box,#12101c;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 50%,calc(100% - 9px) 100%,0 100%);box-sizing:border-box}
+.boss .bar>i,.fb .bar>i{background:linear-gradient(#ff8f6a 0 32%,#ee4632 32% 78%,#b82c22 78%)}.boss .bar::after,.fb .bar::after{display:none}
+.boss .hpn{position:absolute;left:26px;right:0;margin-top:-18px;line-height:18px;text-align:center;font-size:10px;letter-spacing:.05em}
+.boss .wn{color:#f5b83f;margin:3px 0 0 26px;font-size:10px}.boss .wn .bar{height:8px;padding:1px;clip-path:none;margin-top:2px}.boss .wn .bar>i{background:#f0b441}
+.fb{width:70px!important}.fb .nm{font-size:10px;line-height:1.2;white-space:nowrap;text-shadow:-1px 0 #3a1608,1px 0 #3a1608,0 -1px #3a1608,0 1px #3a1608,0 2px 0 #1a0a04!important}.fb .bar{height:9px;padding:1px 6px 1px 1px;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 50%,calc(100% - 5px) 100%,0 100%)}
+.fb .cast{height:6px!important;clip-path:none!important;padding:1px!important}.fb .cast>i{background:#f0b441!important}
 .belt{position:absolute;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);transform-origin:bottom;display:flex;flex-direction:column;align-items:center;gap:26px}
 .belt .slots{display:flex;gap:18px;align-items:flex-end}.heart{position:relative;width:66px;height:60px;margin:0 2px}.heart canvas{width:66px;height:60px}.heart b{position:absolute;left:0;right:0;top:34%;text-align:center;font-size:12px}
 .gem{position:relative;width:46px;height:46px}.gem canvas{width:40px;height:44px;margin:1px 3px}.gem b{position:absolute;left:0;right:0;top:36%;text-align:center;font-size:10px}
@@ -73,7 +78,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 .alert{position:absolute;top:31%;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:34px;color:#ff6a5a;text-shadow:0 2px 10px #000;animation:pulse .5s infinite alternate}
 .alert.soak,.alert.stack{color:var(--gold)}@keyframes pulse{to{transform:translateX(-50%) scale(1.12)}}
 .boss .wn{font-family:var(--body);font-size:14px;color:var(--gold);margin-top:3px}.boss .wn .bar{height:9px;margin-top:2px}.boss .wn .bar>i{background:var(--gold)}
-.fb .bar{height:8px}.fb .bar>i{background:var(--blood)}.fb .cast{height:7px;margin-top:2px}.fb .cast>i{background:#d6a24a}
+.fb .bar{height:8px}.fb .cast{height:7px;margin-top:2px}.fb .cast>i{background:#d6a24a}
 .n{position:absolute;font-family:'Silkscreen',monospace;font-weight:700;text-shadow:0 1px 3px #000;transform:translate(-50%,-50%);white-space:nowrap}
 #sum,#load{position:fixed;inset:0;display:grid;place-items:center;background:#000a}
 #sum>div{background:var(--panel) padding-box;border:12px solid transparent;border-image:var(--vx) 6 / 12px;padding:12px;width:min(460px,92vw);display:flex;flex-direction:column;gap:10px}
@@ -111,7 +116,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 */
 'use strict';
 // §0 CFG
-const CFG={vox:.1,evox:.025,bvox:.03,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
+const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
  depthScale:1.12,dreadReq:.72,mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
@@ -161,6 +166,7 @@ const DB={
   {id:'stats',name:'Stats',key:'c',ico:['....#','..#.#','..#.#','#.#.#','#.#.#']},{id:'orders',name:'Orders',key:'o',ico:['####.','####.','####.','#....','#....']}],
  PIX:{heart:['..##...##..','.####.####.','###########','###########','###########','.#########.','..#######..','...#####...','....###....','.....#.....'],gem:['....#....','...###...','..#####..','.#######.','#########','#########','.#######.','..#####..','...###...','....#....'],
   skull:['.###.','#####','#.#.#','#####','.#.#.']},
+ FIRE:{fire:['#fff3c0','#ffd24a','#ff8a1e','#e8421a'],frost:['#ffffff','#d6f4ff','#8fdcff','#4aa8f0']}, // flame particle ramps, hot to cool
  WARN:{avoid:'Move!',soak:'Stand in a circle!',stack:'Stack together!'},
  DUNGEONS:[
   {id:'undercroft',name:'Undercroft of St. Vael',biome:'Gothic crypt',boss:'golem',bossName:'The Charnel Golem',timer:480,floor:'slab',
@@ -178,7 +184,7 @@ const DB={
    hall:['wisp',0],decor:[['wisp','focus'],['stone','ring',8],['grave','aisle',6],['tree','corner',3],['skulls','corner',2],['sconce','wall',3]],
    en:{bone:'#c9c2a6',bone2:'#8f8a72',rag:'#2b3324',metal:'#4f544d',eye:'#8dffc0'},
    caster:{name:'Lantern-bearer',special:'slow',robe:'#1f2620',robe2:'#2f382d',face:'#cfc8ad',glow:'#8dffc0'},
-   bp:{kind:'gallows',bone:'#d9d2b6',bone2:'#8f8a72',hide:'#cfc8b4',hide2:'#a39c88',rib:'#f0ead4',cloth:'#3d1416',trim:'#7a6a3a',armor:'#2c2d33',armor2:'#45474f',lantern:'#9dffc8',iron:'#2a2a2c',hoof:'#ff7a2a',eye:'#9dffc8',blade:'#c9ccd2',wood:'#3a2a1f',mane:'#111013'}},
+   bp:{kind:'gallows',bone:'#e2dcc2',bone2:'#8f8a72',rib:'#efe9d2',hide2:'#a8a088',cloth:'#8a1e1e',trim:'#d0a53c',armor:'#1d1a24',armor2:'#4a3424',lantern:'#9dffc8',iron:'#2e2e33',hoof:'#ff7a1e',eye:'#ffc23a',blade:'#c9ccd2',wood:'#3a2a1f'}},
   {id:'sepulchre',name:'Sunken Sepulchre of Ka-Zeth',biome:'Ashen desert',boss:'golem',bossName:'The Embalmed Colossus',timer:480,floor:'sand',
    lay:{shapes:['oct','diamond','hall'],boss:'diamond',path:'direct',w:10,wall:'masonry',pillar:'obelisk',amb:[.6,.4,22,50],arena:{id:'dial',name:'Sun Dial',size:5,first:10,cd:15,n:4,r:11,w:1.4,dur:2,step:.4,mul:1.7,col:'#ffd36a'}},
    prefix:['Ka-Zeth','Sun-scoured','Gilded',"Embalmer's",'Scarab'],trash:['Embalmed Warrior','Embalmed Archer','Tomb Guardian'],
@@ -194,7 +200,7 @@ const DB={
    hall:['sconce',1],decor:[['statue','focus'],['brazier','quad'],['barrel','corner',3],['ice','corner',3],['banner','wall',4],['sconce','wall',4],['chains','wall',2]],
    en:{bone:'#dfe8ef',bone2:'#a9bccb',rag:'#2b3a4f',metal:'#7d8a99',eye:'#7fd8ff'},
    caster:{name:'Rime Witch',special:'slow',robe:'#1c2a3d',robe2:'#4a6a8f',face:'#dfe8ef',glow:'#7fd8ff'},
-   bp:{kind:'rime',bone:'#dfe8ef',bone2:'#a9bccb',hide:'#c9d6e2',hide2:'#a7b8c8',rib:'#eef4fb',cloth:'#1c3050',trim:'#9fb8d8',armor:'#4a5a6e',armor2:'#6c7c90',lantern:'#9fe8ff',iron:'#2f3a48',hoof:'#7fd8ff',eye:'#9fe8ff',blade:'#dff4ff',wood:'#3a3a44',mane:'#eef4fb'}}],
+   bp:{kind:'rime',bone:'#e6eef5',bone2:'#a9bccb',rib:'#eef4fb',hide2:'#a7b8c8',cloth:'#2a5490',trim:'#b8cfe8',armor:'#1e2c3c',armor2:'#3d4c5e',lantern:'#9fe8ff',iron:'#2f3a48',hoof:'#6fd0ff',eye:'#dff6ff',blade:'#dff4ff',wood:'#3a3a44'}}],
  EMISSIVE:['flame','rune','glass','lamp','glow'],
  SIGILS:[['.###.','#.#.#','#####','.#.#.','.###.'],['..#..','#####','..#..','..#..','..#..'],['#...#','.#.#.','..#..','.#.#.','#...#'],['.#.#.','#####','.###.','..#..','..#..']],
  RARITY:[{name:'Common',col:'#b9b2a5',mult:.45,stats:1},{name:'Magic',col:'#7c95ff',mult:.6,stats:2},{name:'Rare',col:'#ecd15a',mult:.8,stats:3},{name:'Relic',col:'#ee8a3c',mult:1,stats:3},{name:'Legendary',col:'#62e394',mult:1.3,stats:4}],
@@ -462,37 +468,53 @@ const MODEL={
    {n:'head',p:'chest0',at:[0,3.05,.4],prims:[...skull(3.4,[0,3.3,.55]),...dress.head]},
    ...joint({n:'armR',p:'chest0',at:[-1.08,2.9,.05],prims:mir(arm(claws))},'foreR',[-1.3,1.95,.1]),...joint({n:'armL',p:'chest0',at:[1.08,2.9,.05],prims:arm(dress.club)},'foreL',[1.3,1.95,.1])];
   const r=rig('golem','golem'+bp.kind,nodes,mt,P,CFG.bvox);r.core=bp.core;r.belly=[r.belly0,r.belly1];r.chest=[r.chest0,r.chest1];r.parts=[r.head,r.armR,r.armL];return r},
- horse(bp){const mt={h:[bp.hide,'leather'],h2:[bp.hide2,'leather'],rb:[bp.rib,'bone'],cl:[bp.cloth,'cloth'],tr:[bp.trim,'none'],dk:['#0c0a0c'],mn:[bp.mane,'fur'],hf:[bp.hoof,'none',1],ey:[bp.eye,'none',1],ir:[bp.iron,'plate'],le:['#3a281b','leather']};
-  const legN=(i,x,z,hind)=>joint({n:'leg'+i,p:'torsoH',at:[x,1.85,z],prims:[hind?pc([x,1.9,z],[x,1.15,z-.14],.2,'h',{r2:.1}):pc([x,1.85,z],[x,1.25,z+.04],.17,'h',{r2:.1}),pe([x,hind?1.1:1.22,hind?z-.15:z+.04],[.075,.07,.08],'h'),
-   pc([x,hind?1.08:1.2,hind?z-.15:z+.04],[x,.36,z],.075,'h2',{r2:.06}),pe([x,.32,z+.01],[.08,.08,.085],'h'),pc([x,.3,z+.02],[x,.14,z+.06],.06,'h2'),py([x,.075,z+.07],.085,.072,'hf'),...[0,1,2].map(j=>pe([x+(j-1)*.04,.18+j*.03,z+.1],[.02,.04,.02],'hf'))]},'hock'+i,[x,hind?1.1:1.22,hind?z-.15:z+.04]);
-  const r=rig('horse','horse'+bp.hide,[{n:'torsoH',at:[0,2,0],prims:[pe([0,2.02,0],[.42,.5,1.2],'h',{n:.02,nf:6}),pe([0,2.0,.92],[.4,.52,.42],'h'),pe([0,2.1,-.92],[.43,.5,.46],'h'),
-    ...both([pe([.4,1.86,.05],[.09,.29,.56],0)]),pe([0,1.9,.05],[.33,.36,.6],'dk'),...both([0,1,2,3,4,5,6,7].map(i=>pc([.37,2.2,-.36+i*.11],[.4,1.62,-.33+i*.11],.019,'rb'))),
-    pf([[-.47,.47],[2.02,2.56],[-1.05,1.05]],(x,y,z)=>{const q=Math.hypot(x/.44,(y-2.02)/.52,z/1.22);return q<=1.03&&q>.95&&y>2.08+hash3(Math.floor(z*30),5,5)*.12&&Math.abs(z)<1},'cl'),
-    pf([[-.47,.47],[2.02,2.3],[-1.05,1.05]],(x,y,z)=>{const q=Math.hypot(x/.44,(y-2.02)/.52,z/1.22);return q<=1.04&&q>.96&&y>2.16&&y<2.21&&Math.abs(z)<1},'tr'),pb([0,2.52,.05],[.26,.05,.3],'le',{r:.04}),pb([0,2.6,-.22],[.2,.08,.04],'le',{r:.02})]},
-   ...legN(0,.27,.82),...legN(1,-.27,.82),...legN(2,.27,-.85,1),...legN(3,-.27,-.85,1),
-   {n:'neck',p:'torsoH',at:[0,2.35,1.05],prims:[pc([0,2.3,1.02],[0,2.85,1.5],.25,'h',{r2:.17,n:.02,nf:8}),...[...Array(9)].map((_,i)=>pc([0,2.5+i*.05,.95+i*.05],[(i%2-.5)*.1,2.75+i*.06,.72+i*.04],.05,i%2?'ey':'mn',{r2:.008}))]},
-   ...joint({n:'hhead',p:'neck',at:[0,2.85,1.5],prims:tr([pe([0,3.15,1.6],[.15,.17,.2],'h'),pc([0,3.1,1.7],[0,2.92,2.22],.13,'h',{r2:.085}),pe([0,3.2,1.78],[.15,.1,.4],'rb'),...both([pe([.12,3.17,1.74],[.045,.04,.045],0),pe([.11,3.17,1.73],[.022,.022,.022],'ey'),
-    pc([.08,3.28,1.55],[.1,3.45,1.5],.03,'h',{r2:.01}),pe([.04,2.98,2.25],[.018,.02,.02],0)]),pc([0,2.98,1.66],[0,2.86,2.14],.075,'h2'),...[0,1,2,3,4,5].flatMap(i=>both([pb([.05,2.925,1.92+i*.05],[.011,.02,.011],'rb')])),pc([-.13,3.05,1.8],[.13,3.05,1.8],.012,'ir')],[0,-.2,-.05])},'jaw',[0,2.8,1.52]),
-   {n:'tail',p:'torsoH',at:[0,2.35,-1.35],prims:[...Array(9)].map((_,i)=>pc([0,2.35,-1.35],[Math.sin(i*1.7)*.16,1.15+i*.05,-1.7-i*.03],.045,i%3?'mn':'ey',{r2:.01}))},
-   {n:'trap',p:'torsoH',at:[0,2,0],prims:bp.kind==='rime'?[...[...Array(7)].map((_,i)=>pc([0,2.45,-.95+i*.3],[(i%2-.5)*.3,2.8+(i%3)*.12,-1.05+i*.3],.07,'ey',{r2:.004})),...both([0,1,2,3].map(i=>pc([.42,1.75,-.6+i*.4],[.44,1.45-(i%2)*.12,-.6+i*.4],.03,'ey',{r2:.003}))),pe([0,3.02,1.62],[.17,.1,.2],'ir')] // rime: ice spines, icicles, frozen chamfron
-    :[...both([pc([.44,2.3,-.5],[.5,1.7,-.52],.014,'le'),hoop([.5,1.6,-.52],.04,.07,1.56,1.6,'le'),pc([.44,2.3,.4],[.5,1.85,.4],.014,'ir'),pe([.5,1.74,.4],[.06,.09,.06],'ey'),hoop([.5,1.84,.4],.04,.075,1.83,1.86,'ir')])]}],mt);r.legs=[r.leg0,r.leg1,r.leg2,r.leg3];r.fire=bp.eye;return r}, // trap = kind-specific trappings (gallows: nooses and grave lanterns)
- rider(bp){ // heavy armoured horseman, big voxels: oversized burning skull for a head so it reads from the game camera. bp.kind 'gallows' = skull in an iron lantern cage, noose, fire; 'rime' = crown of ice, frozen helm
-  const k=1.6,Ri=bp.kind==='rime',mt={a:[bp.armor,'plate'],a2:[bp.armor2,'plate'],cl:[bp.cloth,'cloth'],ir:[bp.iron,'plate'],ln:[bp.lantern,'none',1],fire:[Ri?bp.lantern:bp.hoof,'none',1],bl:[bp.blade,'plate'],wd:[bp.wood,'wood'],rope:['#8a7a5a','cloth'],
-   bone:[bp.bone,'bone'],eye:[bp.eye,'none',1],dark:['#0c0b0d']},big=L=>tr(scl(tr(L,[0,-1.5,0]),1.9),[0,1.5,0]),spk=m=>[0,1,2].map(i=>pc([.3+i*.03,1.5,-.07+i*.07],[.42+i*.03,1.68,-.07+i*.07],.035,m,{r2:.006}));
+ horse(bp){ // skeleton warhorse, bone by bone: long skull with a hinged jaw, vertebrae up the neck and along the back, open ribs around a burning heart, flame mane and tail (own nodes, they flicker),
+  // saddle, tattered blanket, breast strap and swinging lanterns ('trap' node). Node names are what ANIM.horse drives: torsoH, leg0-3 + hock0-3, neck, mane, hhead, jaw, tail, trap
+  const Ri=bp.kind==='rime',mt={bn:[bp.rib,'bone'],b2:[bp.hide2,'bone'],dk:['#0c0a0c'],cl:[bp.cloth,'cloth'],tr:[bp.trim,'plate'],le:['#3a281b','leather'],ir:[bp.iron,'plate'],fi:[bp.hoof,'none',1],ey:[bp.eye,'none',1]};
+  const vert=(a,b,n,r)=>[...Array(n)].map((_,i)=>{const t=i/(n-1);return pb([lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)],[r,r*.75,r*.5],'b2',{r:.012})}); // a run of vertebrae
+  const rib=z=>[...Array(6)].map((_,k)=>{const t0=.25+k*.4,t1=t0+.4;return pc([Math.sin(t0)*.34,1.5+Math.cos(t0)*.4,z],[Math.sin(t1)*.34,1.5+Math.cos(t1)*.4,z-.02],.022,'bn')});
+  const tongue=(c,h,w,i)=>[pe(c,[w,h,w*1.2],'fi'),pe([c[0],c[1]+h*.5,c[2]],[w*.5,h*.6,w*.6],i%2?'ey':'fi')],lamp=(x,y,z)=>[pc([x,y,z],[x,y-.16,z],.008,'ir'),pe([x,y-.24,z],[.055,.07,.055],'ey'),pb([x,y-.165,z],[.045,.012,.045],'ir'),pb([x,y-.315,z],[.04,.012,.04],'ir')];
+  const leg=(i,x,z,hind)=>{const top=[x,1.45,z],kn=hind?[x,.92,z-.16]:[x,.88,z+.05],fz=z+(hind?.02:0);return joint({n:'leg'+i,p:'torsoH',at:top,prims:[pe(top,[.1,.13,.13],'b2'),pc(top,kn,.07,'bn',{r2:.05}),pe(kn,[.065,.07,.07],'b2'),
+    pc(kn,[x,.36,fz],.042,'bn',{r2:.036}),pe([x,.34,fz],[.05,.05,.055],'b2'),pc([x,.32,fz],[x,.16,fz+.04],.035,'bn'),pf([[x-.1,x+.1],[0,.18],[fz-.07,fz+.2]],(px,y,z)=>{const t=y/.17;return y<.17&&Math.abs(px-x)<.088-t*.022&&z>fz-.05+t*.03&&z<fz+.18-t*.08},'dk'),pb([x,.012,fz+.065],[.092,.012,.12],'ir'),pc([x,.2,fz-.03],[x,.26,fz-.1],.02,'bn',{r2:.004})]},'hock'+i,kn)};
+  const r=rig('horse','horse'+bp.kind,[{n:'torsoH',at:[0,1.5,0],prims:[pe([0,1.5,.1],[.2,.24,.5],'dk'),pe([0,1.46,.22],[.15,.17,.24],'fi'),pe([0,1.5,.26],[.08,.1,.14],'ey'),...vert([0,1.9,-.72],[0,1.93,.62],13,.06),...both([-.28,-.16,-.04,.08,.2,.32,.44,.56].flatMap(rib)),
+    ...both([pe([.3,1.62,.6],[.07,.2,.14],'bn'),pe([.25,1.62,-.62],[.1,.15,.15],'b2')]),pe([0,1.74,-.64],[.26,.15,.2],'bn'),pc([0,1.13,.52],[0,1.11,.05],.04,'b2'),
+    ellShell([0,1.5,-.06],[.41,.48,.5],.12,'cl',(x,y,z)=>y>1.52&&!tatter(z,y-1.52,3)),ellShell([0,1.5,-.06],[.425,.49,.51],.1,'tr',(x,y)=>y>1.6&&y<1.64),pb([0,2,-.06],[.2,.05,.28],'le',{r:.04}),pb([0,2.08,.2],[.1,.07,.04],'le',{r:.02}),pb([0,2.09,-.32],[.16,.08,.04],'le',{r:.02}),
+    ...both([pc([.4,1.92,0],[.45,1.32,.02],.012,'le'),pb([.45,1.28,.02],[.05,.012,.06],'ir'),pc([.3,1.78,.7],[0,1.5,.88],.022,'le'),pc([.36,1.7,-.5],[.2,1.84,-.74],.02,'le')])]},
+   ...leg(0,.24,.6),...leg(1,-.24,.6),...leg(2,.24,-.62,1),...leg(3,-.24,-.62,1),
+   {n:'neck',p:'torsoH',at:[0,1.82,.62],prims:[...vert([0,1.84,.64],[0,2.5,1.05],8,.075),pc([0,1.6,.76],[0,2.32,1.1],.03,'bn'),pc([0,2.5,1.05],[0,2.56,1.1],.06,'b2'),...[0,1,2,3,4,5].map(i=>pc([0,1.92+i*.1,.62+i*.07],[0,2.1+i*.1,.5+i*.07],.028,'bn',{r2:.005}))]}, // dorsal spines where the mane burns
+   {n:'hhead',p:'neck',at:[0,2.5,1.05],prims:[pe([0,2.56,1.12],[.14,.15,.17],'bn'),pc([0,2.48,1.22],[0,2.12,1.62],.115,'bn',{r2:.07}),pc([0,2.6,1.2],[0,2.2,1.64],.035,'b2'),...both([pe([.12,2.44,1.26],[.035,.06,.1],'b2'), // long skull: cranium, tapering snout, nasal ridge, cheek arches
+      pe([.125,2.54,1.2],[.06,.065,.07],0),pe([.09,2.54,1.2],[.034,.034,.034],'ey'),pe([.05,2.16,1.64],[.025,.03,.04],0),pc([.08,2.68,1.04],[.15,2.92,.88],.036,'bn',{r2:.006}),pc([.11,2.46,1.14],[.07,2.26,1.5],.012,'le'),
+      ...[0,1,2,3,4].map(i=>pb([.05,2.325-i*.04,1.34+i*.052],[.013,.024,.015],'bn')),pb([.025,2.1,1.68],[.014,.03,.014],'bn')]),pc([0,2.68,1.16],[0,2.4,1.47],.05,'ir',{r2:.03}),pc([0,2.64,1.26],[0,2.82,1.42],.032,'ir',{r2:.004}),pb([0,2.3,1.5],[.085,.012,.014],'le')]},
+   {n:'jaw',p:'hhead',at:[0,2.42,1.12],prims:[...both([pc([.075,2.42,1.12],[.035,2.1,1.56],.036,'b2',{r2:.024}),...[0,1,2,3].map(i=>pb([.045,2.27-i*.04,1.34+i*.052],[.012,.02,.014],'bn'))]),pe([0,2.08,1.58],[.05,.03,.04],'b2')]},
+   {n:'tail',p:'torsoH',at:[0,1.84,-.78],prims:[pc([0,1.84,-.78],[0,1.72,-.98],.045,'b2'),...[0,1,2].map(i=>pe([0,1.82-i*.05,-.82-i*.07],[.055,.03,.03],'bn'))]},
+   {n:'tail2',p:'tail',at:[0,1.72,-.98],prims:[pc([0,1.72,-.98],[0,1.3,-1.12],.036,'b2',{r2:.016}),...[0,1,2,3,4].map(i=>pe([0,1.66-i*.08,-1-i*.027],[.045,.022,.026],'bn')),...[-1,0,1].map(i=>pc([0,1.3,-1.12],[i*.07,1.12,-1.2],.016,'bn',{r2:.003}))]},
+   {n:'trap',p:'torsoH',at:[0,1.6,.8],prims:[...[-1,0,1].flatMap(i=>lamp(i*.17,1.56-Math.abs(i)*.02,.87-Math.abs(i)*.06)),...both(lamp(.44,1.66,-.42)),
+    ...(Ri?[...Array(6)].map((_,i)=>pc([0,1.95,-.6+i*.22],[(i%2-.5)*.24,2.3+(i%3)*.1,-.68+i*.22],.06,'ey',{r2:.004})):[])]}],mt);
+  r.legs=[r.leg0,r.leg1,r.leg2,r.leg3];r.hot=Ri?'frost':'fire';r.emit=[...[0,1,2,3,4].map(i=>['neck',[0,.26+i*.1,-.1+i*.07],11,2]),['tail2',[0,-.42,-.14],16,2],['tail2',[0,-.22,-.07],9,1.7],['torsoH',[0,0,.26],5,1.4],
+   ...[0,1,2,3].map(i=>['hock'+i,i<2?[0,-.78,.03]:[0,-.82,.26],12,1.8,'move'])];return r},
+ rider(bp){ // the headless horseman: broad coat with a tall open collar, fire where the head should be, spiked pauldrons, cape, boots in the stirrups, scythe in the right hand.
+  // His own burning skull hangs in a chain cage from the left hand (r.bomb): that is what Skull Bomb throws. Separate moving nodes: flame, cloak, both hands' items, plus the whole steed under him
+  const k=1.3,Ri=bp.kind==='rime',mt={co:[bp.armor,'cloth'],c2:[bp.armor2,'leather'],cl:[bp.cloth,'cloth'],ir:[bp.iron,'plate'],go:[bp.trim,'plate'],ln:[bp.lantern,'none',1],fire:[Ri?bp.lantern:bp.hoof,'none',1],bl:[bp.blade,'plate'],wd:[bp.wood,'wood'],
+   bone:[bp.bone,'bone'],eye:[bp.eye,'none',1],dark:['#0c0b0d']};
   const rd=rig('hum','rider'+bp.kind,humNodes(k,{
-   leg:()=>[...BODY.leg('a','a2'),pe([.1,.5,.04],[.085,.08,.075],'a2'),pc([.1,.46,.02],[.1,.12,.01],.07,'a',{r2:.058}),pb([.1,.04,.05],[.055,.04,.115],'a2',{r:.01})],
-   torso:()=>[...BODY.torso('a'),pe([0,1.3,.02],[.23,.19,.15],'a'),pb([0,1.3,.165],[.014,.14,.012],'a2'),pe([0,1.36,.16],[.05,.05,.02],'ln'),pb([0,1.12,0],[.21,.03,.16],'ir',{r:.01}),pb([0,.98,.15],[.15,.2,.014],'cl'),pc([0,1.42,0],[0,1.52,0],.12,'a2')],
-   arm:()=>[...BODY.arm('a','a2'),pe([.28,1.44,0],[.16,.13,.16],'a2'),pe([.29,1.36,0],[.14,.045,.14],'a'),...spk(Ri?'ln':'fire'),pc([.25,1.1,0],[.26,.86,.02],.062,'a',{r2:.052}),pb([.26,.8,.025],[.045,.06,.05],'a2',{r:.01})],
-   head:()=>big(Ri?[...SKULL(),ellShell([0,1.66,-.012],[.1,.09,.115],.2,'a2',(x,y)=>y>1.65),...[0,1,2,3,4,5,6].map(i=>{const a=i/7*TAU;return pc([Math.cos(a)*.085,1.7,Math.sin(a)*.095],[Math.cos(a)*.13,1.9+(i%2)*.07,Math.sin(a)*.14],.026,'ln',{r2:.004})}),
-     ...[-1,0,1].map(i=>pc([i*.03,1.53,.07],[i*.035,1.4-(i?0:.06),.085],.014,'ln',{r2:.003}))]
-    :[...SKULL(),hoop([0,1.5,0],.115,.145,1.49,1.53,'ir'),hoop([0,1.76,0],.115,.145,1.75,1.79,'ir'),...[0,1,2,3,4,5].map(i=>pc([Math.cos(i*1.047+.5)*.13,1.5,Math.sin(i*1.047+.5)*.13],[Math.cos(i*1.047+.5)*.13,1.78,Math.sin(i*1.047+.5)*.13],.012,'ir')),
-     hoop([0,1.47,0],.06,.09,1.45,1.49,'rope'),pc([.07,1.46,.05],[.09,1.22,.11],.016,'rope')]),
-   extra:s=>[{n:'flame',p:'head',at:s([0,2.1,0]),prims:scl([pe([0,2.18,0],[.13,.15,.13],'fire'),pe([.03,2.36,-.02],[.09,.16,.09],'fire'),pe([-.02,2.54,0],[.05,.12,.05],'ln')],k)}, // own node so the fire can lick and twist
-    {n:'stump',p:'torso',at:s([0,1.52,0]),prims:scl([pe([0,1.56,0],[.07,.06,.07],'fire'),pe([0,1.5,0],[.1,.03,.1],'ir')],k)},{n:'cloak',p:'torso',at:s([0,1.48,-.14]),prims:scl([pf([[-.36,.36],[.2,1.5],[-.4,-.1]],(x,y,z)=>{const zz=-.15-(1.48-y)*.12-Math.sin(x*14+y*6)*.015;return Math.abs(z-zz)<.025&&Math.abs(x)<.24+(1.48-y)*.12&&!tatter(x,y-.2,4)},'cl')],k)}]}),mt);
-  rd.weapon=equip(rd,'scythe',mt,bp.blade);equip(rd,'lantern',mt,bp.lantern);
-  const horse=MODEL.horse(bp),r={kind:'rider',mat:rd.mat,root:new THREE.Group(),horse,rd,mounted:1};rd.mounted=1;rd.root.position.y=2.62-.9*k;r.root.add(horse.root,rd.root);return r},
+   leg:()=>[...BODY.leg('co','c2'),pc([.1,.5,.01],[.1,.1,-.01],.066,'c2',{r2:.056}),hoop([.1,.52,.01],.055,.088,.48,.56,'c2'),pe([.1,.52,.06],[.05,.05,.03],'ir'),pb([.1,.045,.05],[.05,.04,.11],'c2',{r:.012}),pc([.1,.1,-.07],[.1,.1,-.13],.012,'go')],
+   torso:()=>[...BODY.torso('co'),pe([0,1.3,.01],[.215,.17,.135],'co'),...both([pb([.07,1.3,.135],[.035,.13,.01],'cl')]),...[0,1,2,3].map(i=>pe([0,1.38-i*.07,.15],[.016,.016,.01],'go')),pb([0,1.1,0],[.2,.03,.15],'c2',{r:.01}),pb([0,1.1,.155],[.035,.03,.01],'go'),
+    pc([.17,1.42,.12],[-.15,1.12,.14],.02,'c2'),ellShell([0,1.54,0],[.17,.15,.16],.2,'co',(x,y,z)=>y>1.46&&y<1.68&&!(z>.05&&Math.abs(x)<.075)),ellShell([0,1.54,0],[.175,.155,.165],.12,'cl',(x,y,z)=>y>1.64&&y<1.68&&!(z>.05&&Math.abs(x)<.075)),
+    pe([0,1.5,0],[.06,.04,.06],'dark'),pc([0,1.48,-.01],[0,1.56,-.01],.025,'bone'),pb([0,.98,.15],[.14,.16,.014],'co'),pb([0,.98,-.15],[.16,.2,.014],'co')],
+   arm:()=>[...BODY.arm('co','c2'),pe([.28,1.45,0],[.145,.105,.145],'ir'),pe([.285,1.4,0],[.15,.02,.15],'go'),...[0,1].map(i=>pc([.32,1.52,-.04+i*.08],[.42,1.66,-.04+i*.08],.03,'ir',{r2:.005})),pc([.255,1.0,.01],[.262,.86,.025],.058,'c2',{r2:.072}),pb([.26,.8,.025],[.04,.055,.045],'c2',{r:.01})],
+   head:()=>tr(scl(tr([pe([0,1.66,0],[.085,.095,.085],'fire'),ellShell([0,1.66,0],[.125,.14,.13],.3,'bone'),pe([0,1.565,.045],[.075,.045,.07],'bone'), // hollow skull lit from within, like a carved lantern
+     ...both([pf([[.02,.095],[1.65,1.725],[.07,.14]],(x,y)=>y<1.662+(x-.02)*.85,0)]),pf([[-.016,.016],[1.608,1.645],[.09,.14]],(x,y)=>Math.abs(x)<(1.645-y)*.45,0),pf([[-.08,.08],[1.545,1.6],[.06,.14]],(x,y)=>Math.abs(y-1.574)<.007+Math.abs(((x*38)%1+1)%1-.5)*.032,0), // slanted eyes, nose, jagged grin
+     hoop([0,1.745,0],.105,.14,1.73,1.765,'ir'),...[0,1,2,3,4,5,6,7].map(i=>{const a=i/8*TAU;return pc([Math.cos(a)*.12,1.76,Math.sin(a)*.125],[Math.cos(a)*.145,1.86+(i%2)*.04,Math.sin(a)*.15],.016,'ir',{r2:.003})}),
+     ...both(arcCaps(.07,1.72,-.02,.13,.07,Math.PI*1.1,Math.PI*2.05,6,.03,'bone',.2,.006)),ellShell([0,1.65,-.005],[.15,.165,.155],.14,'cl',(x,y,z)=>z<-.03&&y<1.78)],[0,-1.5,0]),1.7),[0,1.5,0]),
+   extra:s=>[{n:'cloak',p:'torso',at:s([0,1.46,-.14]),prims:scl([pf([[-.42,.42],[.3,1.5],[-.5,-.1]],(x,y,z)=>{const zz=-.15-(1.46-y)*.2-Math.sin(x*12+y*5)*.02;return Math.abs(z-zz)<.022&&Math.abs(x)<.2+(1.46-y)*.17&&!tatter(x,y-.3,4)},'cl'),
+     pf([[-.42,.42],[.3,1.5],[-.5,-.1]],(x,y,z)=>{const zz=-.172-(1.46-y)*.2-Math.sin(x*12+y*5)*.02;return Math.abs(z-zz)<.012&&Math.abs(x)<.2+(1.46-y)*.17&&!tatter(x,y-.3,4)},'co')],k)}]}),mt);
+  rd.weapon=equip(rd,'scythe',mt,bp.blade);equip(rd,'lantern',mt,bp.kind);rd.hot=Ri?'frost':'fire';rd.emit=[['head',[0,.56*k,0],26,2.2],['head',[0,.3*k,.2*k],8,1.4],['torso',[0,.64*k,0],9,1.5]];
+  const horse=MODEL.horse(bp),r={kind:'rider',mat:rd.mat,root:new THREE.Group(),horse,rd,mounted:1};rd.mounted=1;rd.root.position.y=2.05-.9*k;r.root.add(horse.root,rd.root);r.root.scale.setScalar(CFG.riderK);return r},
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
+function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
+ for(const[n,o,rate,sz,mv]of r.emit){const nd=r[n];if(!nd||!nd.parent)continue;for(let c=rate*dt*(mv?a.moveAmt*1.5+(a.charge?3:0):1)+Math.random()|0;c>0;c--){V3.set(o[0]+(Math.random()-.5)*sz*.07,o[1],o[2]+(Math.random()-.5)*sz*.07);nd.localToWorld(V3);
+  chips(V3.x,V3.y,V3.z,C[1+Math.random()*3|0],1,{sp:.1,up:1+Math.random()*.9,g:-2.4,life:.45,s:sz*(.6+Math.random()*.6)})}}}
 const key=(K,p)=>{let i=1;while(i<K.length-1&&K[i][0]<p)i++;const a=K[i-1],b=K[i],t=clamp((p-a[0])/(b[0]-a[0]),0,1),u=t*t*(3-2*t);return a.map((v,j)=>lerp(v,b[j],u))};
 const POSE=(r,k)=>(n,x=0,y=0,z=0)=>{const o=r[n];if(!o)return;const q=o.rotation;q.x+=(x-q.x)*k;q.y+=(y-q.y)*k;q.z+=(z-q.z)*k}; // ease joint n toward a target rotation
 const ANIM={ // every frame: build a target pose from actor state (gait + idle + ready + swing + cast + flinch + stun), joints ease toward it
@@ -501,18 +523,18 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   let th=[s*A.thigh*m-rd*.18,-s*A.thigh*m-rd*.18],kn=[Math.max(0,-c)*A.knee*m+rd*.36+.06,Math.max(0,c)*A.knee*m+rd*.36+.06]; // [L,R] thigh, knee
   let ar=[-s*.5*m,s*.5*m],az=[0,0],fo=[-.25-.45*m-rd*.5+Math.min(0,-s)*.3*m,-.25-.45*m-rd*.5+Math.min(0,s)*.3*m]; // [L,R] arm x, arm z, forearm
   let tw=-s*.2*m,ln=.1*m+br*.015+rd*.08-fl*.3+st*.3,hx=-.05*m+st*.5-fl*.25,hy=s*.12*m+Math.sin(t*.43)*Math.sin(t*.17)*.3*id*(1-a.rdy),by=(Math.abs(c)-.6)*.035*m+br*.006-rd*.03;
-  if(r.mounted){th=[-1.35,-1.35];kn=[1.2,1.2];by=a.bob||0}
+  if(r.mounted){th=[-1.05,-1.05];kn=[1.15,1.15];by=a.bob||0}
   if(a.leap){th=[-1.3,-.4];kn=[1.7,1.2];ar=[-2.7,-2.7];fo=[-.4,-.4];ln=.3}
   if(st){ar=[.1,.1];fo=[-.15,-.15];tw=Math.sin(t*5)*.12}
   if(a.windT>0){ar=[-2.5,-2.5];fo=[-.4,-.4];az=[-.12,.12];ln=-.28}
   if(a.atkT>0){const K=key(DB.SWINGS[a.sw||'slash'].k,1-a.atkT/a.atkDur),i=a.alt&&a.atkN&1?0:1,sd=i?1:-1;ar[i]=K[1];az[i]=K[2]*sd;fo[i]=K[3];tw+=K[4]*sd;ln+=K[5];ar[1-i]=K[6];fo[1-i]=K[7]}
   if(a.castT>0){ar=[-1.5,-1.5];fo=[-.3,-.3];ln+=.1}
   if(a.cast){const q=Math.sin(S.t*11)*.08;ar=[-2.1+q,-2.1-q];az=[.45,-.45];fo=[-.8,-.8];hx=-.3;ln=-.1;by+=.02}
-  J('legL',th[0]);J('legR',th[1]);J('shinL',kn[0]);J('shinR',kn[1]);[1,-1].forEach((sd,i)=>{const n='LR'[i],Q=A.arm,x=clamp(ar[i],Q[0],Q[1]); // shoulder limits: hang clear of the hips, cross the chest only when raised in front, swing wide when drawn back; elbows only fold forward
+  J('legL',th[0],0,r.mounted?.5:0);J('legR',th[1],0,r.mounted?-.5:0);J('shinL',kn[0]);J('shinR',kn[1]);[1,-1].forEach((sd,i)=>{const n='LR'[i],Q=A.arm,x=clamp(ar[i],Q[0],Q[1]); // shoulder limits: hang clear of the hips, cross the chest only when raised in front, swing wide when drawn back; elbows only fold forward
    J('arm'+n,x,0,sd*Math.max(az[i]*sd,Q[2]-clamp((-x-.3)*.8,0,.75)+Math.max(0,x)*.35));J('fore'+n,clamp(fo[i],Q[3],0))});
   J('torso',ln,tw,Math.sin(t*.6)*.02*id+st*Math.sin(t*4)*.08);J('head',hx,hy,r.skel?Math.sin(t*2.3)*.07:0);r.body.position.y+=(by-r.body.position.y)*Math.min(1,dt*A.k);
   Js('skirt',s*.08+m*.1);Js('cape',.1+m*.45-ln*.6+Math.sin(t*2)*.04,-tw*.5);Js('cloak',.08+m*.4+Math.sin(t*1.7)*.05,-tw*.5);
-  for(const w of r.plumb||[])w.m.rotation.x=w.rx-(r['arm'+w.sd].rotation.x+r['fore'+w.sd].rotation.x+r.torso.rotation.x);if(r.flame){const f=1+Math.sin(S.t*17+a.seed)*.2+Math.sin(S.t*29)*.1;r.flame.scale.set(2-f,f,2-f);r.flame.rotation.y=S.t*3}if(r.orb)r.orb.scale.setScalar(a.cast?1+(1-a.cast.t/a.cast.max)*1.3+Math.sin(S.t*30)*.08:1)},
+  for(const w of r.plumb||[])w.m.rotation.x=w.rx-(r['arm'+w.sd].rotation.x+r['fore'+w.sd].rotation.x+r.torso.rotation.x);flames(r,dt,a);if(r.orb)r.orb.scale.setScalar(a.cast?1+(1-a.cast.t/a.cast.max)*1.3+Math.sin(S.t*30)*.08:1)},
  golem(r,a,dt){const m=a.moveAmt,J=POSE(r,Math.min(1,dt*9)),t=S.t+a.seed,s=Math.sin(a.ph),c=Math.cos(a.ph),br=Math.sin(t*1.3),st=a.stun>0?1:0,fl=Math.max(0,a.flash)/.12;a.ph+=dt*m*(a.charge?10:1.7*a.speed);
   let aL=-s*.3*m,fL=-.25,aR=s*.4*m+.05,fR=-.3-m*.2,ln=br*.02+fl*-.08+st*.45,tw=-s*.12*m,hx=st*.4+Math.sin(t*.9)*.05,by=(Math.abs(c)-.7)*.09*m+br*.012;
   if(a.charge){ln=.42;aL=.9;aR=.9;fL=fR=-.9}
@@ -528,8 +550,8 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   [0,Math.PI*(g?.25:1),Math.PI*(g?1.1:.5),Math.PI*(g?1.35:1.5)].forEach((o,i)=>{const p=a.hph+o,up=rear&&i<2,pw=i?0:paw;J('leg'+i,up?-1+Math.sin(S.t*13+i*2)*.35:Math.sin(p)*(.5+g*.3)*m-pw*(.55+Math.sin(t*9)*.25));J('hock'+i,up?1.3:Math.max(0,-Math.cos(p))*(.9+g*.4)*m+.04+pw*1.1)});
   a.bob=(Math.abs(Math.sin(a.hph))-.5)*(.05+g*.08)*m;h.body.position.y=a.bob;J('torsoH',rear?-.38:Math.sin(a.hph*2)*.03*g*m);J('neck',rear?-.3:Math.sin(a.hph*2+1)*.07*m+Math.sin(t*.8)*.04-g*.25-ngh*.3+paw*.25);
   J('hhead',Math.sin(t*1.3)*.08+rear*.4+g*.2-ngh*.45+Math.sin(t*14)*.1*Math.min(1,ngh),Math.sin(t*.37)*.25*(1-m));J('jaw',Math.min(.6,ngh*.55)+g*.2+Math.max(0,Math.sin(t*2.1))*.05);
-  J('tail',-.15-m*.5-g*.4,0,Math.sin(t*3)*.22+Math.sin(t*7)*.08*m);J('trap',0,0,Math.sin(t*2.2)*.05+Math.sin(a.hph)*.08*m);if(r.rd)r.rd.root.rotation.x=h.torsoH.rotation.x*.8;
-  if(S.run&&Math.random()<dt*(4+g*14+ngh*10))chips(a.x+Math.sin(a.face)*1.9,2.2+Math.random(),a.z+Math.cos(a.face)*1.9,h.fire,1,{sp:.2,up:1,g:-1,life:.7,s:1.2})}, // ghost-fire snorts and mane sparks
+  J('tail',-.15-m*.5-g*.4,0,Math.sin(t*3)*.22+Math.sin(t*7)*.08*m);J('tail2',.25+m*.3+Math.sin(t*4+1)*.2,0,Math.sin(t*3-.8)*.35+Math.sin(t*8)*.12*m);flames(h,dt,a);J('trap',0,0,Math.sin(t*2.2)*.05+Math.sin(a.hph)*.08*m);if(r.rd)r.rd.root.rotation.x=h.torsoH.rotation.x*.8},
+
  rider(r,a,dt){ANIM.horse(r,a,dt);ANIM.hum(r.rd,a,dt)},
  static(){}};
 const SKULL=()=>[pe([0,1.64,-.01],[.082,.092,.1],'bone'),pb([0,1.636,.076],[.07,.012,.02],'bone',{r:.008}),pe([0,1.565,.06],[.046,.026,.042],'bone'),
@@ -685,7 +707,6 @@ function genDungeon(def,seed){
   if(q.w>=3&&q.h>=3){const ps=q.type==='boss'?[[1,1],[bs-1,1],[1,bs-1],[bs-1,bs-1]]:[[1,1],[q.w-1,1],[1,q.h-1],[q.w-1,q.h-1]];
    ps.forEach(([i,j])=>dIn[(Z0+j*CV)*SX+X0+i*CV]>=8&&STAMP[L.pillar||'pillar'](W,M,X0+i*CV,Z0+j*CV,r,q.type==='boss'||r.chance(.7)?T0-1:r.int(8,18)))}
   if(q.type==='start'){W.disc(q.cx,q.cz,1,1,11,(x,y,z)=>{const d=Math.hypot(x-q.cx,z-q.cz),a=Math.atan2(z-q.cz,x-q.cx);return d>9.5||(d>5&&d<6.2)||(d<9.5&&d>6.2&&Math.abs(((a/TAU*12)%1+1)%1-.5)<.08)?M.rune:-1});addL(q.cx,q.cz,.6,def.pal.rune,1.2)}
-  if(q.type==='boss'){const Ra=bs*8;W.disc(q.cx,q.cz,1,1,Ra,(x,y,z)=>{const d=Math.hypot(x-q.cx,z-q.cz),a=Math.atan2(z-q.cz,x-q.cx);return d>Ra-1.5||(d<13&&d>11.8)||(d<Ra-1.5&&d>13&&Math.abs(((a/TAU*5)%1+1)%1-.5)*d<1)?M.accent:-1})}
   const D=(x,z)=>dIn[Math.round(z)*SX+Math.round(x)];
   for(const[id,mode,n=4]of def.decor)for(const[px,pz,nx,nz]of q.type==='start'&&mode!=='wall'?[]:PLACE[mode](q,n,r,D)){const x=Math.round(px),z=Math.round(pz);
    if(mode==='wall'){if(dIn[z*SX+x]===1&&!open[(z-nz)*SX+x-nx])addL(x,z,STAMP[id](W,M,x,z,r,nx,nz));continue}
@@ -903,7 +924,7 @@ const BOSS={
   if(A.stomp<=0&&near(S.party,f,Ab.stomp.r).length>=2){const Q=Ab.stomp;A.stomp=Q.cd;f.busy=f.windT=Q.dur; // rears up when crowded
    tele({shape:'circle',x:f.x,z:f.z,r:Q.r,dur:Q.dur,team:'foe',by:f,name:Q.name,fire:tl=>{if(f.dead)return;for(const m of inTele(tl))hit(f,m,f.dmg*Q.mul);shake(.25)}});return}autoAtk(f,t,dt)}};
 function splitRider(f){const B=DB.BOSSES.rider,r=f.rig,k=S.run.scale,SB=DB.BOSSES.steed;f.phase=2;r.mounted=0;r.rd.mounted=0;r.rd.root.position.y=0;
- r.rd.root.rotation.x=0;const ab={};for(const n in SB.abil)ab[n]=SB.abil[n].first;
+ r.rd.root.rotation.x=0;r.horse.root.scale.setScalar(CFG.riderK);const ab={};for(const n in SB.abil)ab[n]=SB.abil[n].first;
  const st=actor({team:'foe',type:'steed',boss:1,name:'Nightmare Steed',maxHp:B.hp*k*B.steedHp,dmg:SB.dmg*k,range:SB.range,speed:SB.speed,radius:SB.radius,armor:SB.armor,x:f.x+1,z:f.z,pack:'boss',aggro:true,
   ab,phase:2,rig:r.horse,threat:new Map(f.threat)});
  st.hp=st.maxHp;S.foes.push(st);foeBar(st);S.run.bossLeft++;f.rig={...r.rd,kind:'hum',root:r.root};f.speed=B.footSpeed;f.radius=B.footRadius;f.busy=1;chips(f.x,2,f.z,'#444',40);toast(`${f.name} is thrown from his steed!`)}
@@ -1149,7 +1170,7 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.lantern=new THREE.PointLight(0xffc98a,0,9,2);R.bossLight=new THREE.PointLight(0x9dffc8,0,12,2);R.flash=new THREE.PointLight(0xffffff,0,9,2);R.time={value:0};R.scene.add(R.lantern,R.bossLight,R.flash);
  R.cut={p:{value:new THREE.Vector3()},c:{value:new THREE.Vector3()},on:{value:0}};R.matW=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});addCut(R.matW);
  R.matWE=new THREE.MeshBasicMaterial({vertexColors:true});addCut(R.matWE);R.matE=new THREE.MeshBasicMaterial({vertexColors:true});R.cube=new THREE.BoxGeometry(1,1,1);
- R.chipMax=500;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.count=0;R.chips.frustumCulled=false;R.scene.add(R.chips);
+ R.chipMax=1000;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby();meshVox(L.W,R.lobby);R.lobbyLights=L.lights;toLobby();requestAnimationFrame(loop)}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
