@@ -173,7 +173,7 @@ const DB={
  BOSSES:{
   golem:{sw:['slam','hook','pound','slam'],hp:6000,dmg:30,cd:2.1,range:2.3,speed:2.5,radius:1.05,armor:20,abil:{
    smash:{name:'Grave Smash',cd:9,first:5,r:2.4,dur:1.4,mul:3.8,quake:{name:'Aftershock',r:5.4,dur:1.1,mul:1.5}},retch:{name:'Bile Retch',cd:13,first:8,r:6.5,arc:1.1,dur:1.1,mul:2.2,dot:10},
-   toss:{name:'Tombstone Toss',cd:12,first:7,r:2.6,dur:1.6,mul:2.4},charge:{name:'Charnel Charge',cd:18,first:14,len:14,w:2.2,dur:1.2,mul:2.4,sp:15},barrage:{name:'Rib Barrage',cd:14,first:3,n:4,r:1.3,dur:3.4,mul:1.3,miss:1.6}}},
+   toss:{name:'Hurled Maul',cd:12,first:7,r:2.6,dur:1.6,mul:2.4},charge:{name:'Charnel Charge',cd:18,first:14,len:14,w:2.2,dur:1.2,mul:2.4,sp:15},barrage:{name:'Rib Barrage',cd:14,first:3,n:4,r:1.3,dur:3.4,mul:1.3,miss:1.6}}},
   rider:{sw:['reap','chop','reap','thrust'],solo:.7,hp:6200,dmg:26,cd:2,range:2.8,speed:5.2,footSpeed:3.6,radius:1.3,footRadius:.6,armor:20,steedHp:.32,abil:{
    ride:{name:'Hollow Charge',cd:14,first:7,len:18,w:2.4,dur:1.5,mul:2.2,sp:18},reap:{name:'Reap',cd:11,first:9,r:3.5,dur:1.6,mul:2},
    bolts:{cd:11,first:12,n:3,mul:1.2,sp:7},summon:{cd:24,first:17,n:3},hurl:{name:'Pumpkin Bomb',cd:13,first:5,r:2.6,dur:2.3,total:4},
@@ -182,14 +182,14 @@ const DB={
    tombs:{name:'Open the Tombs',cd:22,first:8,n:2,r:1.5,dur:4.5},scarab:{name:'Scarab',cd:18,first:4},judge:{name:'Judgement',cd:11,first:6,len:13,w:1.8,dur:1.3,mul:2.6},curse:{name:'Breath of Dust',cd:14,first:11,r:6,arc:1.1,dur:1.2,mul:1.8,dot:8}}},
   steed:{dmg:26,cd:1.8,range:2.4,speed:6,radius:1.1,armor:10,abil:{ride:{name:'Trample',cd:9,first:4,len:12,w:2.4,dur:1.1,mul:2,sp:16},stomp:{name:'Stomp',cd:8,first:6,r:3,dur:1,mul:1.8}}}},
  SWINGS:{ // attack keyframes [t, arm x, arm z, forearm x, torso twist, torso lean, off-arm x, off-forearm x, grip]; arc = swoosh width (rad).
-  // grip 0..1 turns the held weapon from its carry angle (HELD rx) toward the swing's g: PI lays it along the forearm (a thrust), ~1.75 holds it level for a sweep
+  // grip 0..1 turns the held weapon from its carry angles (HELD rx, ry) toward the swing's g (pitch: PI lays it along the forearm for a thrust, ~1.55 holds it level for a sweep) and gy (roll, so the edge leads)
   slash:{arc:2.2,k:[[0,-.3,0,-.5,0,0,.1,-.3,0],[.3,-2.1,-.6,-.6,-.7,-.12,.45,-.6,0],[.5,-.85,.5,-.05,.55,.2,-.3,-.4,0],[.7,-.1,.75,-.15,.4,.15,-.2,-.4,0],[1,-.3,0,-.5,0,0,.1,-.3,0]]}, // high outside, cutting down across the body
   back:{arc:2.2,k:[[0,-.3,0,-.5,0,0,.1,-.3,0],[.28,-1.2,.9,-1,.65,-.05,.3,-.5,0],[.5,-1.15,-.55,-.1,-.55,.15,-.2,-.4,0],[.72,-.5,-.8,-.25,-.4,.1,-.2,-.4,0],[1,-.3,0,-.5,0,0,.1,-.3,0]]}, // backhand, level, returning outward
   rise:{arc:2,k:[[0,-.3,0,-.5,0,0,.1,-.3,0],[.3,.3,.45,-.3,.5,.18,.2,-.4,0],[.52,-1.8,-.45,-.3,-.45,-.1,-.3,-.5,0],[.76,-2.3,-.6,-.5,-.5,-.14,-.2,-.5,0],[1,-.3,0,-.5,0,0,.1,-.3,0]]}, // rising cut from the low inside to high outside
   hack:{arc:1.5,k:[[0,-.2,0,-.4,0,0,.1,-.3,0],[.36,-2.4,-.2,-.45,-.45,-.2,.6,-.7,0],[.5,-.6,.25,0,.4,.3,-.4,-.3,0],[.72,.1,.3,-.1,.3,.25,-.3,-.4,0],[1,-.2,0,-.4,0,0,.1,-.3,0]]},
   chop:{arc:1.3,k:[[0,-.2,0,-.4,0,0,-.2,-.4,0],[.38,-2.5,.15,-.4,0,-.3,-2.5,-.4,0],[.5,-.7,.1,0,0,.35,-.7,0,0],[.74,-.1,.1,-.1,0,.3,-.1,-.1,0],[1,-.2,0,-.4,0,0,-.2,-.4,0]]},
   thrust:{arc:.7,g:Math.PI,k:[[0,-.3,0,-.5,0,0,.1,-.3,0],[.35,.2,-.2,-1.8,-.5,-.1,.2,-.5,1],[.5,-1.4,.1,-.05,.45,.25,-.2,-.4,1],[.72,-1.3,.1,-.1,.3,.2,-.2,-.4,1],[1,-.3,0,-.5,0,0,.1,-.3,0]]}, // weapon couched along the forearm, driven straight out
-  reap:{arc:2.8,g:1.55,k:[[0,-.2,0,-.4,0,0,-.2,-.4,0],[.36,.15,-1,-.35,-.95,-.05,-.9,-.9,1],[.52,.05,.45,-.25,.9,.15,-1.1,-.6,1],[.76,-.1,.6,-.3,.6,.1,-.9,-.6,.8],[1,-.2,0,-.4,0,0,-.2,-.4,0]]}, // two-handed level sweep for scythes and staves, turned from the hips
+  reap:{arc:2.8,g:1.55,gy:Math.PI/2,k:[[0,-.2,0,-.4,0,0,-.2,-.4,0],[.36,.15,-1,-.35,-.95,-.05,-.9,-.9,1],[.52,.05,.45,-.25,.9,.15,-1.1,-.6,1],[.76,-.1,.6,-.3,.6,.1,-.9,-.6,.8],[1,-.2,0,-.4,0,0,-.2,-.4,0]]}, // two-handed level sweep for scythes and staves, turned from the hips
   shoot:{k:[[0,-.3,0,-.5,0,0,-.4,-.3,0],[.3,-1.35,-.1,-2,-.5,0,-1.5,-.05,0],[.45,-1.35,-.1,-2.1,-.5,0,-1.5,-.05,0],[.55,-1.2,-.3,-1.2,-.4,0,-1.5,-.05,0],[1,-.3,0,-.5,0,0,-.4,-.3,0]]},
   cast:{k:[[0,-.3,0,-.5,0,0,-.2,-.5,0],[.32,-1,-.4,-1.6,-.3,-.1,-.3,-.8,0],[.5,-1.55,.1,-.1,.3,.15,-.2,-.6,0],[.75,-1.3,.1,-.2,.2,.1,-.2,-.6,0],[1,-.3,0,-.5,0,0,-.2,-.5,0]]},
   hook:{arc:2,k:[[0,0,0,-.2,0,0,0,-.25,0],[.4,-1.2,0,-1.4,-.8,-.1,.3,-.3,0],[.52,-1.3,0,-.2,.8,.2,.2,-.3,0],[.75,-.6,0,-.2,.4,.15,.1,-.3,0],[1,0,0,-.2,0,0,0,-.25,0]]},
@@ -204,13 +204,13 @@ const DB={
   skull:['.###.','#####','#.#.#','#####','.#.#.']},
  ZONES:[ // the overworld: one generated stretch of open country per biome, with that biome's dungeon gate somewhere in it. d = index into DUNGEONS (palette, foes); pal adds outdoor ground tones
   {id:'marsh',d:0,name:'Vael Marsh',pal:{tree:'oak',leaf:'#2f4a34',turf:['#2f3a30','#38443a','#414e40','#4a5846','#343c34'],water:'#10202a',moss:'#3a4a34',grass:'#56684a'}},{id:'moor',d:1,name:'Hollow Moor',pal:{tree:'oak',leaf:'#4a6a2e'}},
-  {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{tree:'palm',leaf:'#6a8a3a',turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
-  {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
+  {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{tree:'palm',treeN:.2,leaf:'#6a8a3a',turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
+  {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',treeN:.7,leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
  ZONE:{floor:'earth',foes:.6,lay:{shapes:['cave','cave','round'],boss:'round',path:'wind',w:13,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
-  decor:[['stone','ring',6],['tree','corner',4],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
+  decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
  NODES:{ // gathering nodes: hold left click on one to work it. time = seconds per haul, hauls before it is spent, respawn seconds
-  ore:{name:'Ore vein',tool:'pick',trade:'mining',item:'ore',rare:'gem',time:1.6,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'chop'},fish:{name:'Fishing spot',tool:'rod',trade:'fishing',item:'fish',rare:'pearl',time:2.4,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'cast'},
-  wood:{name:'Tree',tool:'hatchet',trade:'woodcutting',item:'wood',rare:'amber',time:1.4,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'hack'}},
+  ore:{name:'Ore vein',at:[.7,.95],tool:'pick',trade:'mining',item:'ore',rare:'gem',time:1.6,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'chop'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',trade:'fishing',item:'fish',rare:'pearl',time:2.4,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'cast'},
+  wood:{name:'Tree',at:[.6,.9],tool:'hatchet',trade:'woodcutting',item:'wood',rare:'amber',time:1.4,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'hack'}},
  TRADES:{mining:'Mining',fishing:'Fishing',woodcutting:'Woodcutting',smithing:'Smithing',cooking:'Cooking'},TRADE:{base:40,grow:1.18,max:50,speed:.03,rare:.06,rareLv:.004}, // trade skills: xp to next = base*grow^(lvl-1); each level works faster and finds rares more often
  MATS:{ore:'Ore',gem:'Gem',fish:'Fish',pearl:'Pearl',wood:'Wood',amber:'Amber',ration:'Ration'},
  RECIPES:[{id:'ration',name:'Cook a ration',trade:'cooking',need:{fish:2},xp:15,make:'ration',tip:'Q in the field: restores 40% health'},{id:'weapon',name:'Forge a weapon',trade:'smithing',need:{ore:6,wood:2},xp:40,slot:'weapon'},
@@ -420,7 +420,7 @@ const AXE=[pc([0,-.14,0],[0,.62,0],.016,'wood'),...[0,1,2,3,4].map(i=>hoop([0,-.
  pf([[-.01,.01],[.36,.68],[.01,.2]],(x,y,z)=>{const e=y>.56?.17-(y-.56)*1.25:.17-(.56-y)*.2+(y<.46?(.46-y)*.9:0);return Math.abs(x)<.008&&z>.012&&z<e&&y>.37&&y<.66},'blade'),
  pf([[-.01,.01],[.36,.68],[.01,.22]],(x,y,z)=>{const e=y>.56?.17-(y-.56)*1.25:.17-(.56-y)*.2+(y<.46?(.46-y)*.9:0);return Math.abs(x)<.009&&z>e-.022&&z<e&&y>.37&&y<.66},'edge'),pc([0,.6,-.01],[0,.6,-.1],.013,'iron',{r2:.002})];
 const HELD={ // held items, authored in grip space (origin = palm, +y = up the haft/blade). at = socket node, rx = pitch (PI/2 lays +y along the knuckles, pointing forward), ry = yaw, pos = offset, plumb = hangs by gravity whatever the arm does
- sword:{at:'handR',rx:2.05,prims:()=>[...W_SWORD(),pb([0,.035,0],[.03,.02,.022],'gold'),pe([0,.035,.02],[.014,.014,.008],'fuller'),...[0,1,2].map(i=>hoop([0,-.06+i*.03,0],.012,.019,-.065+i*.03,-.055+i*.03,'gold')),pb([0,.085,0],[.02,.03,.01],'fuller'),...both([pc([.095,.035,0],[.125,.07,0],.012,'gold',{r2:.006})]),pe([0,-.1,.022],[.011,.011,.008],'fuller'),...[0,1,2,3].map(i=>pb([0,.22+i*.16,.009],[.01,.012,.003],'gold'))]}, // carried point-down-and-forward, not stuck straight out; rain-guard, grip wire, gem
+ sword:{at:'handR',rx:2.05,ry:Math.PI/2,prims:()=>[...W_SWORD(),pb([0,.035,0],[.03,.02,.022],'gold'),pe([0,.035,.02],[.014,.014,.008],'fuller'),...[0,1,2].map(i=>hoop([0,-.06+i*.03,0],.012,.019,-.065+i*.03,-.055+i*.03,'gold')),pb([0,.085,0],[.02,.03,.01],'fuller'),...both([pc([.095,.035,0],[.125,.07,0],.012,'gold',{r2:.006})]),pe([0,-.1,.022],[.011,.011,.008],'fuller'),...[0,1,2,3].map(i=>pb([0,.22+i*.16,.009],[.01,.012,.003],'gold'))]}, // carried point-down-and-forward, not stuck straight out; rain-guard, grip wire, gem
  axe:{at:'handR',rx:2,prims:()=>[...AXE,pb([0,.52,.02],[.012,.1,.02],'iron'),pe([0,.66,0],[.02,.03,.02],'iron'),pc([0,-.14,0],[0,-.2,0],.02,'iron',{r2:.004}),...[0,1,2].map(i=>pe([.0095,.47+i*.045,.07+i*.02],[.004,.012,.012],'gold')),pc([0,.3,0],[0,.36,0],.022,'leather2')]},
  was:{at:'handR',rx:.3,pos:[0,.1,.06],prims:()=>scl([pc([0,-1,0],[0,1,0],.02,'go'),...both([pc([0,-1,0],[.05,-1.1,0],.014,'go')]),...[-.5,0,.5].map(y=>hoop([0,y,0],.016,.032,y-.015,y+.015,'bl')), // Anubis's sceptre: forked foot, lapis bands, jackal head, a khopesh crescent and a burning heart-stone
    pc([0,1,0],[0,1.1,.12],.035,'go',{r2:.016}),...both([pc([.015,1.07,.02],[.03,1.2,-.02],.014,'go',{r2:.003})]),pe([0,1.0,0],[.045,.045,.045],'core'),
@@ -431,7 +431,7 @@ const HELD={ // held items, authored in grip space (origin = palm, +y = up the h
  censer:{at:'handR',rx:0,plumb:1,prims:()=>[pc([0,0,0],[0,-.22,0],.006,'iron'),pe([0,-.28,0],[.048,.042,.048],'gold'),pe([0,-.24,0],[.03,.018,.03],'glow'),pe([0,-.235,0],[.036,.02,.036],'gold',{sh:.008}),pc([0,-.32,0],[0,-.35,0],.01,'gold')]},
  tome:{at:'handL',rx:-.3,pos:[0,.05,.08],prims:()=>[pb([0,0,0],[.075,.095,.028],'tome',{r:.006}),pb([0,0,.0],[.07,.09,.03],'robe'),pb([.074,0,0],[.006,.096,.029],'tome'),pb([0,.01,.03],[.012,.05,.004],'gold'),pb([0,.03,.03],[.035,.012,.004],'gold')]},
  orb:{at:'handR',rx:0,pos:[0,-.06,0],prims:()=>[pe([0,0,0],[.06,.06,.06],'glow'),...[0,1,2,3].map(i=>pc([Math.cos(i*1.57)*.07,0,Math.sin(i*1.57)*.07],[Math.cos(i*1.57)*.03,.09,Math.sin(i*1.57)*.03],.008,'iron'))]},
- blade:{at:'handR',prims:o=>[pc([0,-.08,0],[0,.03,0],.014,'wood'),pb([0,.035,0],[.08,.011,.014],'metal'), // rusted, notched; o.L = length, o.w = width factor
+ blade:{at:'handR',rx:2.05,ry:Math.PI/2,prims:o=>[pc([0,-.08,0],[0,.03,0],.014,'wood'),pb([0,.035,0],[.08,.011,.014],'metal'), // rusted, notched; o.L = length, o.w = width factor
   pf([[-.04,.04],[.04,o.L+.06],[-.01,.01]],(x,y,z)=>{const t=y>o.L-.1?(o.L+.04-y)/.14:1;return y<o.L+.04&&Math.abs(x)<=.024*o.w*t&&Math.abs(z)<.007&&!(Math.abs(x)>.012&&hash3(Math.floor(y*40),1,1)<.18)},'metal')]},
  buckler:{at:'foreL',rx:0,ry:.35,pos:[.02,-.16,.07],plumb:1,shield:1,prims:()=>[pf([[-.24,.24],[-.24,.24],[-.03,.03]],(x,y,z)=>Math.hypot(x,y)<.2&&Math.abs(z)<.014&&!(Math.hypot(x,y)>.13&&hash3(Math.floor(Math.atan2(y,x)*6),2,2)<.15),'wood'),
   pf([[-.23,.23],[-.23,.23],[-.02,.02]],(x,y,z)=>{const d=Math.hypot(x,y);return d>.19&&d<.225&&Math.abs(z)<.017&&hash3(Math.floor(Math.atan2(y,x)*8),3,3)>.12},'metal'),pe([0,0,.02],[.05,.05,.03],'metal')]},
@@ -441,9 +441,9 @@ const HELD={ // held items, authored in grip space (origin = palm, +y = up the h
  hatchet:{at:'handR',rx:2,prims:()=>[pc([0,-.15,0],[0,.5,0],.018,'tw'),pf([[-.012,.012],[.34,.52],[.01,.17]],(x,y,z)=>z<.16-Math.abs(y-.43)*.5&&Math.abs(x)<.01,'ti'),pb([0,.43,-.02],[.014,.035,.02],'ti')]},
  rod:{at:'handR',rx:1.1,prims:()=>[pc([0,-.2,0],[0,1.5,0],.013,'tw',{r2:.005}),pe([0,.02,.03],[.02,.03,.03],'ti'),pc([0,1.5,0],[0,1.1,.9],.003,'tl'),pe([0,1.1,.9],[.02,.03,.02],'ti')]},
  staff:{at:'handR',rx:.2,pos:[0,0,.05],prims:()=>[pc([0,-.9,0],[0,.75,0],.016,'bead'),...tr(scl(tr(SKULL(),[0,-1.63,0]),.7),[0,.86,0]),pe([0,.86,.02],[.03,.03,.03],'glow'),hoop([0,.72,0],.016,.03,.71,.74,'iron')]},
- scythe:{at:'handR',rx:.3,ry:Math.PI/2,pos:[0,.1,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
+ scythe:{at:'handR',rx:.3,pos:[0,.1,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
   pf([[-.012,.012],[1.2,1.86],[-.02,.62]],(x,y,z)=>{const dy=y-1.25,r0=Math.hypot(dy,z),th=Math.atan2(dy,z);if(th<.15||th>1.58)return false;const w=.006+.085*(th-.15)/1.43;return Math.abs(x)<.01&&r0<.57&&r0>.57-w},'bl')]}};
-function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);m.userData={rx:H.rx??Math.PI/2,plumb:H.plumb};if(H.shield)r.shield=1;if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
+function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);m.userData={rx:H.rx??Math.PI/2,ry:H.ry||0,plumb:H.plumb};if(H.shield)r.shield=1;if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
 const SLOTS3=['head','chest','legs'],wornId=g=>SLOTS3.map(sl=>g[sl]?1:0).join('');
 const dress=(B,K,g)=>Object.fromEntries(['leg','torso','head','arm'].map(p=>[p,()=>[...B[p],...SLOTS3.flatMap(sl=>((g[sl]?K[sl]:K.bare&&K.bare[sl])||{})[p]||[])]])); // modular gear: base body part + the pieces of every filled slot (K.bare = what shows when a slot is empty)
 const MODEL={
@@ -516,7 +516,9 @@ const MODEL={
   const dress={belly:[...[[-.2,1.74,.28],[.18,1.8,.28],[0,1.98,.3]].flatMap(c=>skull(1.25,c)),...[-2,-1,0,1,2].map(i=>pc([i*.17,1.5,.55-Math.abs(i)*.04],[i*.18,1.1,.58],.025,'ir')),pb([0,1.12,.5],[.2,.36,.02],'rag')],
     chest:[pe([0,2.55,.42],[.28,.32,.2],'core'),...both([...skull(1.45,[.98,3.22,.1]),...skull(1.1,[1.2,3.14,-.14]),...candle(.7,3.5,-.15),...candle(1.15,3.42,.3,.1)]),...[0,1,2,3,4,5,6].map(i=>ellShell([-.6+i*.2,2.95-Math.sin(i/6*Math.PI)*.45,.8-Math.abs(i-3)*.04],[.06,.045,.025],.45,'ir'))],
     head:[...both(big(arcCaps(.06,1.7,0,.13,.07,Math.PI*1.1,Math.PI*2.05,6,.034,'b2',.22,.006),3.4,[0,3.3,.55])),...[-2,-1,0,1,2].flatMap(i=>candle(i*.13,3.78-Math.abs(i)*.04,.5-Math.abs(i)*.03,.08+(i&1)*.05))],jaw:[],
-    club:[pb([1.34,.78,.52],[.1,.7,.34],'sl',{r:.03}),pb([1.445,.95,.52],[.014,.4,.05],'dk'),pb([1.445,1.1,.52],[.014,.05,.2],'dk'),...[1.3,.4].map(y=>pb([1.34,y,.52],[.115,.045,.355],'ir'))],
+    club:[pc([1.32,1.42,.08],[1.32,.36,.74],.055,'ir'),pe([1.32,1.44,.07],[.08,.08,.08],'ir'),...[0,1,2].map(i=>hoop([1.32,1.1-i*.2,.28+i*.12],.05,.085,1.07-i*.2,1.13-i*.2,'b2')), // grave maul: iron haft with bone grips, dragged head-down
+     pb([1.32,.3,.82],[.2,.21,.27],'sl',{r:.04}),...[.6,1.04].map(z=>pb([1.32,.3,z],[.215,.225,.03],'ir')),...skull(1.5,[1.32,.3,1.1]),...both([pc([.2,.3,.82],[.36,.3,.82],.07,'ir',{r2:.01})]).map(o=>({...o,a:[o.a[0]+1.32,o.a[1],o.a[2]],b:[o.b[0]+1.32,o.b[1],o.b[2]]})), // banded stone head, a skull set in its face, side spikes
+     pc([1.32,.5,.82],[1.32,.7,.82],.07,'ir',{r2:.01}),pc([1.32,.3,.55],[1.32,.3,.4],.06,'ir',{r2:.02})],
     bell:[pc([0,2.05,.78],[0,1.88,.8],.022,'ir'),pf([[-.22,.22],[1.48,1.9],[.58,1.02]],(x,y,z)=>{const d=Math.hypot(x,z-.8),rr=.07+(1.88-y)*.36;return y>1.5&&y<1.88&&d<=rr&&d>rr-.045},'bz'),pe([0,1.88,.8],[.09,.04,.09],'bz'),pc([0,1.8,.8],[0,1.52,.8],.018,'ir'),pe([0,1.5,.8],[.05,.05,.05],'ir')],
     rib:[0,1,2].flatMap(i=>[0,1,2,3,4].map(j=>ellShell([1.2+i*.1,1.26-j*.1,.2+i*.05],[.04,.05,.022],.45,'ir'))),
     emit:[...[1,-1].flatMap(sd=>[lit('chest0',CH,sd*.7,3.5,-.15),lit('chest0',CH,sd*1.15,3.42,.3,.1),['head',[sd*.11,.29,.42],4,.9]]),...[-2,-1,0,1,2].map(i=>lit('head',HD,i*.13,3.78-Math.abs(i)*.04,.5-Math.abs(i)*.03,.08+(i&1)*.05))]};
@@ -530,7 +532,7 @@ const MODEL={
    ...joint({n:'armR',p:'chest0',at:[-1.08,2.9,.05],prims:mir(arm(claws))},'foreR',[-1.3,1.95,.1]),...joint({n:'armL',p:'chest0',at:[1.08,2.9,.05],prims:arm([])},'foreL',[1.3,1.95,.1]),{n:'club',p:'foreL',at:[1.34,1.05,.48],prims:dress.club},
    {n:'ribL',p:'foreL',at:[1.3,1.32,.22],prims:dress.rib},{n:'ribR',p:'foreR',at:[-1.3,1.32,.22],prims:mir(dress.rib)},{n:'bell',p:'chest0',at:[0,2.05,.78],prims:dress.bell}];
   const r=rig('golem','golem'+bp.kind,nodes,mt,P,CFG.bvox);r.belly=[r.belly0,r.belly1];r.chest=[r.chest0,r.chest1];r.parts=[r.head,r.armR,r.armL,r.bell];r.core=bp.core;r.hot=Wr?'spirit':'fire';
-  r.emit=[['club',[0,.42,.04],5,1.3],['chest0',[0,.55,.5],10,1.8],['chest1',[0,.55,.4],26,2.3],...['chest0','chest1'].flatMap(n=>[-2,-1,0,1,2].map(i=>[n,[i*.42,1.84-Math.abs(i)*.24,-.87],6,1.5])),...dress.emit];return r},
+  r.emit=[['club',[-.02,-.75,.36],6,1.4],['chest0',[0,.55,.5],10,1.8],['chest1',[0,.55,.4],26,2.3],...['chest0','chest1'].flatMap(n=>[-2,-1,0,1,2].map(i=>[n,[i*.42,1.84-Math.abs(i)*.24,-.87],6,1.5])),...dress.emit];return r},
  horse(bp){ // skeleton warhorse, bone by bone: long skull with a hinged jaw, vertebrae up the neck and along the back, open ribs around a burning heart, flame mane and tail (own nodes, they flicker),
   // saddle, tattered blanket, breast strap and swinging lanterns ('trap' node). Node names are what ANIM.horse drives: torsoH, leg0-3 + hock0-3, neck, mane, hhead, jaw, tail, trap
   const Ri=bp.kind==='rime',mt={bn:[bp.rib,'bone'],b2:[bp.hide2,'bone'],dk:['#0c0a0c'],cl:[bp.cloth,'cloth'],tr:[bp.trim,'plate'],le:['#3a281b','leather'],ir:[bp.iron,'plate'],fi:[bp.hoof,'none',1],ey:[bp.eye,'none',1]};
@@ -639,7 +641,7 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   if(a.cast){const q=Math.sin(S.t*11)*.08;ar=[-2.1+q,-2.1-q];az=[.45,-.45];fo=[-.8,-.8];hx=-.3;ln=-.1;by+=.02}
   J('legL',th[0],0,r.mounted?.5:0);J('legR',th[1],0,r.mounted?-.5:0);J('shinL',kn[0]);J('shinR',kn[1]);if(a.act&&a.act.t<a.act.d){const q={ar,az,fo,tw,ln};ACT[a.act.id](a.act.t/a.act.d,q);tw=q.tw;ln=q.ln;a.act.t+=dt}
   if(r.shield){const g=Math.max(a.rdy,a.atkT>0?1:0),b=a.buffs&&hasBuff(a,'bulwark')?1:0;ar[0]=lerp(ar[0],-.75-b*.35,Math.max(g,b));fo[0]=lerp(fo[0],-.95,Math.max(g,b));az[0]=lerp(az[0],-.3,Math.max(g,b))} // shield arm comes up into a guard in combat and stays there through the sword stroke
-  J('handL',wr[0]);J('handR',wr[1]);if(r.weapon&&!r.weapon.userData.plumb){const U=r.weapon.userData,sw=DB.SWINGS[a.sw||'slash'];r.weapon.rotation.x+=((sw.g!=null?lerp(U.rx,sw.g,gb):U.rx)-r.weapon.rotation.x)*Math.min(1,dt*A.k)} // weapon turns in the hand to the swing's grip
+  J('handL',wr[0]);J('handR',wr[1]);if(r.weapon&&!r.weapon.userData.plumb){const U=r.weapon.userData,sw=DB.SWINGS[a.sw||'slash'];const k2=Math.min(1,dt*A.k);r.weapon.rotation.x+=((sw.g!=null?lerp(U.rx,sw.g,gb):U.rx)-r.weapon.rotation.x)*k2;r.weapon.rotation.y+=((sw.gy!=null?lerp(U.ry,sw.gy,gb):U.ry)-r.weapon.rotation.y)*k2} // weapon turns in the hand to the swing's grip
   [1,-1].forEach((sd,i)=>{const n='LR'[i],Q=A.arm,x=clamp(ar[i],Q[0],Q[1]); // shoulder limits: hang clear of the hips, cross the chest only when raised in front, swing wide when drawn back; elbows only fold forward
    J('arm'+n,x,0,sd*Math.max(az[i]*sd,Q[2]-clamp((-x-.3)*.8,0,.75)+Math.max(0,x)*.35));J('fore'+n,clamp(fo[i],Q[3],0))});
   J('torso',ln,tw,Math.sin(t*.6)*.02*id+st*Math.sin(t*4)*.08);J('head',hx,hy,r.skel?Math.sin(t*2.3)*.07:0);r.body.position.y+=(by-r.body.position.y)*Math.min(1,dt*A.k);
@@ -730,7 +732,7 @@ const WALL={ // wall column builder; G = gen context {W,M,def,L,T0,r}, d = dista
   if(nc&&d===2&&u===16&&T>21)NICHE[G.def.floor](W,M,x,z,5,G.r)},
  bank(G,x,z,d){const{W,M}=G,n=noise2(x*.09,z*.09,17),rk=noise2(x*.2,z*.2,19)>.7?4:0,h=Math.min(W.sy-14,Math.round(2+Math.min(d,8)*2.7+n*9)+rk); // sloped earth bank rising to an open moor, rock outcrops
   for(let y=d>4?h-6:0;y<h;y++)W.set(x,y,z,y>=h-1?(rk?M.stone:M.turf[Math.floor(n*3+hash3(x,z,3)*2)]):rk||noise3(x*.2,y*.4,z*.2)>.62?M.stone:M.floor[(y>>1)%3]);
-  if(d>3&&hash3(x,z,33)<.0016)STAMP.tree(W,M,x,z,G.r,h)}};
+  if(!rk&&d>5&&hash3(x,z,33)<.0016*(G.def.pal.treeN??1))STAMP.tree(W,M,x,z,G.r,h)}}; // trees root in soil, never on bare rock, and thin out by biome (pal.treeN)
 const HANG={ // per wall-adjacent floor column: (W,M,x,z,T,h) things hanging on / leaning on walls
  slab(W,M,x,z,T,h){if(h<.018)W.line([x,T-2,z],[x,T-13,z],k=>k%2?0:M.iron);else if(h<.03)W.line([x,T-1,z],[x,T-3-Math.floor(h*200),z],M.web)},
  earth(W,M,x,z,T,h){if(h<.05)for(let y=2;y<6+h*90;y++)W.set(x,y,z,y>8?M.wood:M.turf[3])}, // reeds and cattails at the bank foot
@@ -769,7 +771,13 @@ const STAMP={ // floor stamps block nav; wall stamps get (nx,nz) pointing into t
   if(r.chance(.5))for(const s of[-1,1])W.box(x+s*3,13,z-3,x+s*6,24,z-3,(px,y)=>y>22-Math.abs(px-x)?-1:M.stone);W.block(x-4,z-4,x+4,z+4)},
  rubble(W,M,x,z,r){for(let k=0;k<6;k++){const a=r.r()*TAU,d=r.r()*4,s=r.int(1,2);W.box(Math.round(x+Math.cos(a)*d),2,Math.round(z+Math.sin(a)*d),Math.round(x+Math.cos(a)*d)+s,2+s,Math.round(z+Math.sin(a)*d)+s,M.wall[k%3])}
   const al=r.chance(.5);for(let k=-7;k<=7;k++)W.disc(al?x+k:x,al?z:z+k,2,2,0,M.trim),W.box(al?x+k:x-1,2,al?z-1:z+k,al?x+k:x+1,4,al?z+1:z+k,(px,y,pz)=>Math.abs(k)===7?M.trim:M.wall[0]);W.block(x-7,z-7,x+7,z+7)},
- tree(W,M,x,z,r,y0=2){const H=Math.min(W.sy-3-y0,r.int(22,34)),lx=r.range(-4,4),lz=r.range(-4,4),at=t=>[x+lx*t*t,y0+H*t,z+lz*t*t]; // dead tree: leaning trunk, forked bare boughs
+};
+const TREEV={ // world-tree shapes for zones whose palette names one (pal.tree); anything else gets the broadleaf in STAMP.tree
+ pine(W,M,x,z,r,y0){const H=Math.min(W.sy-3-y0,r.int(26,38));W.box(x,y0,z,x,y0+H,z,M.wood);W.box(x+1,y0,z,x+1,y0+Math.round(H*.4),z,M.wood); // straight trunk, tiered skirts, snow on the tips
+  for(let y=6;y<H+2;y++){const t=(y-6)/(H-4),R0=(1-t)*7*(1-.35*((y%6)/6))+.6;W.disc(x+.5,z,y0+y,y0+y,R0,(px,py,pz)=>M.snow&&y%6===5&&hash3(px,py,pz)<.6?M.snow:hash3(px,py,pz)<.85?M.leaf:M.moss)}},
+ palm(W,M,x,z,r,y0){const H=Math.min(W.sy-8-y0,r.int(24,32)),t=[x+r.range(-6,6),y0+H,z+r.range(-6,6)];for(const o of[0,1])W.line([x+o,y0,z],[t[0]+o,t[1],t[2]],k=>k%5?M.wood:M.groove); // leaning ringed trunk, drooping fronds
+  for(let i=0;i<7;i++){const a=i/7*TAU+r.r(),m=[t[0]+Math.cos(a)*6,t[1]+3,t[2]+Math.sin(a)*6],e=[t[0]+Math.cos(a)*12,t[1]-4,t[2]+Math.sin(a)*12];W.line(t,m,M.leaf);W.line(m,e,M.leaf);W.line([m[0],m[1]+1,m[2]],[e[0],e[1]+1,e[2]],M.moss)}}};
+Object.assign(STAMP,{tree(W,M,x,z,r,y0=2){if(TREEV[W.tree]){TREEV[W.tree](W,M,x,z,r,y0);if(y0===2)W.block(x-1,z-1,x+1,z+1);return}const H=Math.min(W.sy-3-y0,r.int(22,34)),lx=r.range(-4,4),lz=r.range(-4,4),at=t=>[x+lx*t*t,y0+H*t,z+lz*t*t]; // dead tree: leaning trunk, forked bare boughs
   for(const[ox,oz]of[[0,0],[1,0],[0,1]])W.line([x+ox,y0,z+oz],at(ox||oz?.6:1),M.wood);W.disc(x,z,y0,y0+1,1.6,M.wood);
   for(let k=0,n=r.int(4,6);k<n;k++){const p=at(r.range(.45,.95)),a=r.r()*TAU,L=r.range(5,11),e=[p[0]+Math.cos(a)*L,Math.min(W.sy-1,p[1]+L*r.range(.3,.9)),p[2]+Math.sin(a)*L];W.line(p,e,M.wood);
    W.line(e,[e[0]+Math.cos(a+1)*L*.5,Math.min(W.sy-1,e[1]+L*.4),e[2]+Math.sin(a+1)*L*.5],M.wood);
@@ -783,12 +791,12 @@ const STAMP={ // floor stamps block nav; wall stamps get (nx,nz) pointing into t
   if(y<=8&&(Math.abs(k)+y)%2&&y<8)continue;const sx=k+2,sy=18-y,on=sx>=0&&sx<5&&sy>=0&&sy<5&&sig[sy][sx]==='#';W.set(px,y,pz,y===22?M.iron:Math.abs(k)===4||y===9?M.gold:on?M.gold:M.accent)}},
  chains(W,M,x,z,r,nx,nz){for(let k=0;k<3;k++){const L=r.int(8,16),T=CFG.wallH;W.line([x+(nz?k*2:0),T,z+(nx?k*2:0)],[x+(nz?k*2:0),T-L,z+(nx?k*2:0)],j=>j%2?M.groove:M.iron)}},
  pillar(W,M,x,z,r,h){W.disc(x,z,2,3,5.5,M.trim);W.disc(x,z,4,4,4.5,M.trim);W.disc(x,z,2,h,3.2,(px,y,pz)=>Math.floor(Math.atan2(pz-z,px-x)/TAU*12+12)%2?M.wall[0]:M.wall[2]);
-  for(const[ox,oz]of[[3.6,0],[-3.6,0],[0,3.6],[0,-3.6]])W.disc(x+ox,z+oz,5,h,1.3,(px,y)=>y%9===0?M.trim:M.wall[1]);W.disc(x,z,h-2,h-2,4.5,M.trim);W.disc(x,z,h-1,h,5.5,M.trim);W.block(x-5,z-5,x+5,z+5)}};
+  for(const[ox,oz]of[[3.6,0],[-3.6,0],[0,3.6],[0,-3.6]])W.disc(x+ox,z+oz,5,h,1.3,(px,y)=>y%9===0?M.trim:M.wall[1]);W.disc(x,z,h-2,h-2,4.5,M.trim);W.disc(x,z,h-1,h,5.5,M.trim);W.block(x-5,z-5,x+5,z+5)}});
 function cheb(N,seed){const d=new Int16Array(N*N);for(let i=0;i<N*N;i++)d[i]=seed(i)?0:999;
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){const i=z*N+x;let v=d[i];if(x>0)v=Math.min(v,d[i-1]+1);if(z>0){v=Math.min(v,d[i-N]+1);if(x>0)v=Math.min(v,d[i-N-1]+1);if(x<N-1)v=Math.min(v,d[i-N+1]+1)}d[i]=v}
  for(let z=N-1;z>=0;z--)for(let x=N-1;x>=0;x--){const i=z*N+x;let v=d[i];if(x<N-1)v=Math.min(v,d[i+1]+1);if(z<N-1){v=Math.min(v,d[i+N]+1);if(x<N-1)v=Math.min(v,d[i+N+1]+1);if(x>0)v=Math.min(v,d[i+N-1]+1)}d[i]=v}return d}
 function genDungeon(def,seed){
- const r=rng(seed),{cell:CV,cells:N,wallH,wallT,sy}=CFG,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];
+ const r=rng(seed),{cell:CV,cells:N,wallH,wallT,sy}=CFG,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];W.tree=def.pal.tree; // which tree shape this place grows (zones only)
  const free=(x,z,w,h)=>{for(let j=z-1;j<=z+h;j++)for(let i=x-1;i<=x+w;i++)if(occ[j*N+i]>=0)return false;return true};
  const put=(x,z,w,h,type)=>{for(let j=z;j<z+h;j++)for(let i=x;i<x+w;i++)occ[j*N+i]=rooms.length;rooms.push({x,z,w,h,type,cx:(x+w/2)*CV,cz:(z+h/2)*CV})};
  const bs=def.lay.arena.size;for(let t=0;t<300&&!rooms.length;t++){const x=r.int(1,N-1-bs),z=r.int(1,N-1-bs);if(free(x,z,bs,bs))put(x,z,bs,bs,'boss')}
@@ -833,8 +841,8 @@ function genDungeon(def,seed){
    if(ok)addL(x,z,STAMP[id](W,M,x,z,r))}}
  if(L.hall)hall.forEach(([x,z],i)=>{x=Math.round(x);z=Math.round(z);if(rm[z*SX+x]>=0||!open[z*SX+x])return;if(!L.hall[1])return addL(x,z,STAMP[L.hall[0]](W,M,x,z,r)); // passages: a light every few metres, alternating sides
   const[nx,nz]=[[0,1],[0,-1],[1,0],[-1,0]][(i&1)+(open[z*SX+x-L.w-3]?0:2)];for(let k=0;k<24&&dIn[z*SX+x]>1;k++){x-=nx;z-=nz}if(dIn[z*SX+x]===1&&!open[(z-nz)*SX+x-nx])addL(x,z,STAMP[L.hall[0]](W,M,x,z,r,nx,nz))});
- for(const[kind,n]of def.nodes||[])for(let i=0,t=0;i<n&&t<60;t++){const q=r.pick(rooms),a=r.r()*TAU,d0=r.range(.25,.8)*Math.min(q.w,q.h)*CV/2,x=Math.round(q.cx+Math.cos(a)*d0),z=Math.round(q.cz+Math.sin(a)*d0),v=CFG.vox; // gathering nodes scattered through the clearings
-  if(q.type==='start'||dIn[z*SX+x]<8||lane[z*SX+x]||W.blk[z*SX+x]||nodes.some(o=>Math.hypot(o.x-x*v,o.z-z*v)<3))continue;i++;nodes.push({kind,x:x*v,z:z*v});if(kind==='fish'){W.disc(x,z,1,4,8,0);W.disc(x,z,0,0,8,M.water);W.disc(x,z,1,1,8,(a,b,c)=>Math.hypot(a-x,c-z)>7?M.stone:-1)}} // a fishing spot is a stone-rimmed pool
+ for(const[kind,n]of def.nodes||[])for(let i=0,t=0;i<n&&t<60;t++){const q=r.pick(rooms),a=r.r()*TAU,d0=r.range(...DB.NODES[kind].at)*Math.min(q.w,q.h)*CV/2,x=Math.round(q.cx+Math.cos(a)*d0),z=Math.round(q.cz+Math.sin(a)*d0),v=CFG.vox; // gathering nodes scattered through the clearings
+  if(q.type==='start'||dIn[z*SX+x]<(kind==='fish'?12:5)||lane[z*SX+x]||W.blk[z*SX+x]||(kind!=='fish'&&W.get(x,0,z)===M.water)||nodes.some(o=>Math.hypot(o.x-x*v,o.z-z*v)<3))continue;i++;nodes.push({kind,x:x*v,z:z*v});if(kind==='fish'){W.disc(x,z,1,4,8,0);W.disc(x,z,0,0,8,M.water);W.disc(x,z,1,1,8,(a,b,c)=>Math.hypot(a-x,c-z)>7?M.stone:-1)}} // a fishing spot is a stone-rimmed pool
  return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,r}}
 
 function genLobby(){ // plaza + procedurally assembled Gothic chapel (grammar: walls → buttresses → windows → roof → tower → portal → rose → spire)
