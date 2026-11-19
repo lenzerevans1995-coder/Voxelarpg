@@ -17,8 +17,9 @@ Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
 4. **One state object.** All mutable game state lives in `S`. Three.js handles
    live in `R`.
 5. **Registries keyed by id.** Behavior is looked up by id:
-   `SKILL[id]`, `AI[role]`, `BOSS[id]`, `MODEL[kind]`, `ANIM[kind]`,
-   `STAMP[id]`, `FLOOR[style]`. To add content, add a `DB` entry and, if
+   `SKILL[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `MODEL[kind]`,
+   `ANIM[kind]`, `HELD[id]`, `STAMP[id]`, `PLACE[mode]`, `SHAPE[id]`,
+   `PATH[id]`, `FLOOR[style]`, `WALL[style]`, `ZONE[shape]`, `PANEL[id]`. To add content, add a `DB` entry and, if
    needed, one registry function. Do not add `if/else` chains.
 6. **Ids are consistent.** The same short lowercase id is used in `DB`, the
    registries, save data and the UI (e.g. `golem`, `templar`, `undercroft`).
@@ -29,9 +30,16 @@ Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
 8. **Prefer tables and loops** over repeated code. Short functions.
 9. **Extend, don't duplicate.** Before adding a new structure, check whether an
    existing registry or `DB` table already fits.
+10. **Portable to GDScript.** Plain data (dictionaries/arrays) and plain
+    functions only: no classes with inheritance, no closures holding hidden
+    state, no DOM or three.js calls outside §14–§16 and the `R` handles. See
+    `docs/11-optimization-seeding-porting.md` for the port map, the seeding
+    rules and the optimization plan.
 
 ## Repo layout
 
 - `docs/` — design plan (01–10). `docs/10-party-and-dungeon-runs.md` is the
   core game loop (loot → lobby → harder dungeon).
+- `docs/11-optimization-seeding-porting.md` — optimization plan, seeding
+  rules, GDScript port map.
 - `prototype/index.html` — three.js prototype. Open it in a browser.
