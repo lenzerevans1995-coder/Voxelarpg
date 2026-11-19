@@ -111,7 +111,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §12 FX     ZONE[shape] telegraph shapes + GLSL decal, projectiles, hazards, swooshes, bursts, chips, debris, numbers, toasts
  §13 RUN    start/finish run, loot, save
  §14 UI     lobby; run HUD: icon(), pix() pixel heart/gem gauges, minimap() with fog of war and zoom, PANEL[id] menu windows, buildHud/updateHud; summary
- §15 INPUT  mouse/touch/keys
+ §15 INPUT  WASD / left click move, right click attack, 1-4 skills, menu keys
  §16 LOOP   update + render
 */
 'use strict';
@@ -213,7 +213,7 @@ const DB={
 
 // §2 STATE
 const S={mode:'boot',t:0,ui:{tab:null,t:0},save:null,sel:{d:0,cls:'templar',member:'templar',mode:'charted',item:null},run:null,D:null,nav:null,party:[],foes:[],
- fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],rings:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,sx:0,sy:0},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
+ fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],rings:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,fire:false},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
 const R={};
 
 // §3 UTIL
@@ -853,12 +853,11 @@ function partyAI(a,dt){a.noMove=S.cmd.hold;const e=escape(a);if(e){goTo(a,e.x,e.
  for(const tl of tele0(a)){if(tl.kind==='soak'&&(!tl.claim||tl.claim===a||tl.claim.dead)&&dist(a,tl)<10&&!S.fx.tele.some(o=>o!==tl&&o.claim===a)){tl.claim=a;goTo(a,tl.x,tl.z,dt,.2);return}
   if(tl.kind==='stack'){goTo(a,tl.x,tl.z,dt,.6);return}}
  AI[a.role](a,dt)}
-function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const k=S.in.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0);
- if(S.in.down&&S.in.ground&&(!a.order||a.order.type==='move'))a.order={type:'move',x:S.in.ground.x,z:S.in.ground.z};
- if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);a.face=Math.atan2(wx,wz);a.moving=1;a.order=null}
- else if(a.order&&a.order.type==='move'){if(goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null}
- else if(a.order&&a.order.type==='attack'){const t=a.order.t;if(!t||t.dead)a.order=null;else engage(a,t,dt)}
- else{const t=nearest(combatFoes(),a),C0=DB.CLASSES[a.cls].atk;if(t&&dist(a,t)<=C0.range+t.radius+.3)basic(a,t)}}
+function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk;
+ if(I.down&&I.ground)a.order={x:I.ground.x,z:I.ground.z}; // left button held: keep walking to the cursor
+ if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
+ else if(a.order&&goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null;
+ if(I.fire&&I.ground){const t=tgt(a,C0.range+.4);a.target=t||a.target;a.face=t?ang(a,t):ang(a,I.ground);if(t)basic(a,t);else if(a.atkCd<=0&&!C0.ranged){a.atkCd=C0.cd/a.haste;swing(a)}}} // right button: attack the foe nearest the cursor in reach, or swing at the air toward it
 function foeAI(f,dt){f.alert=f.aggro;if(f.stun>0){f.cast=null;return}
  if(!f.aggro){for(const m of S.party)if(!m.dead&&dist(f,m)<CFG.aggroR&&los(f,m)){aggroPack(f);break}if(!f.aggro)return}
  const t=f.tgt=pickTarget(f);if(!t)return;if(f.boss)return BOSS[f.type](f,t,dt);const E=DB.ENEMIES[f.type],fr=omen('frenzy')&&f.hp<f.maxHp*.3?.7:1;f.windT=Math.max(0,(f.windT||0)-dt);
@@ -1061,7 +1060,7 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  <div class="lbl">Layout</div><div class="row"><button data-m="charted" class="${sel.mode==='charted'?'on':''}">Charted (weekly seed)</button><button data-m="uncharted" class="${sel.mode==='uncharted'?'on':''}">Uncharted</button></div>
  <div class="det"><b>Depth ${dep}</b> · foes ×${(CFG.depthScale**(dep-1)).toFixed(2)} · timer ${fmt(d.timer)}<br>${om.length?om.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join(''):'<span class="muted">No omens yet. They begin at Depth 3.</span>'}</div>
  <button class="enter" id="go">Enter the ${d.biome.split(' ').pop()}</button>
- <div class="help">Click or tap to move and attack. Keys 1–4 use skills. WASD moves, the wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
+ <div class="help">WASD or left click to move. Hold right click to attack toward the cursor. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
  <header><h1>Grave Lantern</h1><div class="lbl">Morrowgate · party lobby</div></header>
  <section><span class="lbl">Your party</span><h2>Choose your role</h2>
  <div class="row">${Object.entries(DB.CLASSES).map(([k,c])=>`<button data-c="${k}" class="${sel.cls===k?'on':''}">${c.name}<br><small class="muted">${DB.ROLES[c.role]}</small></button>`).join('')}</div>
@@ -1140,14 +1139,15 @@ function updateHud(dt){if(S.mode!=='run')return;const r=S.run,H=$('#hud'),U=S.ui
 
 // §15 INPUT
 function ground(cx,cy){const m=new THREE.Vector2(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);R.ray.setFromCamera(m,R.cam);const p=new THREE.Vector3();return R.ray.ray.intersectPlane(R.plane,p)?{x:p.x,z:p.z}:null}
-function initInput(){const c=$('#c');
- c.addEventListener('pointerdown',e=>{if(S.mode!=='run')return;const g=ground(e.clientX,e.clientY),pl=S.party.find(m=>m.isPlayer);if(!g||!pl)return;S.in.ground=g;
-  const f=S.foes.filter(f=>!f.dead).sort((a,b)=>dist(a,g)-dist(b,g))[0];if(f&&dist(f,g)<f.radius+.7){pl.order={type:'attack',t:f};pl.target=f;S.in.down=false}else{pl.order={type:'move',x:g.x,z:g.z};S.in.down=true}});
- c.addEventListener('pointermove',e=>{if(S.mode==='run')S.in.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>S.in.down=false);
- c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});c.addEventListener('contextmenu',e=>e.preventDefault());
- addEventListener('keydown',e=>{const k=e.key.toLowerCase();S.in.keys[k]=true;if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k)>=0?'1234'.indexOf(k):'qerf'.indexOf(k);
-  if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);const mn=DB.MENU.find(m=>m.key===k);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}if(k===' '&&pl){const t=tgt(pl,12);if(t)pl.order={type:'attack',t}}});
- addEventListener('keyup',e=>S.in.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>S.in.keys={});addEventListener('resize',resize)}
+function initInput(){const c=$('#c'),I=S.in; // WASD or left click = move, right click (hold) = attack toward the cursor, 1-4 = skills, Tab/B/G/C/O = menu, N = minimap, wheel = zoom
+ c.addEventListener('pointerdown',e=>{if(S.mode!=='run')return;const g=ground(e.clientX,e.clientY),pl=S.party.find(m=>m.isPlayer);if(!g||!pl)return;I.ground=g;
+  const tap=e.pointerType!=='mouse'&&S.foes.some(f=>!f.dead&&dist(f,g)<f.radius+.7); // touch has no right button: tapping a foe attacks it
+  if(e.button===2||tap)I.fire=true;else if(e.button===0){I.down=true;pl.order={x:g.x,z:g.z}}});
+ c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=I.fire=false});
+ c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
+  if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}});
+ addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=I.fire=false});addEventListener('resize',resize)}
 
 // §16 LOOP
 function addCut(mat){mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,{uP:R.cut.p,uC:R.cut.c,uOn:R.cut.on});
