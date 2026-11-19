@@ -22,7 +22,7 @@ Design docs: `/docs`. Playable prototype:
    `SKILL[id]`, `PERK[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `ACT[id]`, `MODEL[kind]`,
    `ANIM[kind]`, `HELD[id]`, `STAMP[id]`, `PLACE[mode]`, `SHAPE[id]`,
    `PATH[id]`, `FLOOR[style]`, `WALL[style]`, `ZONE[shape]`, `PANEL[id]`.
-   Data-only tables looked up by id: `DB.ZONES`, `DB.NODES`, `DB.TRADES`,
+   Data-only tables looked up by id: `DB.ZONES`, `DB.NODES`, `DB.TRADES`, `DB.TREE`,
    `DB.RECIPES`, `DB.PERKS`. To add content, add a `DB` entry and, if
    needed, one registry function. Do not add `if/else` chains.
 6. **Ids are consistent.** The same short lowercase id is used in `DB`, the

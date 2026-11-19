@@ -18,7 +18,9 @@ Built in stages. Each stage is playable on its own.
   cursor; 1–4 skills. No right click. Hovered foes glow and get a bracket.
 - Swings chain through `DB.CLASSES[cls].atk.sw` (e.g. slash → backhand → chop)
   and fill the whole attack cycle. Bosses chain their own lists.
-- Level-ups offer one boon of three (`DB.PERKS`, behaviour in `PERK[id]`).
+- Each level grants a point for the ability tree (`DB.TREE`): Wrath and Ward
+  unlock top to bottom from `DB.PERKS` (behaviour in `PERK[id]`); Mastery ranks
+  the class's own four skills (`DB.RANK`).
   Looted weapons carry a boon affix (`DB.WPERKS`), so weapons change how you
   fight (piercing shards, chain sparks, orbiting blades, death bursts…).
 
@@ -30,7 +32,9 @@ Built in stages. Each stage is playable on its own.
   packs are weaker than dungeon packs. A rune gate (`MODEL.gate`) in the largest
   clearing leads down into that biome's dungeon.
 - `DB.NODES` (`ore`, `fish`, `wood`): hold left click on a node to walk up and
-  work it (`work()`); it yields on a timer, sometimes a rare (gem, pearl, amber),
+  work it (`work()`) with the right tool in hand (pick, rod, hatchet). Veins
+  chip away and shatter, trees topple and leave a stump; trees follow the zone
+  (oak, pine, palm); it yields on a timer, sometimes a rare (gem, pearl, amber),
   empties, and respawns. `DB.TRADES` levels (mining, fishing, woodcutting,
   smithing, cooking) speed work up and improve rare odds.
 - `DB.RECIPES`, crafted in town: rations from fish (Q in the field heals), and
