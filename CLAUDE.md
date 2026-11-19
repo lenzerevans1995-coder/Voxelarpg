@@ -1,6 +1,7 @@
 # CLAUDE.md — Grave Lantern
 
-Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
+Gothic voxel action RPG: solo by default (companions optional), dungeons now,
+seeded overworld with gathering and crafting next (`docs/12`). Design docs: `/docs`. Playable prototype:
 `/prototype/index.html` (three.js r128, single file, no build step).
 
 ## Coding rules (MANDATORY — apply in every session, never drift)
@@ -17,7 +18,7 @@ Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
 4. **One state object.** All mutable game state lives in `S`. Three.js handles
    live in `R`.
 5. **Registries keyed by id.** Behavior is looked up by id:
-   `SKILL[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `ACT[id]`, `MODEL[kind]`,
+   `SKILL[id]`, `PERK[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `ACT[id]`, `MODEL[kind]`,
    `ANIM[kind]`, `HELD[id]`, `STAMP[id]`, `PLACE[mode]`, `SHAPE[id]`,
    `PATH[id]`, `FLOOR[style]`, `WALL[style]`, `ZONE[shape]`, `PANEL[id]`. To add content, add a `DB` entry and, if
    needed, one registry function. Do not add `if/else` chains.
@@ -40,6 +41,8 @@ Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
 
 - `docs/` — design plan (01–10). `docs/10-party-and-dungeon-runs.md` is the
   core game loop (loot → lobby → harder dungeon).
+- `docs/12-overworld-and-skills.md` — solo direction and the staged plan:
+  overworld, gathering, crafting, trade skills.
 - `docs/11-optimization-seeding-porting.md` — optimization plan, seeding
   rules, GDScript port map.
 - `prototype/index.html` — three.js prototype. Open it in a browser.

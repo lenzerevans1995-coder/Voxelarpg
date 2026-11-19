@@ -79,6 +79,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 .belt .slots{display:flex;gap:18px;align-items:flex-end}.heart{position:relative;width:66px;height:60px;margin:0 2px}.heart canvas{width:66px;height:60px}.heart b{position:absolute;left:0;right:0;top:34%;text-align:center;font-size:12px}
 .gem{position:relative;width:46px;height:46px}.gem canvas{width:40px;height:44px;margin:1px 3px}.gem b{position:absolute;left:0;right:0;top:36%;text-align:center;font-size:10px}
 .xp{display:flex;align-items:center;gap:6px;width:100%}.xp .lv{font-size:10px}.xp .dr{flex:1;height:9px;background:#000c;border:1px solid #000;position:relative;font-size:8px;line-height:9px;text-align:center}.xp .dr>i{position:absolute;left:0;top:0;bottom:0;background:#e8b53a}.xp .dr>span{position:relative}
+.pick{position:absolute;inset:0;z-index:10;display:grid;place-items:center;background:#000a;pointer-events:auto;text-transform:none}.pick>div{width:min(420px,90vw);display:flex;flex-direction:column;gap:8px;padding:8px}.pick h3{margin:0;color:var(--gold);font:700 14px 'Silkscreen',monospace}.pick button{text-align:left;font:14px var(--body);text-transform:none;padding:8px 10px}
 .coin{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));color:#ffd36a;font-size:12px;font-weight:700}.coin i{display:inline-block;width:12px;height:12px;border-radius:50%!important;background:#e8b53a;box-shadow:inset -2px -2px 0 #9a6a14,0 0 0 2px #000;vertical-align:-1px;margin-right:6px}
 .toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:26px;text-shadow:0 2px 10px #000;text-align:center;white-space:nowrap;transition:opacity .4s}
 .fb{position:absolute;width:54px;transform:translate(-50%,-100%);font-size:11px;text-align:center;text-shadow:0 1px 2px #000}
@@ -114,29 +115,33 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §6 GEN     genTown() lobby surroundings, SHAPE[id] room footprints, PATH[id] corridors, PLACE[role] prop layout, FLOOR/WALL/WALLPAINT/HANG/NICHE[style], STAMP[id], genDungeon(), genLobby()
  §7 NAV     nav grid, walk, los, A*, goTo
  §8 ACTOR   spawn, hit, heal, buffs, kill
- §9 SKILL   SKILL[id], basic attack, targeting
+ §9 SKILL   SKILL[id], PERK[id] level-up boons + weapon affixes, chained basic attack, targeting
  §10 AI     AI[role] companions, foeAI, mechanic handling
  §11 BOSS   BOSS[id] scripted bosses, ARENA[id] boss-room mechanics
  §12 FX     ZONE[shape] telegraph shapes + GLSL decal, projectiles, hazards, swooshes, bursts, chips, debris, numbers, toasts
  §13 RUN    start/finish run, loot, save
  §14 UI     lobby; run HUD: icon(), pix() pixel heart/gem gauges, minimap() with fog of war and zoom, PANEL[id] menu windows, buildHud/updateHud; summary
- §15 INPUT  WASD / left click move, right click attack, 1-4 skills, menu keys
+ §15 INPUT  WASD / hold-left move, hold-left on a foe attacks, Space attack, 1-4 skills + boon picks, menu keys
  §16 LOOP   init, title fly-through (CFG.title) → enterLobby(), update + render
 */
 'use strict';
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
- town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
+ town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
  mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
 const DB={
  CLASSES:{
-  templar:{mp:100,name:'Templar',role:'tank',ally:'Ser Aldric',hp:560,armor:45,speed:4.2,atk:{dmg:16,cd:.9,range:1.9,sw:'slash',arc:2,col:'#ffe08a',fin:1.7},skills:['bash','taunt','consecrate','bulwark'],weapon:'Sword & Shield'},
-  sister:{mp:160,name:'Sister',role:'healer',ally:'Sister Maud',hp:380,armor:12,speed:4.4,atk:{dmg:11,cd:1,range:9,ranged:1,sw:'cast',col:'#fff2b0',fin:1.8},skills:['mend','sanctuary','paleflame','rebuke'],weapon:'Censer & Tome'},
-  reaver:{mp:100,name:'Reaver',role:'dps',ally:'Brannoc',hp:420,armor:22,speed:4.6,atk:{dmg:24,cd:.75,range:1.9,sw:'hack',alt:1,arc:1.7,col:'#ff5a36',fin:1.6},skills:['cleave','leap','kick','frenzy'],weapon:'Twin Axes'}},
+  templar:{mp:100,name:'Templar',role:'tank',ally:'Ser Aldric',hp:560,armor:45,speed:4.2,atk:{dmg:16,cd:.8,range:1.9,sw:['slash','back','chop'],arc:2,col:'#ffe08a',fin:1.7},skills:['bash','taunt','consecrate','bulwark'],weapon:'Sword & Shield'},
+  sister:{mp:160,name:'Sister',role:'healer',ally:'Sister Maud',hp:380,armor:12,speed:4.4,atk:{dmg:13,cd:.9,range:9,ranged:1,sw:['cast'],col:'#fff2b0',fin:1.8},skills:['mend','sanctuary','paleflame','rebuke'],weapon:'Censer & Tome'},
+  reaver:{mp:100,name:'Reaver',role:'dps',ally:'Brannoc',hp:420,armor:22,speed:4.6,atk:{dmg:22,cd:.65,range:1.9,sw:['hack','back','chop'],alt:1,arc:1.7,col:'#ff5a36',fin:1.6},skills:['cleave','leap','kick','frenzy'],weapon:'Twin Axes'},
+  ranger:{mp:110,name:'Ranger',role:'dps',hp:400,armor:16,speed:4.9,atk:{dmg:17,cd:.6,range:10,ranged:1,sp:19,sw:['shoot'],col:'#c8f08a',fin:1.7},skills:['volley','trap','roll','mark'],weapon:'Longbow',model:'reaver',
+   look:{id:'rg',held:['bow'],pal:{mail:['#4a5a3a','cloth'],red:['#2f4a2a','cloth'],fur:['#3a3428','fur'],iron:['#5a4a34','leather'],horn:['#3a2c1e','wood'],hair:['#6a4a22','fur'],wood:['#5a3c22','wood'],str:['#e8e0c8']}}},
+  warlock:{mp:180,name:'Warlock',role:'dps',hp:360,armor:10,speed:4.4,atk:{dmg:19,cd:.85,range:9,ranged:1,sw:['cast','thrust'],col:'#c07aff',fin:1.8},skills:['hexbolt','nova','blink','drain'],weapon:'Skull Staff',model:'sister',
+   look:{id:'wl',held:['staff','tome'],pal:{robe:['#2a2238','cloth'],robe2:['#4a2a5a','cloth'],mantle:['#15121c','cloth'],gold:['#8a5ad0'],glow:['#c07aff','none',1],eye:['#c07aff','none',1],tome:['#3a1d4a','leather']}}}},
  ROLES:{tank:'Tank',healer:'Healer',dps:'Damage'},
  SKILLS:{
   bash:{cost:15,col:'#d8c48a',ico:['#####','#####','#####','.###.','..#..'],name:'Shield Bash',cd:7,range:2.4,dmg:30,stun:1.5,tip:'Stun + interrupt'},
@@ -150,6 +155,14 @@ const DB={
   cleave:{cost:15,col:'#ffb070',ico:['###..','..##.','...##','..##.','###..'],name:'Cleave',cd:4,range:2.8,arc:2.4,dmg:44,tip:'Hit all foes in front'},
   leap:{cost:20,col:'#ffb070',ico:['..#..','.###.','#.#.#','..#..','..#..'],name:'Leap',cd:9,range:9,r:2.6,dmg:38,tip:'Jump and slam'},
   kick:{cost:15,col:'#c89070',ico:['.##..','.##..','.##..','.####','.####'],name:'Gut Kick',cd:8,range:2.3,dmg:20,dps:12,dur:6,tip:'Interrupt + bleed'},
+  volley:{cost:15,col:'#c8f08a',ico:['#.#.#','#.#.#','.###.','..#..','..#..'],name:'Volley',cd:6,n:5,arc:.9,dmg:22,tip:'Fan of five arrows'},
+  trap:{cost:20,col:'#8fdc7a',ico:['.....','#.#.#','.###.','#####','.....'],name:'Snare',cd:10,r:2.2,dur:6,dps:16,tip:'Thorn snare at the cursor: slows and wounds'},
+  roll:{cost:10,col:'#e8e0c8',ico:['...##','..##.','.##..','##...','#....'],name:'Tumble',cd:5,range:5,tip:'Dash toward the cursor'},
+  mark:{cost:15,col:'#ffd060',ico:['.###.','#...#','#.#.#','#...#','.###.'],name:"Hunter's Mark",cd:12,range:12,dur:8,tip:'Target takes +50% damage'},
+  hexbolt:{cost:15,col:'#c07aff',ico:['..#..','.###.','#####','.###.','..#..'],name:'Hex Bolt',cd:4,range:11,dmg:48,tip:'Heavy cursing bolt'},
+  nova:{cost:30,col:'#8fdcff',ico:['#.#.#','.###.','#####','.###.','#.#.#'],name:'Frost Nova',cd:11,r:4,dmg:36,tip:'Blast and slow everything near you'},
+  blink:{cost:20,col:'#e0b0ff',ico:['#...#','.#.#.','..#..','.#.#.','#...#'],name:'Blink',cd:8,range:8,r:2.2,dmg:24,tip:'Teleport to the cursor in a burst'},
+  drain:{cost:20,col:'#ff5a8a',ico:['.#.#.','#####','#####','.###.','..#..'],name:'Soul Drain',cd:9,range:10,dmg:40,heal:.6,tip:'Rip life from a foe to heal yourself'},
   frenzy:{cost:35,col:'#ff7050',ico:['#...#','##.##','.###.','##.##','#...#'],name:'Frenzy',cd:28,dur:8,tip:'+60% attack speed'}},
  ENEMIES:{ // trash: name index into dungeon.trash (or caster.name)
   warrior:{n:0,hp:120,dmg:14,cd:1.6,range:1.4,speed:3.1,radius:.38,dread:2,weapon:'sword',drop:.05,sw:'slash',dur:.5},
@@ -158,14 +171,14 @@ const DB={
   scarab:{name:'Sun Scarab',model:'scarab',hp:170,dmg:11,cd:.9,range:1.1,speed:5.2,radius:.4,dread:0,sw:'slash',dur:.3,drop:0},
   caster:{n:-1,hp:150,dmg:20,cd:3,range:8,ranged:1,speed:2.7,radius:.38,dread:4,caster:1,drop:.1,sw:'cast',dur:.5,hex:{cd:9,r:1.7,dur:1.5,mul:1.5}}},
  BOSSES:{
-  golem:{sw:'slam',hp:6000,dmg:30,cd:2.1,range:2.3,speed:2.5,radius:1.05,armor:20,abil:{
+  golem:{sw:['slam','hook','slam'],hp:6000,dmg:30,cd:2.1,range:2.3,speed:2.5,radius:1.05,armor:20,abil:{
    smash:{name:'Grave Smash',cd:9,first:5,r:2.4,dur:1.4,mul:3.8,quake:{name:'Aftershock',r:5.4,dur:1.1,mul:1.5}},retch:{name:'Bile Retch',cd:13,first:8,r:6.5,arc:1.1,dur:1.1,mul:2.2,dot:10},
    toss:{name:'Tombstone Toss',cd:12,first:7,r:2.6,dur:1.6,mul:2.4},charge:{name:'Charnel Charge',cd:18,first:14,len:14,w:2.2,dur:1.2,mul:2.4,sp:15},barrage:{name:'Rib Barrage',cd:14,first:3,n:4,r:1.3,dur:3.4,mul:1.3,miss:1.6}}},
-  rider:{hp:7600,dmg:32,cd:2,range:2.8,speed:5.2,footSpeed:3.6,radius:1.3,footRadius:.6,armor:20,steedHp:.32,abil:{
-   ride:{name:'Hollow Charge',cd:13,first:6,len:18,w:2.6,dur:1.3,mul:2.6,sp:18},reap:{name:'Reap',cd:10,first:9,r:4.2,dur:1.1,mul:2.2},
+  rider:{sw:['reap','chop','slash'],hp:6200,dmg:26,cd:2,range:2.8,speed:5.2,footSpeed:3.6,radius:1.3,footRadius:.6,armor:20,steedHp:.32,abil:{
+   ride:{name:'Hollow Charge',cd:14,first:7,len:18,w:2.4,dur:1.5,mul:2.2,sp:18},reap:{name:'Reap',cd:11,first:9,r:3.5,dur:1.6,mul:2},
    bolts:{cd:11,first:12,n:3,mul:1.2,sp:7},summon:{cd:24,first:17,n:3},hurl:{name:'Pumpkin Bomb',cd:13,first:5,r:2.6,dur:2.3,total:4},
    fan:{name:'Reaping Fan',cd:15,first:7,n:3,r:6.5,arc:.8,dur:1.4,mul:1.9}}},
-  anubis:{sw:'chop',hp:5200,dmg:28,cd:1.8,range:2.3,speed:3.6,radius:.6,armor:15,abil:{ // man-sized and quick; the arena's sarcophagi are his mechanic
+  anubis:{sw:['thrust','reap','chop'],hp:5200,dmg:28,cd:1.8,range:2.3,speed:3.6,radius:.6,armor:15,abil:{ // man-sized and quick; the arena's sarcophagi are his mechanic
    tombs:{name:'Open the Tombs',cd:22,first:8,n:2,r:1.5,dur:4.5},scarab:{name:'Scarab',cd:18,first:4},judge:{name:'Judgement',cd:11,first:6,len:13,w:1.8,dur:1.3,mul:2.6},curse:{name:'Breath of Dust',cd:14,first:11,r:6,arc:1.1,dur:1.2,mul:1.8,dot:8}}},
   steed:{dmg:26,cd:1.8,range:2.4,speed:6,radius:1.1,armor:10,abil:{ride:{name:'Trample',cd:9,first:4,len:12,w:2.4,dur:1.1,mul:2,sp:16},stomp:{name:'Stomp',cd:8,first:6,r:3,dur:1,mul:1.8}}}},
  SWINGS:{ // attack keyframes [t, arm x, arm z, forearm x, torso twist, torso lean, off-arm x, off-forearm x]; arc = swoosh width (rad)
@@ -174,11 +187,20 @@ const DB={
   chop:{arc:1.3,k:[[0,-.2,0,-.4,0,0,-.2,-.4],[.38,-2.5,.15,-.4,0,-.3,-2.5,-.4],[.5,-.7,.1,0,0,.35,-.7,0],[.74,-.1,.1,-.1,0,.3,-.1,-.1],[1,-.2,0,-.4,0,0,-.2,-.4]]},
   shoot:{k:[[0,-.3,0,-.5,0,0,-.4,-.3],[.3,-1.35,-.1,-2,-.5,0,-1.5,-.05],[.45,-1.35,-.1,-2.1,-.5,0,-1.5,-.05],[.55,-1.2,-.3,-1.2,-.4,0,-1.5,-.05],[1,-.3,0,-.5,0,0,-.4,-.3]]},
   cast:{k:[[0,-.3,0,-.5,0,0,-.2,-.5],[.32,-1,-.4,-1.6,-.3,-.1,-.3,-.8],[.5,-1.55,.1,-.1,.3,.15,-.2,-.6],[.75,-1.3,.1,-.2,.2,.1,-.2,-.6],[1,-.3,0,-.5,0,0,-.2,-.5]]},
+  back:{arc:2.2,k:[[0,-.2,0,-.4,0,0,.1,-.3],[.3,-1.1,.9,-.9,.6,-.05,.3,-.5],[.5,-.9,-.5,-.1,-.5,.15,-.2,-.4],[.72,-.3,-.7,-.2,-.35,.1,-.2,-.4],[1,-.2,0,-.4,0,0,.1,-.3]]}, // backhand, returning across the body
+  thrust:{arc:.7,k:[[0,-.2,0,-.4,0,0,.1,-.3],[.35,.3,-.2,-1.9,-.5,-.1,.2,-.5],[.5,-1.45,.1,-.05,.45,.25,-.2,-.4],[.7,-1.3,.1,-.15,.3,.2,-.2,-.4],[1,-.2,0,-.4,0,0,.1,-.3]]},
+  reap:{arc:2.8,k:[[0,-.2,0,-.4,0,0,-.2,-.4],[.38,-1.3,-1.1,-.5,-.9,-.05,-1.1,-.9],[.52,-1.3,.5,-.2,.9,.15,-1.2,-.6],[.75,-1.1,.6,-.3,.6,.1,-1,-.6],[1,-.2,0,-.4,0,0,-.2,-.4]]}, // two-handed level sweep (scythes, staves)
+  hook:{arc:2,k:[[0,0,0,-.2,0,0,0,-.25],[.4,-1.2,0,-1.4,-.8,-.1,.3,-.3],[.52,-1.3,0,-.2,.8,.2,.2,-.3],[.75,-.6,0,-.2,.4,.15,.1,-.3],[1,0,0,-.2,0,0,0,-.25]]},
   slam:{arc:1.6,k:[[0,0,0,-.2,0,0,0,-.25],[.42,-2.7,0,-.5,-.25,-.15,.4,-.3],[.5,-.9,0,-.05,.2,.3,.2,-.3],[.75,-.4,0,-.1,.1,.25,.1,-.3],[1,0,0,-.2,0,0,0,-.25]]}},
  MENU:[{id:'bag',name:'Backpack',key:'b',ico:['.###.','#...#','#####','#####','#####']},{id:'gear',name:'Worn gear',key:'g',ico:['.###.','#####','#.#.#','#####','.#.#.']},
   {id:'stats',name:'Stats',key:'c',ico:['....#','..#.#','..#.#','#.#.#','#.#.#']},{id:'orders',name:'Orders',key:'o',ico:['####.','####.','####.','#....','#....']}],
  PIX:{heart:['..##...##..','.####.####.','###########','###########','###########','.#########.','..#######..','...#####...','....###....','.....#.....'],gem:['....#....','...###...','..#####..','.#######.','#########','#########','.#######.','..#####..','...###...','....#....'],
   skull:['.###.','#####','#.#.#','#####','.#.#.']},
+ PERKS:{ // level-up choices (one of three each level) and weapon affixes; v = amount per rank. Behaviour lives in PERK[id]
+  might:{name:'Might',tip:'+10% damage',max:5,v:.1},vigor:{name:'Vigor',tip:'+12% health',max:5,v:.12},swift:{name:'Swiftness',tip:'+6% move speed',max:3,v:.06},haste:{name:'Alacrity',tip:'+8% attack speed',max:5,v:.08},
+  leech:{name:'Leech',tip:'Heal 3% of damage dealt',max:3,v:.03},shard:{name:'Splinter Shot',tip:'Every third attack looses a piercing shard',max:3,v:.6},chain:{name:'Chain Spark',tip:'Hits arc to a second foe',max:3,v:.4},
+  orbit:{name:'Orbiting Blade',tip:'A blade circles you, cutting what it touches',max:3,v:10},nova:{name:'Death Burst',tip:'Slain foes explode',max:3,v:18},ember:{name:'Ember Aura',tip:'Scorch foes standing near you',max:3,v:7}},
+ WPERKS:['leech','shard','chain','orbit','nova','ember'], // perks a looted weapon can carry (+1 rank while wielded)
  LEVEL:{max:30,base:420,grow:1.1,hp:.06,dmg:.05,per:5,boss:150,clear:60}, // xp to next = base*grow^(lvl-1); each level: +hp, +dmg for the whole party; xp = foe dread*per, boss, clear*depth
  BUFFS:{bulwark:'#9fc8ff',frenzy:'#ff5030',pale:'#fff2c0',sanct:'#8ff0a4',bleed:'#c01818',poison:'#9acd32',slow:'#8fdcff',curse:'#b070e0',vuln:'#ffd060'}, // aura particle colour while a buff is on an actor
  FIRE:{fire:['#fff3c0','#ffd24a','#ff8a1e','#e8421a'],spirit:['#eafff8','#8ff5e0','#40e0c8','#1f9a8a'],frost:['#ffffff','#d6f4ff','#8fdcff','#4aa8f0']}, // flame particle ramps, hot to cool
@@ -228,7 +250,7 @@ const DB={
 
 // §2 STATE
 const S={mode:'boot',t:0,ui:{tab:null,t:0},save:null,sel:{d:0,cls:'templar',member:'templar',mode:'charted',item:null},run:null,D:null,nav:null,party:[],foes:[],
- fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,fire:false},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
+ fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,hover:null},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
 const R={};
 
 // §3 UTIL
@@ -381,7 +403,7 @@ const AXE=[pc([0,-.14,0],[0,.62,0],.016,'wood'),...[0,1,2,3,4].map(i=>hoop([0,-.
 const HELD={ // held items, authored in grip space (origin = palm, +y = up the haft/blade). at = socket node, rx = pitch (PI/2 lays +y along the knuckles, pointing forward), ry = yaw, pos = offset, plumb = hangs by gravity whatever the arm does
  sword:{at:'handR',rx:2.05,prims:()=>[...W_SWORD(),pb([0,.035,0],[.03,.02,.022],'gold'),pe([0,.035,.02],[.014,.014,.008],'fuller'),...[0,1,2].map(i=>hoop([0,-.06+i*.03,0],.012,.019,-.065+i*.03,-.055+i*.03,'gold')),pb([0,.085,0],[.02,.03,.01],'fuller')]}, // carried point-down-and-forward, not stuck straight out; rain-guard, grip wire, gem
  axe:{at:'handR',rx:2,prims:()=>[...AXE,pb([0,.52,.02],[.012,.1,.02],'iron'),pe([0,.66,0],[.02,.03,.02],'iron')]},
- was:{at:'handR',rx:.1,pos:[0,0,.06],prims:()=>scl([pc([0,-1,0],[0,1,0],.02,'go'),...both([pc([0,-1,0],[.05,-1.1,0],.014,'go')]),...[-.5,0,.5].map(y=>hoop([0,y,0],.016,.032,y-.015,y+.015,'bl')), // Anubis's sceptre: forked foot, lapis bands, jackal head, a khopesh crescent and a burning heart-stone
+ was:{at:'handR',rx:.7,pos:[0,.1,.06],prims:()=>scl([pc([0,-1,0],[0,1,0],.02,'go'),...both([pc([0,-1,0],[.05,-1.1,0],.014,'go')]),...[-.5,0,.5].map(y=>hoop([0,y,0],.016,.032,y-.015,y+.015,'bl')), // Anubis's sceptre: forked foot, lapis bands, jackal head, a khopesh crescent and a burning heart-stone
    pc([0,1,0],[0,1.1,.12],.035,'go',{r2:.016}),...both([pc([.015,1.07,.02],[.03,1.2,-.02],.014,'go',{r2:.003})]),pe([0,1.0,0],[.045,.045,.045],'core'),
    pf([[-.012,.012],[.55,1],[.02,.34]],(x,y,z)=>{const d=Math.hypot(y-.78,z-.02);return Math.abs(x)<.01&&z>.03&&d<.26&&d>.19-(.26-Math.abs(y-.78))*.1},'go')],1.4)},
  ankh:{at:'handL',rx:0,plumb:1,prims:()=>scl([pc([0,-.02,0],[0,-.24,0],.015,'go'),pb([0,-.07,0],[.065,.015,.015],'go'),pf([[-.07,.07],[0,.14],[-.02,.02]],(x,y,z)=>Math.abs(Math.hypot(x*1.25,y-.065)-.052)<.016&&Math.abs(z)<.015,'go'),pe([0,.065,0],[.022,.03,.012],'core')],1.4)},
@@ -396,14 +418,15 @@ const HELD={ // held items, authored in grip space (origin = palm, +y = up the h
   pf([[-.23,.23],[-.23,.23],[-.02,.02]],(x,y,z)=>{const d=Math.hypot(x,y);return d>.19&&d<.225&&Math.abs(z)<.017&&hash3(Math.floor(Math.atan2(y,x)*8),3,3)>.12},'metal'),pe([0,0,.02],[.05,.05,.03],'metal')]},
  bow:{at:'handL',rx:0,pos:[0,.02,.05],plumb:1,prims:()=>{const f=t=>[0,-.48+t*.96,.09-.11*Math.sin(Math.PI*t)];return[...[...Array(8)].map((_,i)=>pc(f(i/8),f((i+1)/8),.013,'wood')),pc([0,-.47,.09],[0,.47,.09],.003,'str')]}},
  lantern:{at:'handL',rx:0,plumb:1,prims:()=>scl([pc([0,0,0],[0,-.1,0],.008,'ir'),hoop([0,-.12,0],.03,.055,-.13,-.11,'ir'),pe([0,-.19,0],[.04,.055,.04],'ln'),hoop([0,-.26,0],.03,.055,-.27,-.25,'ir'),...[0,1,2,3].map(i=>pc([Math.cos(i*1.57)*.048,-.12,Math.sin(i*1.57)*.048],[Math.cos(i*1.57)*.048,-.26,Math.sin(i*1.57)*.048],.006,'ir'))],1.6)},
- scythe:{at:'handR',rx:.15,pos:[0,0,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
+ staff:{at:'handR',rx:.2,pos:[0,0,.05],prims:()=>[pc([0,-.9,0],[0,.75,0],.016,'bead'),...tr(scl(tr(SKULL(),[0,-1.63,0]),.7),[0,.86,0]),pe([0,.86,.02],[.03,.03,.03],'glow'),hoop([0,.72,0],.016,.03,.71,.74,'iron')]},
+ scythe:{at:'handR',rx:.75,pos:[0,.1,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
   pf([[-.012,.012],[1.2,1.86],[-.02,.62]],(x,y,z)=>{const dy=y-1.25,r0=Math.hypot(dy,z),th=Math.atan2(dy,z);if(th<.15||th>1.58)return false;const w=.006+.085*(th-.15)/1.43;return Math.abs(x)<.01&&r0<.57&&r0>.57-w},'bl')]}};
 function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);if(H.shield)r.shield=1;if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
 const SLOTS3=['head','chest','legs'],wornId=g=>SLOTS3.map(sl=>g[sl]?1:0).join('');
 const dress=(B,K,g)=>Object.fromEntries(['leg','torso','head','arm'].map(p=>[p,()=>[...B[p],...SLOTS3.flatMap(sl=>((g[sl]?K[sl]:K.bare&&K.bare[sl])||{})[p]||[])]])); // modular gear: base body part + the pieces of every filled slot (K.bare = what shows when a slot is empty)
 const MODEL={
- templar(gear){const k=gearTint(gear),mt={skin:['#d7a888','skin'],hair:['#5a3a22','fur'],plate:['#b2b8bf','plate'],plate2:['#7a818a','plate'],mail:['#6b7078','mail'],cloth:['#8c1f24','cloth'],white:['#e8e2d2','cloth'],
-  gold:[k.trim],leather:['#5a3a24','leather'],grip:['#3a2416','wood'],dark:['#121417'],plume:['#a1262b','cloth'],blade:[k.blade,'plate'],fuller:k.leg?['#7dffb0','none',1]:[mix(k.blade,'#000000',.3)],field:['#8c1f24','cloth'],cape:['#5c1418','cloth']};
+ templar(gear,_,L={}){const k=gearTint(gear),mt={skin:['#d7a888','skin'],hair:['#5a3a22','fur'],plate:['#b2b8bf','plate'],plate2:['#7a818a','plate'],mail:['#6b7078','mail'],cloth:['#8c1f24','cloth'],white:['#e8e2d2','cloth'],
+  gold:[k.trim],leather:['#5a3a24','leather'],grip:['#3a2416','wood'],dark:['#121417'],plume:['#a1262b','cloth'],blade:[k.blade,'plate'],fuller:k.leg?['#7dffb0','none',1]:[mix(k.blade,'#000000',.3)],field:['#8c1f24','cloth'],cape:['#5c1418','cloth'],...L.pal};
   const B={leg:BODY.leg('mail','plate2'),torso:[...BODY.torso('mail'),pb([0,1.13,0],[.172,.022,.128],'leather',{r:.01}),pb([0,1.13,.135],[.026,.02,.007],'gold')],head:BODY.head('skin'),arm:BODY.arm('mail','plate2')},K={
    bare:{head:{head:[pe([0,1.67,-.02],[.098,.085,.105],'hair',{n:.008,nf:40}),pe([0,1.56,.07],[.06,.04,.04],'hair',{n:.006,nf:40})]}},
    legs:{leg:[pc([.1,.88,.012],[.1,.58,.02],.083,'plate',{r2:.07}),pc([.1,.47,.02],[.1,.12,.01],.064,'plate',{r2:.052}),pe([.1,.5,.035],[.072,.066,.064],'plate'),
@@ -415,11 +438,11 @@ const MODEL={
      pb([.26,.82,.025],[.036,.06,.048],'plate2',{r:.012}),pe([.265,1.42,0],[.11,.088,.112],'plate'),pe([.275,1.355,0],[.1,.04,.104],'plate2'),pe([.265,1.392,0],[.116,.012,.117],'gold')]},
    head:{head:[pb([0,1.63,.005],[.09,.105,.097],'plate',{r:.03}),pe([0,1.73,0],[.112,.05,.118],'plate'),pb([0,1.645,.125],[.072,.008,.02],'dark'),...[-2,-1,0,1,2].map(i=>pb([i*.022,1.595,.125],[.005,.012,.02],'dark')),
     pb([0,1.66,.13],[.009,.085,.004],'gold'),pb([0,1.695,.13],[.06,.009,.004],'gold'),...[0,1,2,3,4,5,6].map(i=>pc([0,1.775,.09-i*.035],[0,1.83-Math.abs(i-3)*.012,.06-i*.035],.02,'plume')),pc([0,1.79,-.14],[0,1.6,-.17],.016,'plume',{r2:.008})]}};
-  const r=rig('hum','templar'+k.id+wornId(gear),humNodes(1,{...dress(B,K,gear),
+  const r=rig('hum','templar'+k.id+wornId(gear)+(L.id||''),humNodes(1,{...dress(B,K,gear),
    extra:s=>[{n:'cape',p:'torso',at:s([0,1.45,-.15]),prims:[pf([[-.25,.25],[.5,1.47],[-.26,-.12]],(x,y,z)=>{const zz=-.155-(1.45-y)*.05-Math.sin(x*16)*.01;return Math.abs(z-zz)<.013&&Math.abs(x)<.16+(1.45-y)*.07&&!tatter(x,y-.55,3)},'cape')]}]}),mt);
-  r.weapon=equip(r,'sword',mt,k.id);equip(r,'kite',mt);return r},
- sister(gear,cs){gear=gear||{head:1,chest:1,legs:1};const k=gearTint(gear),c=cs||{robe:'#e6dfcf',robe2:'#b9ae98',mantle:'#3a3640',gold:k.trim,face:'#e2b99b',glow:'#ffd27a'},mt={robe:[c.robe,'cloth'],robe2:[c.robe2,'cloth'],mantle:[c.mantle||c.robe2,'cloth'],
-  gold:[c.gold||c.robe2],skin:[c.face,cs?'bone':'skin'],hair:['#6a4a2a','fur'],dark:['#140f12'],glow:[c.glow,'none',1],leather:['#4a3426','leather'],iron:['#2a2a2e','plate'],tome:['#5a1d22','leather'],bead:['#3a2418','wood'],bone:[c.face,'bone'],eye:[c.glow,'none',1]};
+  const H=L.held||['sword','kite'];r.weapon=equip(r,H[0],mt,k.id+(L.id||''));H[1]&&equip(r,H[1],mt,L.id);return r},
+ sister(gear,cs,L={}){gear=gear||{head:1,chest:1,legs:1};const k=gearTint(gear),c=cs||{robe:'#e6dfcf',robe2:'#b9ae98',mantle:'#3a3640',gold:k.trim,face:'#e2b99b',glow:'#ffd27a'},mt={robe:[c.robe,'cloth'],robe2:[c.robe2,'cloth'],mantle:[c.mantle||c.robe2,'cloth'],
+  gold:[c.gold||c.robe2],skin:[c.face,cs?'bone':'skin'],hair:['#6a4a2a','fur'],dark:['#140f12'],glow:[c.glow,'none',1],leather:['#4a3426','leather'],iron:['#2a2a2e','plate'],tome:['#5a1d22','leather'],bead:['#3a2418','wood'],bone:[c.face,'bone'],eye:[c.glow,'none',1],...L.pal};
   const B={leg:BODY.leg('mantle','leather'),torso:BODY.torso('robe'),head:cs?SKULL():BODY.head('skin'),arm:BODY.arm('robe','skin')},K={
    bare:{head:{head:cs?[]:[pe([0,1.66,-.03],[.1,.095,.108],'hair',{n:.008,nf:40}),pe([0,1.6,-.12],[.05,.05,.05],'hair')]}},legs:{},
    chest:{torso:[pe([0,1.41,-.01],[.245,.09,.155],'mantle'),pc([0,1.38,-.12],[0,1.1,-.16],.09,'mantle',{r2:.05}),pb([0,1.12,0],[.17,.018,.13],'gold'),
@@ -427,19 +450,19 @@ const MODEL={
     arm:[pc([.255,1.02,.01],[.265,.86,.025],.06,'robe2',{r2:.075})]},
    head:{head:[ellShell([0,1.64,-.01],[.132,.155,.145],.2,'mantle',(x,y,z)=>!(z>.03&&Math.abs(x)<.08&&y<1.72&&y>1.5)),pc([0,1.72,-.12],[0,1.6,-.2],.05,'mantle',{r2:.015}),
     ...(cs?[]:[pf([[-.15,.15],[1.82,1.92],[-.18,.12]],(x,y,z)=>Math.abs(y-1.86-(z+.03)*.25)<.012&&Math.abs(Math.hypot(x,z+.03)-.115)<.014,'glow')])]}};
-  const r=rig('hum',(cs?'caster'+c.robe:'sister')+k.id+wornId(gear),humNodes(1,{...dress(B,K,gear),
+  const r=rig('hum',(cs?'caster'+c.robe:'sister')+k.id+wornId(gear)+(L.id||''),humNodes(1,{...dress(B,K,gear),
    extra:s=>[{n:'skirt',at:s([0,.97,0]),prims:[pf([[-.32,.32],[.03,.98],[-.26,.26]],(x,y,z)=>{const t=(.97-y)/.92,rx=.165+t*.14,rz=.125+t*.1,q=(x/rx)**2+(z/rz)**2;return y>.035&&q<=1&&q>.55},'robe'),
     pf([[-.32,.32],[.03,.12],[-.26,.26]],(x,y,z)=>{const t=(.97-y)/.92,rx=.165+t*.14,rz=.125+t*.1,q=(x/rx)**2+(z/rz)**2;return y>.035&&q<=1.02&&q>.8},'gold'),pf([[-.04,.04],[.1,.97],[.1,.26]],(x,y,z)=>{const t=(.97-y)/.92;return Math.abs(x)<.03&&Math.abs(z-(.125+t*.1))<.02},'robe2')]}]}),mt);
-  if(cs)r.orb=equip(r,'orb',mt,c.glow);else{r.weapon=equip(r,'censer',mt);equip(r,'tome',mt)}return r},
- reaver(gear){const k=gearTint(gear),mt={skin:['#c89070','skin'],leather:['#5b3f2a','leather'],leather2:['#3a281b','leather'],mail:['#6d7076','mail'],red:['#7f2022','cloth'],fur:['#4a4038','fur'],
-  iron:['#3d3f44','plate'],horn:['#d8cdb4','bone'],hair:['#4a2c1a','fur'],dark:['#1a1410'],gold:[k.trim],wood:['#4a3020','wood'],blade:[k.blade,'plate'],edge:[mix(k.blade,'#ffffff',.35)]};
+  if(cs)r.orb=equip(r,'orb',mt,c.glow);else{const H=L.held||['censer','tome'];r.weapon=equip(r,H[0],mt,L.id);H[1]&&equip(r,H[1],mt,L.id)}return r},
+ reaver(gear,_,L={}){const k=gearTint(gear),mt={skin:['#c89070','skin'],leather:['#5b3f2a','leather'],leather2:['#3a281b','leather'],mail:['#6d7076','mail'],red:['#7f2022','cloth'],fur:['#4a4038','fur'],
+  iron:['#3d3f44','plate'],horn:['#d8cdb4','bone'],hair:['#4a2c1a','fur'],dark:['#1a1410'],gold:[k.trim],wood:['#4a3020','wood'],blade:[k.blade,'plate'],edge:[mix(k.blade,'#ffffff',.35)],...L.pal};
   const B={leg:BODY.leg('leather','leather2'),torso:[...BODY.torso('skin'),pb([0,1.08,0],[.172,.05,.135],'red',{r:.02}),pc([.1,1.05,.13],[.12,.78,.14],.03,'red',{r2:.02}),pb([0,1.15,0],[.18,.018,.14],'leather2'),pb([0,1.15,.15],[.025,.022,.006],'iron')],
    head:[...BODY.head('skin'),pe([0,1.53,.065],[.07,.075,.06],'hair',{n:.012,nf:40}),...both([pc([.03,1.5,.09],[.035,1.4,.1],.012,'hair',{r2:.006})]),pe([0,1.62,-.04],[.095,.1,.08],'hair',{n:.01,nf:40})],arm:BODY.arm('skin','leather2')},K={
    legs:{leg:[pc([.1,.38,.01],[.1,.06,.02],.062,'leather2',{r2:.056}),hoop([.1,.4,.01],.05,.072,.37,.41,'fur'),pe([.1,.51,.04],[.06,.055,.04],'leather2'),...[.7,.62,.25,.18].map(y=>hoop([.1,y,.01],.05,.072,y-.01,y+.01,'leather2'))]},
    chest:{torso:[pc([0,1,0],[0,1.22,0],.136,'mail',{r2:.156}),pe([0,1.31,0],[.196,.146,.12],'mail'),...both([pc([.17,1.42,.118],[-.14,1.06,.146],.018,'leather2')]),pe([0,1.25,.16],[.025,.025,.01],'gold'),pe([0,1.44,-.02],[.25,.09,.165],'fur',{n:.02,nf:30})],
     arm:[pc([.25,1.06,.01],[.26,.88,.025],.05,'leather',{r2:.042}),...[1.04,.95].map(y=>hoop([.255,y,.015],.035,.052,y-.008,y+.008,'iron')),pe([.265,1.42,0],[.1,.08,.1],'iron'),...[0,1,2].map(i=>pc([.28+i*.02,1.45,-.04+i*.04],[.36+i*.02,1.54,-.04+i*.04],.02,'horn',{r2:.003}))]},
    head:{head:[ellShell([0,1.645,-.005],[.104,.112,.112],.25,'iron',(x,y,z)=>y>1.65),pb([0,1.63,.11],[.012,.04,.01],'iron'),...both(arcCaps(.06,1.7,0,.12,.06,Math.PI*1.1,Math.PI*2.05,6,.032,'horn',.2,.006))]}};
-  const r=rig('hum','reaver'+k.id+wornId(gear),humNodes(1,dress(B,K,gear)),mt);r.weapon=equip(r,'axe',mt,k.id);equip(r,'axe',mt,k.id,{at:'handL'});return r},
+  const r=rig('hum','reaver'+k.id+wornId(gear)+(L.id||''),humNodes(1,dress(B,K,gear)),mt),H=L.held||['axe','axe'];r.weapon=equip(r,H[0],mt,k.id+(L.id||''));H[1]&&equip(r,H[1],mt,k.id,{at:'handL'});return r},
  skel(en,weapon,scale=1,X={}){const key='skel'+en.bone+weapon+(X.key||''),mt={...X.mt,bone:[en.bone,en.wrap?'band':'bone'],bone2:[en.bone2,'bone'],dark:['#120f12'],eye:[en.eye,'none',1],rag:[en.rag,'cloth'],metal:[en.metal,'rust'],wood:['#4a3426','wood'],str:['#cfc6a8']},P={rag:en.rag};
   const r=rig('hum',key,humNodes(X.k||1,{
    leg:()=>[pe([.09,.905,0],[.03,.03,.03],'bone'),pc([.09,.88,0],[.095,.53,.01],.021,'bone',{r2:.017}),pe([.095,.5,.012],[.036,.026,.03],'bone2'),pe([.095,.5,.045],[.018,.02,.012],'bone'),
@@ -585,7 +608,7 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   const q={aL:-s*.3*m,fL:-.25,aR:s*.4*m+.05,fR:-.3-m*.2,zz:.06,ln:br*.02+fl*-.08+st*.45,tw:-s*.12*m,hx:st*.4+Math.sin(t*.9)*.05,jaw:.06+Math.max(0,Math.sin(t*1.1))*.08+fl*.3};
   if(a.charge)Object.assign(q,{ln:.42,aL:.9,aR:.9,fL:-.9,fR:-.9,jaw:.5});
   if(a.windT>0&&!a.charge)Object.assign(q,{aL:-2.8,fL:-.5,ln:-.2,tw:-.3,aR:.5,hx:-.2,jaw:.35});
-  if(a.atkT>0){const K=key(DB.SWINGS.slam.k,1-a.atkT/a.atkDur);Object.assign(q,{aL:K[1],fL:K[3],tw:K[4],ln:K[5],aR:K[6],fR:K[7]})}
+  if(a.atkT>0){const K=key(DB.SWINGS[a.sw||'slam'].k,1-a.atkT/a.atkDur);Object.assign(q,{aL:K[1],fL:K[3],tw:K[4],ln:K[5],aR:K[6],fR:K[7]})}
   if(a.retchT>0)Object.assign(q,{ln:.38,aL:.7,aR:.7,hx:.45+Math.sin(S.t*30)*.06,jaw:.8});
   if(a.act&&a.act.t<a.act.d){ACT[a.act.id](a.act.t/a.act.d,q);a.act.t+=dt}
   J('legL',s*.5*m);J('legR',-s*.5*m);J('shinL',Math.max(0,-c)*.8*m+.05);J('shinR',Math.max(0,c)*.8*m+.05);J('armL',q.aL,0,q.zz);J('foreL',q.fL);J('armR',q.aR,0,-q.zz);J('foreR',q.fR);J('jaw',q.jaw);
@@ -834,12 +857,13 @@ function astar(sx,sz,tx,tz){const N=S.nav,cs=N.cs,NX=N.NX,id=(x,z)=>Math.floor(z
   for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dz)continue;const x=cx+dx,z=cz+dz;if(x<0||z<0||x>=NX||z>=NX)continue;const k=z*NX+x;
    if(!N.w[k]||(dx&&dz&&(!N.w[cz*NX+x]||!N.w[z*NX+cx])))continue;const ng=g[c]+(dx&&dz?1.414:1);if(ng<g[k]){g[k]=ng;from[k]=c;push(ng+Math.hypot(x-tx0,z-tz0),k)}}}
  if(from[t]<0)return null;const P=[];for(let c=t;c!==s0&&c>=0;c=from[c])P.unshift({x:(c%NX+.5)*cs,z:(Math.floor(c/NX)+.5)*cs});return P}
-function move(a,dx,dz){const r=a.radius*.8;if(canStand(a.x+dx,a.z+dz,r)){a.x+=dx;a.z+=dz}else if(canStand(a.x+dx,a.z,r))a.x+=dx;else if(canStand(a.x,a.z+dz,r))a.z+=dz}
+function move(a,dx,dz){const r=a.radius*.8,ok=canStand(a.x,a.z,r)?(x,z)=>canStand(x,z,r):walk; // if a dash or shove left the body wedged against a wall, any walkable step is allowed so it can never freeze there
+ if(ok(a.x+dx,a.z+dz)){a.x+=dx;a.z+=dz}else if(ok(a.x+dx,a.z))a.x+=dx;else if(ok(a.x,a.z+dz))a.z+=dz}
 const speedOf=a=>a.speed*(hasBuff(a,'slow')?.6:1);
 function goTo(a,tx,tz,dt,stop=.2){const d=Math.hypot(tx-a.x,tz-a.z);if(d<=stop||a.stun>0)return d;let wx=tx,wz=tz;
  if(!clear(a,tx,tz)){if(!a.path||S.t>a.pathT||Math.hypot(a.pathG.x-tx,a.pathG.z-tz)>1.5){a.path=astar(a.x,a.z,tx,tz);a.pathT=S.t+.6;a.pathG={x:tx,z:tz}}
   while(a.path&&a.path.length&&Math.hypot(a.path[0].x-a.x,a.path[0].z-a.z)<.35)a.path.shift();if(a.path&&a.path.length){wx=a.path[0].x;wz=a.path[0].z}}
- const dx=wx-a.x,dz=wz-a.z,l=Math.hypot(dx,dz)||1,sp=Math.min(speedOf(a)*dt,l);move(a,dx/l*sp,dz/l*sp);a.face=Math.atan2(dx,dz);a.moving=1;return d}
+ const dx=wx-a.x,dz=wz-a.z,l=Math.hypot(dx,dz)||1,sp=Math.min(speedOf(a)*dt,l);move(a,dx/l*sp,dz/l*sp);if(!(a.atkT>0))a.face=Math.atan2(dx,dz);a.moving=1;return d} // keep facing the blow while it lands
 
 // §8 ACTOR
 function actor(o){const a=Object.assign({x:0,z:0,face:0,hp:1,maxHp:1,radius:.38,speed:3,armor:0,dmgMul:1,haste:1,cd:{},atkCd:0,buffs:[],stun:0,threat:new Map(),
@@ -847,20 +871,21 @@ function actor(o){const a=Object.assign({x:0,z:0,face:0,hp:1,maxHp:1,radius:.38,
 const P=(a,v)=>v*a.dmgMul,hasBuff=(a,id)=>a.buffs.some(b=>b.id===id),buff=(a,b)=>{a.buffs=a.buffs.filter(x=>x.id!==b.id);b.acc=0;a.buffs.push(b)};
 function gearStats(g){const s={power:0,vit:0,armor:0,haste:0};for(const k in g)if(g[k])for(const st in g[k].stats)s[st]+=g[k].stats[st];return s}
 function spawnMember(cls,isPlayer,x,z){const C0=DB.CLASSES[cls],st=gearStats(S.save.gear[cls]);
- const L=DB.LEVEL,lv=S.save.lvl-1,a=actor({team:'party',cls,role:C0.role,name:isPlayer?'You':C0.ally,isPlayer,maxHp:Math.round(C0.hp*(1+st.vit/100)*(1+L.hp)**lv),armor:C0.armor+st.armor,dmgMul:1+st.power/100+L.dmg*lv,
-  haste:1+st.haste/100,speed:C0.speed,x,z,maxMp:C0.mp,mp:C0.mp,sw:C0.atk.sw,alt:C0.atk.alt,rig:MODEL[cls](S.save.gear[cls])});a.hp=a.maxHp;S.party.push(a);return a}
-function spawnFoe(type,x,z,pack,o={}){const d=S.run.def,E=DB.ENEMIES[type],k=S.run.scale;
- const a=actor({team:'foe',type,name:E.name||(E.caster?d.caster.name:d.trash[E.n]),maxHp:E.hp*k,dmg:E.dmg*k,range:E.range,speed:E.speed,radius:E.radius,x,z,home:{x,z},pack,dread:E.dread,
+ const L=DB.LEVEL,lv=S.save.lvl-1,a=actor({team:'party',cls,role:C0.role,name:isPlayer?'You':C0.ally||C0.name,isPlayer,maxHp:Math.round(C0.hp*(1+st.vit/100)*(1+L.hp)**lv),armor:C0.armor+st.armor,dmgMul:1+st.power/100+L.dmg*lv,
+  haste:1+st.haste/100,speed:C0.speed,x,z,maxMp:C0.mp,mp:C0.mp,calm:0,alt:C0.atk.alt,rig:MODEL[C0.model||cls](S.save.gear[cls],undefined,C0.look),swL:C0.atk.sw});if(isPlayer)for(const id in PERK)for(let n=perk(id);PERK[id].on&&n>0;n--)PERK[id].on(a);a.hp=a.maxHp;S.party.push(a);return a}
+const ONE={hp:1,dmg:1,boss:1};
+function spawnFoe(type,x,z,pack,o={}){const d=S.run.def,E=DB.ENEMIES[type],k=S.run.scale,so=S.run.solo?CFG.solo:ONE;
+ const a=actor({team:'foe',type,name:E.name||(E.caster?d.caster.name:d.trash[E.n]),maxHp:E.hp*k*so.hp,dmg:E.dmg*k*so.dmg,range:E.range,speed:E.speed,radius:E.radius,x,z,home:{x,z},pack,dread:E.dread,
   spawn:{type,x,z,pack},rig:E.model?MODEL[E.model](d.bp):E.caster?MODEL.caster(d.caster):MODEL.skel(d.en,E.weapon,E.scale||1),sw:E.sw,atkDur:E.dur,abT:3,mendT:4,...o});a.hp=a.maxHp;S.foes.push(a);foeBar(a);return a}
 function spawnBoss(x,z){const d=S.run.def,B=DB.BOSSES[d.boss],k=S.run.scale,ab={};for(const n in B.abil)ab[n]=B.abil[n].first;
- const a=actor({team:'foe',type:d.boss,boss:1,name:d.bossName,maxHp:B.hp*k,dmg:B.dmg*k,range:B.range,speed:B.speed,radius:B.radius,armor:B.armor,x,z,home:{x,z},pack:'boss',ab,phase:1,
-  spawn:{boss:1,x,z},rig:MODEL[d.boss](d.bp),sw:B.sw,atkDur:.7});a.hp=a.maxHp;S.foes.push(a);foeBar(a);S.run.bossLeft=1;return a}
+ const a=actor({team:'foe',type:d.boss,boss:1,name:d.bossName,maxHp:B.hp*k*(S.run.solo?CFG.solo.boss:1),dmg:B.dmg*k*(S.run.solo?CFG.solo.dmg:1),range:B.range,speed:B.speed,radius:B.radius,armor:B.armor,x,z,home:{x,z},pack:'boss',ab,phase:1,
+  spawn:{boss:1,x,z},rig:MODEL[d.boss](d.bp),swL:[].concat(B.sw||'slash'),atkDur:.7});a.hp=a.maxHp;S.foes.push(a);foeBar(a);S.run.bossLeft=1;return a}
 function hit(src,t,amt,o={}){if(!t||t.dead)return 0;let v=amt*100/(100+(t.armor||0));
  if(hasBuff(t,'bulwark'))v*=.5;if(hasBuff(t,'vuln'))v*=1.5;if(src&&src.team==='foe'&&omen('frenzy')&&src.hp<src.maxHp*.3)v*=1.2;
  v=Math.max(1,Math.round(v));t.hp-=v;t.flash=.12;
  if(t.team==='foe'&&src){t.threat.set(src,(t.threat.get(src)||0)+v*(src.role==='tank'?3:1));if(!t.aggro)aggroPack(t)}
  if(o.interrupt&&t.cast){t.cast=null;num(t,'Interrupted','#9fd8ff')}if(o.stun&&!t.boss)t.stun=Math.max(t.stun,o.stun);
- num(t,v,t.team==='party'?'#ff7262':'#f0e6d0');chips(t.x,(t.boss?1.8:1),t.z,t.team==='party'?'#a01818':chipCol(t),t.boss?6:4);if(t.hp<=0)kill(t,src);return v}
+ num(t,v,t.team==='party'?'#ff7262':'#f0e6d0');chips(t.x,(t.boss?1.8:1),t.z,t.team==='party'?'#a01818':chipCol(t),t.boss?6:4);if(!o.proc)procs('hit',src,t,v);if(t.boss&&S.run.solo){const q=CFG.solo.bossOrb*t.maxHp;if(Math.floor((t.hp+v)/q)>Math.floor(Math.max(0,t.hp)/q)){const an=Math.random()*TAU;S.fx.loot.push(orbDrop(t.x+Math.sin(an)*2.5,t.z+Math.cos(an)*2.5))}}if(t.hp<=0)kill(t,src);return v}
 const chipCol=t=>t.rig.skel?S.run.def.en.bone:t.type==='golem'?S.run.def.bp.bone:'#3a2a2a';
 function heal(src,t,amt){if(!t||t.dead)return;const v=Math.min(Math.round(amt),t.maxHp-t.hp);if(v<=0)return;t.hp+=v;num(t,'+'+v,'#8ff0a4');
  for(const f of S.foes)if(f.aggro&&!f.dead)f.threat.set(src,(f.threat.get(src)||0)+v*.25)}
@@ -870,6 +895,7 @@ function kill(t,src){t.dead=true;t.hp=0;t.cast=t.strike=null;
  if(E&&Math.random()<E.drop)dropLoot(t.x,t.z,E.elite?'elite':'trash');
  if(t.boss){boom(t.x,t.z,'#ffd060',4.5);boom(t.x+1,t.z-.7,'#ffffff',2.5);S.run.bossLeft--;dropLoot(t.x,t.z,'boss');dropLoot(t.x+1,t.z,'boss');if(t.bossLight)R.bossLight.intensity=0}
  if(omen('restless')&&t.rig.skel&&!t.revived&&Math.random()<.3)setTimeout(()=>{if(S.mode==='run'&&S.run===t.run0)spawnFoe(t.type,t.x,t.z,t.pack,{revived:1,aggro:true,dread:0,hp:0}).hp*=.4},2500);
+ procs('kill',src,t);if(S.run.solo&&Math.random()<CFG.solo.orb)S.fx.loot.push(orbDrop(t.x,t.z));
  if(omen('tithe')&&!t.boss)haz({x:t.x,z:t.z,r:2.2,t:6,team:'tithe',col:'#9a1a3a'});
  if(t.rig.skel)breakApart(t);else t.deathT=0}
 function aggroPack(f){for(const g of S.foes)if(!g.dead&&g.pack===f.pack&&!g.aggro){g.aggro=true;const m=nearest(S.party,g);if(m)g.threat.set(m,(g.threat.get(m)||0)+1)}}
@@ -880,7 +906,7 @@ const omen=id=>S.run&&S.run.omens.some(o=>o.id===id),combatFoes=()=>S.foes.filte
 function tgt(a,range){const ok=f=>f&&!f.dead&&f.team==='foe'&&dist(a,f)<=range+f.radius;if(ok(a.target))return a.target;
  const ref=a.isPlayer&&S.in.ground?S.in.ground:a;let b=null,bd=1e9;for(const f of S.foes)if(ok(f)&&(f.aggro||a.isPlayer)){const d=dist(ref,f);if(d<bd){bd=d;b=f}}return b}
 const lowest=(a,range)=>{let b=null,v=2;for(const m of S.party)if(!m.dead&&dist(a,m)<=range&&m.hp/m.maxHp<v){v=m.hp/m.maxHp;b=m}return b};
-const swing=(a,fn)=>{a.atkT=a.atkDur;a.atkN++;a.strike=fn||1},castAnim=a=>a.castT=.35; // fn runs on the strike frame (see updateActors), so blows land with the animation
+const swing=(a,fn)=>{if(a.swL)a.sw=a.swL[a.atkN%a.swL.length];a.atkT=a.atkDur;a.atkN++;a.strike=fn||1},castAnim=a=>a.castT=.35; // fn runs on the strike frame (see updateActors), so blows land with the animation
 const strikeNow=a=>{a.atkT=a.atkDur*(1-CFG.fx.strike);a.atkN++;a.strike=null;swoosh(a)}; // for telegraphed blows: the wind-up was the telegraph
 const SKILL={ // each returns 1 if it fired. Melee effects land on the strike frame via swing(a,fn)
  bash(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{stun:s.stun,interrupt:1});swoosh(a,1.3,s.range+.8,'#ffe08a');ring(t,1.1,'#ffe9a8');ring(t,.6,'#ffffff',.25);chips(t.x,1.2,t.z,'#ffe08a',18,{g:5,s:1.8,sp:1.3});flash(t.x,t.z,'#ffe08a',3);shake(.18)});return 1}, // shield slam: shock cone, starburst
@@ -897,12 +923,36 @@ const SKILL={ // each returns 1 if it fired. Melee effects land on the strike fr
  leap(a,s){let p=a.isPlayer&&S.in.ground?S.in.ground:tgt(a,s.range);if(!p)return 0;const d=dist(a,p);if(d>s.range)p={x:a.x+(p.x-a.x)/d*s.range,z:a.z+(p.z-a.z)/d*s.range};
   if(!walk(p.x,p.z))return 0;a.leap={fx:a.x,fz:a.z,tx:p.x,tz:p.z,t:0,d:.45,s};return 1}, // lands with boom() in updateActors
  kick(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{interrupt:1,stun:.5});buff(t,{id:'bleed',t:s.dur,dps:P(a,s.dps),src:a});swoosh(a,.9,s.range+.3,'#ffb070');chips(t.x,1,t.z,'#c01818',16,{sp:1.2,g:8,s:1.6});ring(t,.7,'#ffb070',.25);shake(.1)});return 1},
+ volley(a,s){const d=a.isPlayer&&S.in.ground?ang(a,S.in.ground):a.face;a.face=d;swing(a,()=>{for(let i=0;i<s.n;i++)bolt(a,null,P(a,s.dmg),{col:s.col,dir:d+(i/(s.n-1)-.5)*s.arc,sp:19})});return 1},
+ trap(a,s){const p=a.isPlayer&&S.in.ground||a;haz({x:p.x,z:p.z,r:s.r,t:s.dur,dps:P(a,s.dps),team:'party',col:s.col,src:a,slow:1,rise:1});ring(p,s.r,s.col);castAnim(a);return 1},
+ roll(a,s){const g=a.isPlayer&&S.in.ground,d=g?ang(a,g):a.face,p={x:a.x+Math.sin(d)*s.range,z:a.z+Math.cos(d)*s.range};if(!walk(p.x,p.z))return 0;a.leap={fx:a.x,fz:a.z,tx:p.x,tz:p.z,t:0,d:.26,h:.35,quiet:1,s};return 1},
+ mark(a,s){const t=tgt(a,s.range);if(!t)return 0;buff(t,{id:'vuln',t:s.dur});smite(t,s.col);castAnim(a);return 1},
+ hexbolt(a,s){const t=tgt(a,s.range),d=t?ang(a,t):a.isPlayer&&S.in.ground?ang(a,S.in.ground):a.face;a.face=d;swing(a,()=>bolt(a,t,P(a,s.dmg),{col:s.col,dir:d,big:1,special:'curse'}));return 1},
+ nova(a,s){for(const f of near(S.foes,a,s.r)){hit(a,f,P(a,s.dmg));buff(f,{id:'slow',t:4})}ring(a,s.r,s.col);ring(a,s.r*.5,'#ffffff',.3);flash(a.x,a.z,s.col,4);castAnim(a);return 1},
+ blink(a,s){let p=a.isPlayer&&S.in.ground||tgt(a,s.range);if(!p)return 0;const d=dist(a,p);if(d>s.range)p={x:a.x+(p.x-a.x)/d*s.range,z:a.z+(p.z-a.z)/d*s.range};if(!walk(p.x,p.z))return 0;
+  smite(a,s.col);a.x=p.x;a.z=p.z;a.order=null;boom(a.x,a.z,s.col,s.r);for(const f of near(S.foes,a,s.r))hit(a,f,P(a,s.dmg));return 1},
+ drain(a,s){const t=tgt(a,s.range);if(!t)return 0;const v=hit(a,t,P(a,s.dmg));beam(t,a,s.col,16);heal(a,a,v*s.heal);castAnim(a);return 1},
  frenzy(a,s){buff(a,{id:'frenzy',t:s.dur});ring(a,1.3,'#ff5030');ring(a,.7,'#ffd060',.3);chips(a.x,.4,a.z,'#ff5030',24,{sp:.8,up:5,g:6,s:1.8});flash(a.x,a.z,'#ff5030',4);return 1}};
+const perk=id=>(S.save.perks[id]||0)+(S.save.gear[S.sel.cls].weapon?.perk===id?1:0); // rank = level-up picks + the wielded weapon's affix
+const PERK={ // on(a) = stat change per rank; other hooks are called from basic(), hit(), kill() and updateActors() and do nothing at rank 0
+ might:{on:a=>a.dmgMul+=DB.PERKS.might.v},vigor:{on:a=>{const k=1+DB.PERKS.vigor.v;a.maxHp=Math.round(a.maxHp*k);a.hp=Math.round(a.hp*k)}},swift:{on:a=>a.speed*=1+DB.PERKS.swift.v},haste:{on:a=>a.haste+=DB.PERKS.haste.v},
+ leech:{hit:(a,t,v,n)=>{a.hp=Math.min(a.maxHp,a.hp+v*DB.PERKS.leech.v*n)}},
+ shard:{swing:(a,i,dm)=>{const n=a.isPlayer&&perk('shard');if(n&&i%3===2)bolt(a,null,dm*DB.PERKS.shard.v*n,{col:'#9fe8ff',dir:a.face,sp:20,pierce:1})}},
+ chain:{hit:(a,t,v,n)=>{const g=nearest(S.foes.filter(f=>f!==t&&dist(f,t)<4.5),t);if(g){beam(t,g,'#9fd8ff',8);hit(a,g,v*DB.PERKS.chain.v*n,{proc:1})}}},
+ orbit:{tick:(a,dt,n)=>{a.orbT=(a.orbT||0)+dt;const go=a.orbT>.35;if(go)a.orbT=0;for(let i=0;i<n;i++){const an=S.t*3.2+i/n*TAU,p={x:a.x+Math.sin(an)*1.9,z:a.z+Math.cos(an)*1.9};chips(p.x,1,p.z,i%2?'#ffffff':'#ffd060',1,{sp:0,up:0,g:0,life:.14,s:2.4});
+   if(go)for(const f of near(S.foes,p,.7))hit(a,f,P(a,DB.PERKS.orbit.v),{proc:1})}}},
+ nova:{kill:(a,t,n)=>{ring(t,2.2,'#ff8a3a',.3);chips(t.x,.6,t.z,'#ffd060',14,{up:4,s:1.8});for(const f of near(S.foes,t,2.2))hit(a,f,P(a,DB.PERKS.nova.v*n),{proc:1})}},
+ ember:{tick:(a,dt,n)=>{a.embT=(a.embT||0)+dt;if(a.embT<1)return;a.embT=0;const L=near(S.foes,a,2.6);if(L.length)ring(a,2.6,'#ff7a2a',.35);for(const f of L)hit(a,f,P(a,DB.PERKS.ember.v*n),{proc:1})}}};
+const procs=(hook,a,...v)=>{if(a&&a.isPlayer)for(const id in PERK){const n=PERK[id][hook]&&perk(id);if(n)PERK[id][hook](a,...v,n)}};
+function offerPerks(){const P0=Object.keys(DB.PERKS).filter(id=>(S.save.perks[id]||0)<DB.PERKS[id].max).sort(()=>Math.random()-.5).slice(0,3),el=$('.pick');if(!P0.length){S.picks=0;return}S.pick=P0;el.hidden=false; // level-up: the game pauses on a choice of three
+ el.innerHTML=`<div class="vx"><h3>Level ${S.save.lvl}: choose a boon</h3>${P0.map((id,i)=>`<button data-p="${id}"><b>${i+1}. ${DB.PERKS[id].name}</b> <span class="muted">rank ${(S.save.perks[id]||0)+1}/${DB.PERKS[id].max}</span><br>${DB.PERKS[id].tip}</button>`).join('')}</div>`;
+ el.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>pickPerk(b.dataset.p))}
+function pickPerk(id){const pl=S.party.find(m=>m.isPlayer);S.save.perks[id]=(S.save.perks[id]||0)+1;PERK[id].on&&pl&&PERK[id].on(pl);S.pick=null;S.picks--;$('.pick').hidden=true;save();if(S.picks>0)offerPerks()}
 function useSkill(a,id){const s=DB.SKILLS[id];if(a.dead||a.stun>0||(a.cd[id]||0)>0||a.leap||a.mp<s.cost)return 0;if(SKILL[id](a,s)){a.cd[id]=s.cd/a.haste;a.mp-=s.cost;return 1}return 0}
 const ready=(a,id)=>!((a.cd[id]||0)>0);
-function basic(a,t,dir){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=t?ang(a,t):dir;a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1)); // t may be null for the player: swing or shoot toward dir
- const fin=a.atkN%3===2,dm=P(a,C0.dmg)*(fin?C0.fin:1); // every third blow is a finisher: harder, wider, louder
- swing(a,()=>{if(C0.ranged)return bolt(a,t,dm,{col:C0.col,dir:a.face,big:fin});
+function basic(a,t,dir){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=t?ang(a,t):dir;a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1));a.atkDur=clamp(a.atkCd*.95,.26,.7); // the swing fills the whole cycle, so held attacks flow into each other
+ const n=a.atkN,fin=n%3===2,dm=P(a,C0.dmg)*(fin?C0.fin:1); // every third blow is a finisher: harder, wider, louder
+ swing(a,()=>{PERK.shard.swing(a,n,dm);if(C0.ranged)return bolt(a,t,dm,{col:C0.col,dir:a.face,big:fin,sp:C0.sp});
   for(const f of near(S.foes,a,C0.range+(fin?.5:.2)))if(Math.abs(angDiff(a.face,ang(a,f)))<C0.arc/2){hit(a,f,dm);chips(f.x,1.1,f.z,C0.col,fin?12:5,{g:6,s:1.5,sp:1.1})} // melee sweeps everything in the arc
   swoosh(a,C0.arc*(fin?1.25:1),C0.range+(fin?1:.5),C0.col);if(fin){swoosh(a,C0.arc,C0.range+.4,'#ffffff');shake(.1)}})}
 function engage(a,t,dt){const C0=DB.CLASSES[a.cls].atk,R0=C0.range+t.radius;if(dist(a,t)>R0||(C0.ranged&&!los(a,t))){if(!a.noMove)goTo(a,t.x,t.z,dt,R0-.3)}else basic(a,t)}
@@ -934,11 +984,12 @@ function partyAI(a,dt){a.noMove=S.cmd.hold;const e=escape(a);if(e){goTo(a,e.x,e.
  for(const tl of tele0(a)){if(tl.kind==='soak'&&(!tl.claim||tl.claim===a||tl.claim.dead)&&dist(a,tl)<10&&!S.fx.tele.some(o=>o!==tl&&o.claim===a)){tl.claim=a;goTo(a,tl.x,tl.z,dt,.2);return}
   if(tl.kind==='stack'){goTo(a,tl.x,tl.z,dt,.6);return}}
  AI[a.role](a,dt)}
-function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk;
- if(I.down&&I.ground)a.order={x:I.ground.x,z:I.ground.z}; // left button held: keep walking to the cursor
- if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
+function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk,g=I.ground;
+ const hv=I.hover=g?S.foes.reduce((b,f)=>!f.dead&&dist(f,g)<f.radius+.75&&(!b||dist(f,g)<dist(b,g))?f:b,null):null; // foe under the cursor (highlighted in animate)
+ if(I.down&&g){if(hv){const R0=C0.range+hv.radius;a.target=hv;a.order=null;if(dist(a,hv)>R0||(C0.ranged&&!los(a,hv)))goTo(a,hv.x,hv.z,dt,R0-.3);else basic(a,hv)}else a.order={x:g.x,z:g.z}} // held on a foe: close in and keep attacking; held on ground: walk there
+ if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);if(!(a.atkT>0))a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
  else if(a.order&&goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null;
- if(I.fire&&I.ground){const t=C0.ranged?tgt(a,C0.range):null;a.target=t||a.target;basic(a,t,ang(a,I.ground))}} // right button: melee sweeps an arc toward the cursor; ranged shoots at the foe nearest the cursor, or straight at the cursor
+ if(!(I.down&&hv)){const t=k[' ']&&g?null:nearest(combatFoes().filter(f=>dist(a,f)<=C0.range+f.radius&&(!C0.ranged||los(a,f))),a);if(t)basic(a,t);else if(k[' ']&&g)basic(a,null,ang(a,g))}} // otherwise strike whatever comes into reach on your own; Space attacks toward the cursor
 function foeAI(f,dt){f.alert=f.aggro;if(f.stun>0){f.cast=null;return}
  if(!f.aggro){for(const m of S.party)if(!m.dead&&dist(f,m)<CFG.aggroR&&los(f,m)){aggroPack(f);break}if(!f.aggro)return}
  const t=f.tgt=pickTarget(f);if(!t)return;if(f.boss)return BOSS[f.type](f,t,dt);const E=DB.ENEMIES[f.type],fr=omen('frenzy')&&f.hp<f.maxHp*.3?.7:1;f.windT=Math.max(0,(f.windT||0)-dt);
@@ -986,7 +1037,7 @@ const BOSS={
   if(f.phase===1&&A.retch<=0){A.retch=B.retch.cd;const v=randNonTank(f);f.face=ang(f,v);f.busy=B.retch.dur;f.retchT=B.retch.dur;
    tele({shape:'cone',x:f.x,z:f.z,r:B.retch.r,face:f.face,arc:B.retch.arc,dur:B.retch.dur,team:'foe',col:'#9acd32',by:f,name:B.retch.name,fire:tl=>{if(f.dead)return;for(const m of inTele(tl)){hit(f,m,f.dmg*B.retch.mul);buff(m,{id:'poison',t:5,dps:B.retch.dot*S.run.scale,src:f})}
     haz({x:f.x+Math.sin(tl.face)*3.5,z:f.z+Math.cos(tl.face)*3.5,r:1.8,t:6,dps:12*S.run.scale,team:'foe',col:'#9acd32'})}});return}
-  if(f.phase===2&&A.barrage<=0){A.barrage=B.barrage.cd;f.busy=.6;toast('Rib Barrage: soak the circles!');for(let i=0;i<B.barrage.n;i++){let p;for(let k=0;k<20;k++){const a=Math.random()*TAU,d=3+Math.random()*4;p={x:f.x+Math.sin(a)*d,z:f.z+Math.cos(a)*d};if(walk(p.x,p.z))break}
+  if(f.phase===2&&A.barrage<=0){A.barrage=B.barrage.cd;f.busy=.6;toast('Rib Barrage: soak the circles!');for(let i=0;i<Math.min(B.barrage.n,alive(S.party).length+1);i++){let p;for(let k=0;k<20;k++){const a=Math.random()*TAU,d=3+Math.random()*4;p={x:f.x+Math.sin(a)*d,z:f.z+Math.cos(a)*d};if(walk(p.x,p.z))break}
     tele({shape:'circle',kind:'soak',x:p.x,z:p.z,r:B.barrage.r,dur:B.barrage.dur,team:'foe',col:'#ffd36a',by:f,name:B.barrage.name,fire:tl=>{if(f.dead)return;const L=inTele(tl);if(L.length)L.forEach(m=>hit(f,m,f.dmg*B.barrage.mul));else{alive(S.party).forEach(m=>hit(f,m,f.dmg*B.barrage.miss));toast('A rib spike was not soaked!')}}})}return}
   if(A.toss<=0&&f.rig.club.parent===f.rig.foreL){const Q=B.toss,v=randNonTank(f);A.toss=Q.cd;f.face=ang(f,v);f.busy=.9;act(f,'toss',.9);lob(f.rig.club,{x:v.x,z:v.z},Q.dur); // tears the club loose and hurls it; it comes back to the fist
    tele({shape:'circle',x:v.x,z:v.z,r:Q.r,dur:Q.dur,team:'foe',by:f,name:Q.name,quiet:1,fire:tl=>{boom(tl.x,tl.z,'#b8b0a0',Q.r);if(!f.dead)for(const m of inTele(tl))hit(f,m,f.dmg*Q.mul)}});return}
@@ -999,7 +1050,7 @@ const BOSS={
   if(!f.rig.mounted&&A.fan<=0){const F=Ab.fan;A.fan=F.cd;f.face=ang(f,t);f.busy=f.windT=F.dur; // on foot: scythe cones fan out, stand in the gaps
    for(let i=0;i<F.n;i++)tele({shape:'cone',x:f.x,z:f.z,r:F.r,face:f.face+i/F.n*TAU,arc:F.arc,dur:F.dur,team:'foe',col:S.run.def.bp.lantern,by:f,name:F.name,fire:tl=>{if(f.dead)return;i||strikeNow(f);for(const m of inTele(tl))hit(f,m,f.dmg*F.mul)}});return}
   if(A.bolts<=0){A.bolts=Ab.bolts.cd;f.castT=.5;for(let i=0;i<Ab.bolts.n;i++){const v=alive(S.party)[i%alive(S.party).length];bolt(f,v,f.dmg*Ab.bolts.mul,{col:S.run.def.bp.lantern,sp:Ab.bolts.sp,turn:2.2,life:5})}return}
-  if(A.summon<=0){A.summon=Ab.summon.cd;toast('The gallows bell tolls…');for(let i=0;i<Ab.summon.n;i++){const a=i/Ab.summon.n*TAU,x=f.x+Math.sin(a)*3,z=f.z+Math.cos(a)*3;if(walk(x,z))spawnFoe('warrior',x,z,'boss',{aggro:true,dread:0,add:1})}return}
+  if(A.summon<=0){A.summon=Ab.summon.cd;toast('The gallows bell tolls…');for(let i=0;i<(S.run.solo?1:Ab.summon.n);i++){const a=i/Ab.summon.n*TAU,x=f.x+Math.sin(a)*3,z=f.z+Math.cos(a)*3;if(walk(x,z))spawnFoe('warrior',x,z,'boss',{aggro:true,dread:0,add:1})}return}
   if(A.hurl<=0){A.hurl=Ab.hurl.cd;const v=randNonTank(f),col=S.run.def.bp.lantern;f.busy=.6;f.castT=0;act(f,'throw',.7);f.face=ang(f,v);toast('Pumpkin Bomb: stack together to share it!');lob((f.rig.rd||f.rig).head,{x:v.x,z:v.z},Ab.hurl.dur); // he tears off his burning head and throws it
    tele({shape:'circle',kind:'stack',x:v.x,z:v.z,r:Ab.hurl.r,dur:Ab.hurl.dur,team:'foe',col,by:f,name:Ab.hurl.name,quiet:1,fire:tl=>{boom(tl.x,tl.z,col,Ab.hurl.r);haz({x:tl.x,z:tl.z,r:Ab.hurl.r*.7,t:5,dps:10*S.run.scale,team:'foe',col:'#ff7a2a'});if(f.dead)return;
     const L=inTele(tl);L.forEach(m=>hit(f,m,f.dmg*Ab.hurl.total/Math.max(1,L.length)));if(!L.length)alive(S.party).forEach(m=>hit(f,m,f.dmg*2))}});return}
@@ -1019,7 +1070,7 @@ const BOSS={
    tele({shape:'circle',x:f.x,z:f.z,r:Q.r,dur:Q.dur,team:'foe',by:f,name:Q.name,fire:tl=>{if(f.dead)return;for(const m of inTele(tl))hit(f,m,f.dmg*Q.mul);shake(.25)}});return}autoAtk(f,t,dt)}};
 function splitRider(f){const B=DB.BOSSES.rider,r=f.rig,k=S.run.scale,SB=DB.BOSSES.steed;f.phase=2;r.mounted=0;r.rd.mounted=0;r.rd.root.position.y=0;
  r.rd.root.rotation.x=0;r.horse.root.scale.setScalar(CFG.riderK);const ab={};for(const n in SB.abil)ab[n]=SB.abil[n].first;
- const st=actor({team:'foe',type:'steed',boss:1,name:'Nightmare Steed',maxHp:B.hp*k*B.steedHp,dmg:SB.dmg*k,range:SB.range,speed:SB.speed,radius:SB.radius,armor:SB.armor,x:f.x+1,z:f.z,pack:'boss',aggro:true,
+ const st=actor({team:'foe',type:'steed',boss:1,name:'Nightmare Steed',maxHp:B.hp*k*B.steedHp,dmg:SB.dmg*k,range:SB.range,speed:SB.speed,radius:SB.radius,armor:SB.armor,x:f.x+1,z:f.z,home:{x:f.x+1,z:f.z},pack:'boss',aggro:true,
   ab,phase:2,rig:r.horse,threat:new Map(f.threat)});
  st.hp=st.maxHp;S.foes.push(st);foeBar(st);S.run.bossLeft++;f.rig={...r.rd,kind:'hum',root:r.root};f.speed=B.footSpeed;f.radius=B.footRadius;f.busy=1;boom(f.x,f.z,S.run.def.bp.hoof,3.5);toast(`${f.name} is thrown from his steed!`)}
 
@@ -1076,6 +1127,7 @@ function num(a,v,col){if(S.fx.nums.length>40)S.fx.nums.shift().el.remove();const
 let toastT=0;function toast(s){const el=$('.toast');if(!el)return;el.textContent=s;el.style.opacity=1;toastT=2.6}
 function shake(v){S.cam.shake=Math.max(S.cam.shake||0,v)}
 function foeBar(f){const el=document.createElement('div');el.className='fb';el.innerHTML=`<div class="nm"></div><div class="bar"><i></i></div><div class="bar cast" hidden><i></i></div>`;$('#hud').appendChild(el);f.bar=el;el.hidden=true}
+function orbDrop(x,z){const g=new THREE.Group(),gem=new THREE.Mesh(R.cube,new THREE.MeshBasicMaterial({color:'#ff3a3a'}));gem.scale.setScalar(.26);gem.position.y=.4;g.add(gem);g.position.set(x,0,z);R.scene.add(g);return{heal:1,g,gem,x,z}} // health orb: solo sustain
 function dropLoot(x,z,src){const it=makeItem(src),g=new THREE.Group(),col=DB.RARITY[it.rar].col,gem=new THREE.Mesh(R.cube,new THREE.MeshBasicMaterial({color:col}));gem.scale.setScalar(.22);gem.position.y=.35;
  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.35,depthWrite:false}));beam.position.y=1.2;g.add(gem,beam);g.position.set(x,0,z);R.scene.add(g);S.fx.loot.push({it,g,gem,x,z})}
 const sweep=(k,fn)=>{const L=S.fx[k];S.fx[k]=[];for(const o of L)fn(o)&&S.fx[k].push(o)}; // like filter, but anything spawned from inside fn (an aftershock, a pool) lands in the new list instead of being lost and left drawn forever
@@ -1084,9 +1136,9 @@ function updateFx(dt){const F=S.fx;
  sweep('tele',tl=>{tl.t+=dt;tl.mesh.material.uniforms.uP.value=Math.min(1,tl.t/tl.dur);if(tl.t<tl.dur)return true;R.scene.remove(tl.mesh);tl.mesh.geometry.dispose();tl.mesh.material.dispose();tl.quiet||burst(tl);tl.fire&&tl.fire(tl);return false});
  sweep('proj',p=>{p.life-=dt;if(p.t&&!p.t.dead){const want=Math.atan2(p.t.x-p.x,p.t.z-p.z);p.dir+=clamp(angDiff(p.dir,want),-p.turn*dt,p.turn*dt)}
   p.x+=Math.sin(p.dir)*p.sp*dt;p.z+=Math.cos(p.dir)*p.sp*dt;p.m.position.set(p.x,p.y,p.z);p.m.rotation.y=p.dir;if(!p.arrow){p.m.rotation.z+=dt*9;chips(p.x,p.y,p.z,p.o.col||'#fff',1,{sp:.15,up:.3,g:0,life:.3,s:1.6})}
-  const L=p.src.team==='party'?S.foes:S.party,h=L.find(a=>!a.dead&&dist(a,p)<a.radius+.25);
+  const L=p.src.team==='party'?S.foes:S.party,h=L.find(a=>!a.dead&&dist(a,p)<a.radius+.25&&!(p.hs&&p.hs.has(a)));if(h&&p.o.pierce)(p.hs=p.hs||new Set()).add(h);
   if(h){hit(p.src,h,p.dmg,p.o);if(p.o.special==='slow')buff(h,{id:'slow',t:3});if(p.o.special==='curse')buff(h,{id:'curse',t:6,dps:p.dmg*.12,src:p.src})}
-  if(h||p.life<=0||!walk(p.x,p.z)){R.scene.remove(p.m);chips(p.x,p.y,p.z,p.o.col||'#fff',p.arrow?4:10,{sp:.7,up:1.5,g:5});return false}return true});
+  if((h&&!p.o.pierce)||p.life<=0||!walk(p.x,p.z)){R.scene.remove(p.m);chips(p.x,p.y,p.z,p.o.col||'#fff',p.arrow?4:10,{sp:.7,up:1.5,g:5});return false}return true});
  sweep('haz',h=>{h.t-=dt;h.acc+=dt;if(h.rise&&Math.random()<dt*26){const an=Math.random()*TAU,rd=Math.sqrt(Math.random())*h.r;chips(h.x+Math.cos(an)*rd,.1,h.z+Math.sin(an)*rd,Math.random()<.3?'#ffffff':h.col,1,{sp:.05,up:3.5,g:-2,life:.7,s:1.5})}if(h.acc>=.5){h.acc=0;chips(h.x+(Math.random()-.5)*h.r,.1,h.z+(Math.random()-.5)*h.r,h.col,2,{sp:.1,up:1.2,g:-1,life:.8});
    if(h.team==='tithe')S.foes.forEach(f=>!f.dead&&!f.boss&&Math.hypot(f.x-h.x,f.z-h.z)<h.r&&(f.hp=Math.min(f.maxHp,f.hp+f.maxHp*.02))); /* not bosses: adds dying beside one made it unkillable */
   else(h.team==='foe'?alive(S.party):alive(S.foes)).forEach(a=>{if(Math.hypot(a.x-h.x,a.z-h.z)<h.r+a.radius*.5){hit(h.src||null,a,h.dps*.5);h.slow&&buff(a,{id:'slow',t:1})}})}
@@ -1094,7 +1146,7 @@ function updateFx(dt){const F=S.fx;
  sweep('lob',l=>{l.t+=dt;const p=Math.min(1,l.t/l.d),o=l.o;o.position.set(lerp(l.from.x,l.to.x,p),lerp(l.from.y,.7,p)+Math.sin(p*Math.PI)*4.5,lerp(l.from.z,l.to.z,p));o.rotation.x+=dt*10;chips(o.position.x,o.position.y,o.position.z,'#ffb030',1,{sp:.2,up:.5,g:0,life:.4,s:1.8});
   if(p<1)return true;l.par.add(o);o.position.copy(l.home);o.scale.copy(l.hs);o.rotation.set(0,0,0);return false}); // attach() baked the world scale in; put the socket scale back or it grows every throw
  sweep('loot',l=>{l.gem.rotation.y+=dt*2;l.gem.position.y=.35+Math.sin(S.t*3)*.08;const p=S.party.find(m=>m.isPlayer);
-  if(p&&!p.dead&&dist(p,l)<1.4){if(S.save.bag.length<CFG.bagMax){S.save.bag.push(l.it);S.run.loot.push(l.it);toast(`Looted ${l.it.name}`)}R.scene.remove(l.g);return false}return true});
+  if(p&&!p.dead&&dist(p,l)<1.4){if(l.heal){heal(p,p,p.maxHp*CFG.solo.heal);smite(p,'#ff5a5a')}else if(S.save.bag.length<CFG.bagMax){S.save.bag.push(l.it);S.run.loot.push(l.it);toast(`Looted ${l.it.name}`)}R.scene.remove(l.g);return false}return true});
  sweep('debris',d=>{d.t-=dt;d.vy-=9.8*dt;d.o.position.x+=d.vx*dt;d.o.position.y=Math.max(.05,d.o.position.y+d.vy*dt);d.o.position.z+=d.vz*dt;
   if(d.o.position.y<=.05){d.vx*=.85;d.vz*=.85;d.vy=Math.abs(d.vy)*.3;d.ax*=.7;d.az*=.7}d.o.rotation.x+=d.ax*dt;d.o.rotation.z+=d.az*dt;if(d.t<1)d.o.scale.setScalar(Math.max(.01,d.t));
   if(d.t>0)return true;R.scene.remove(d.o);return false});
@@ -1107,12 +1159,12 @@ function makeItem(src,ilvl){const d=S.run?S.run.def:DB.DUNGEONS[0],rar=src==='st
  const cls=slot==='weapon'?(r.chance(.6)?S.sel.cls:r.pick(Object.keys(DB.CLASSES))):null,keys=Object.keys(DB.STATS).sort(()=>r.r()-.5).slice(0,Rr.stats);
  if(slot==='weapon'&&!keys.includes('power'))keys[0]='power';const bud=ilvl*Rr.mult*(slot==='weapon'?1.4:1),stats={};
  keys.forEach(k=>stats[k]=Math.max(1,Math.round(bud/keys.length*DB.STATS[k].w*(.8+r.r()*.4))));const base=slot==='weapon'?DB.CLASSES[cls].weapon:r.pick(DB.BASES[slot]);
- return{id:Math.random().toString(36).slice(2,9),name:`${r.pick(d.prefix)} ${base}${rar===4?' of the Last Vigil':''}`,slot,cls,rar,ilvl,stats,from:d.id}}
+ return{perk:slot==='weapon'&&rar>0?r.pick(DB.WPERKS):undefined,id:Math.random().toString(36).slice(2,9),name:`${r.pick(d.prefix)} ${base}${rar===4?' of the Last Vigil':''}`,slot,cls,rar,ilvl,stats,from:d.id}}
 const xpNeed=l=>Math.round(DB.LEVEL.base*DB.LEVEL.grow**(l-1));
-function gainXp(v){const sv=S.save,L=DB.LEVEL;if(sv.lvl>=L.max||!v)return;sv.xp+=Math.round(v);while(sv.lvl<L.max&&sv.xp>=xpNeed(sv.lvl)){sv.xp-=xpNeed(sv.lvl);sv.lvl++;toast(`Level ${sv.lvl}!`); // party-wide level: everyone grows and is restored
+function gainXp(v){const sv=S.save,L=DB.LEVEL;if(sv.lvl>=L.max||!v)return;sv.xp+=Math.round(v);while(sv.lvl<L.max&&sv.xp>=xpNeed(sv.lvl)){sv.xp-=xpNeed(sv.lvl);sv.lvl++;toast(`Level ${sv.lvl}!`);if(S.mode==='run')S.picks=(S.picks||0)+1; // party-wide level: everyone grows and is restored
   for(const m of S.party){m.maxHp=Math.round(m.maxHp*(1+L.hp));m.dmgMul+=L.dmg;if(!m.dead){m.hp=m.maxHp;m.mp=m.maxMp;smite(m,'#ffd24a')}}}}
 function loadSave(){let s=null;try{s=JSON.parse(localStorage.getItem(CFG.saveKey))}catch(e){}
- if(!s){s={gear:{},bag:[],sigil:{},best:{},cls:'templar'};for(const c in DB.CLASSES){s.gear[c]={};const it=makeItem('starter',5);it.name='Worn '+(DB.BASES.chest[0]);s.gear[c].chest=it}}s.lvl=s.lvl||1;s.xp=s.xp||0;return s}
+ if(!s){s={gear:{},bag:[],sigil:{},best:{},cls:'templar'};for(const c in DB.CLASSES){s.gear[c]={};const it=makeItem('starter',5);it.name='Worn '+(DB.BASES.chest[0]);s.gear[c].chest=it}}s.lvl=s.lvl||1;s.xp=s.xp||0;s.perks=s.perks||{};for(const c in DB.CLASSES)s.gear[c]=s.gear[c]||{};return s}
 const save=()=>{try{localStorage.setItem(CFG.saveKey,JSON.stringify(S.save))}catch(e){}};
 function clearRun(){for(const a of[...S.party,...S.foes]){R.scene.remove(a.rig.root);if(a.bar)a.bar.remove()}S.party=[];S.foes=[];
  for(const k of['tele','proj','haz','loot','debris','lob'])S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.g||o.o));for(const k in S.fx)if(k!=='nums')S.fx[k]=[];
@@ -1121,7 +1173,7 @@ function startRun(){const def=DB.DUNGEONS[S.sel.d],depth=S.save.sigil[def.id]||1
  $('#load').hidden=false;$('#lobby').hidden=true;$('#title').classList.add('out');setTimeout(()=>{
   const D=genDungeon(def,seed);S.D=D;S.nav=navBuild(D);R.lobby.visible=false;(R.lobbyRigs||[]).forEach(q=>R.scene.remove(q.root));meshVox(D.W,R.world);setEnv(def.pal,def.lay.amb);R.cut.on.value=1;
   S.run={def,depth,seed,t:0,limit:def.timer,dread:0,dreadReq:1,deaths:0,bossLeft:1,done:false,loot:[],scale:CFG.depthScale**(depth-1),omens:DB.OMENS.filter(o=>depth>=o.depth)};
-  const st=D.start,v=CFG.vox,cl=S.sel.cls;[cl,...Object.keys(DB.CLASSES).filter(c=>c!==cl)].forEach((c,i)=>spawnMember(c,!i,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
+  const st=D.start,v=CFG.vox,cl=S.sel.cls;S.run.solo=!S.save.party;[cl,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==cl).slice(0,2):[])].forEach((c,i)=>spawnMember(c,!i,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
   let tot=0,pk=0;const addPack=(cx,cz,types)=>{pk++;types.forEach((ty,i)=>{const a=i/types.length*TAU+D.r.r();let x=cx*v+Math.sin(a)*1.4,z=cz*v+Math.cos(a)*1.4;if(!reach(x,z)){x=cx*v;z=cz*v}if(reach(x,z)){const f=spawnFoe(ty,x,z,pk);f.run0=S.run;tot+=f.dread}})};
   const comp=()=>D.r.chance(.25)?['brute','warrior','warrior']:[...Array(D.r.int(2,3)).fill('warrior'),...Array(D.r.int(0,2)).fill('archer'),...(D.r.chance(.45)?['caster']:[])];
   for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
@@ -1140,10 +1192,10 @@ function finishRun(){const r=S.run;r.done=true;const inTime=r.t<=r.limit,up=inTi
  <button class="enter" id="back">Return to Morrowgate</button></div>`;$('#back').onclick=toLobby}
 function toLobby(){clearRun();S.run=null;S.nav=null;$('#sum').hidden=true;$('#hud').hidden=true;R.lobby.visible=true;R.cut.on.value=0;R.bossLight.intensity=0;R.lantern.intensity=0;setEnv(DB.LOBBY,CFG.town.amb);S.mode='lobby';S.D={lights:R.lobbyLights};lobbyParty();renderLobby()}
 function revive(m,x,z){m.dead=false;m.hp=m.maxHp;m.mp=m.maxMp;m.buffs=[];m.x=x;m.z=z;m.rig.root.rotation.set(0,0,0);m.rig.root.position.y=0;m.deathT=undefined}
-function wipeReset(){const v=CFG.vox,st=S.D.start,bossHit=S.foes.some(f=>f.boss&&!f.dead&&f.aggro);toast('The party rises again at the sigil');
+function wipeReset(){const v=CFG.vox,st=S.D.start,bossHit=!S.run.solo&&S.foes.some(f=>f.boss&&!f.dead&&f.aggro);toast('The party rises again at the sigil');
  S.party.forEach((m,i)=>revive(m,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
  S.foes=S.foes.filter(f=>{if(f.add||(bossHit&&f.pack==='boss')){R.scene.remove(f.rig.root);if(f.bar)f.bar.remove();return false}
-  if(!f.dead&&f.aggro){Object.assign(f,{hp:f.maxHp,x:f.home.x,z:f.home.z,aggro:false,cast:null,buffs:[],taunt:null,path:null});f.threat.clear()}return true});
+  if(!f.dead&&f.aggro){Object.assign(f,{hp:f.boss&&S.run.solo?f.hp:f.maxHp,x:f.home.x,z:f.home.z,aggro:false,cast:null,buffs:[],taunt:null,path:null});f.threat.clear()}return true});
  if(bossHit){const b=spawnBoss(S.D.boss.cx*v,S.D.boss.cz*v);b.bossLight=S.run.def.boss==='rider';R.bossLight.intensity=b.bossLight?2.2:0}
  for(const k of['tele','haz','proj','lob']){S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.o));S.fx[k]=[]}S.party.forEach(m=>m.strike=null)}
 function updateRun(dt){const r=S.run,v=CFG.vox,st=S.D.start;if(!r.done)r.t+=dt;
@@ -1160,25 +1212,25 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  <div class="lbl">Layout</div><div class="row"><button data-m="charted" class="${sel.mode==='charted'?'on':''}">Charted (weekly seed)</button><button data-m="uncharted" class="${sel.mode==='uncharted'?'on':''}">Uncharted</button></div>
  <div class="det"><b>Depth ${dep}</b> · foes ×${(CFG.depthScale**(dep-1)).toFixed(2)} · timer ${fmt(d.timer)}<br>${om.length?om.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join(''):'<span class="muted">No omens yet. They begin at Depth 3.</span>'}</div>
  <button class="enter" id="go">Enter the ${d.biome.split(' ').pop()}</button>
- <div class="help">WASD or left click to move. Hold right click to attack toward the cursor. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
+ <div class="help">WASD or hold left click to move. Hold left click on a foe to attack it; you also strike anything that comes into reach. Space attacks toward the cursor. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
  <header><h1>Grave Lantern</h1><div class="lbl">Morrowgate · party level ${S.save.lvl}</div></header>
  <section><span class="lbl">Your party</span><h2>Choose your role</h2>
  <div class="row">${Object.entries(DB.CLASSES).map(([k,c])=>`<button data-c="${k}" class="${sel.cls===k?'on':''}">${c.name}<br><small class="muted">${DB.ROLES[c.role]}</small></button>`).join('')}</div>
- <div class="muted">AI companions take the other roles: ${Object.entries(DB.CLASSES).filter(([k])=>k!==sel.cls).map(([,c])=>c.ally).join(' & ')}.</div>
- <span class="lbl">Gear</span><div class="row">${Object.keys(DB.CLASSES).map(k=>`<button data-g="${k}" class="${sel.member===k?'on':''}">${k===sel.cls?'You':DB.CLASSES[k].ally.split(' ').pop()}</button>`).join('')}</div>
+ <div class="row"><button data-party class="${S.save.party?'on':''}">${S.save.party?'Two companions join you':'Solo'}</button></div><div class="muted">${S.save.party?'Companions fill the roles you lack. Foes are at full strength.':'You fight alone: foes are weaker, slain foes drop health, and you mend between fights.'}</div>
+ <span class="lbl">Gear</span><div class="row">${Object.keys(DB.CLASSES).map(k=>`<button data-g="${k}" class="${sel.member===k?'on':''}">${k===sel.cls?'You':DB.CLASSES[k].name}</button>`).join('')}</div>
  ${DB.SLOTS.map(s=>`<div class="item" data-u="${s}"><span class="muted">${s}</span>${g[s]?rarSpan(g[s]):'<span class="muted">empty</span>'}</div>`).join('')}
  <div class="muted num">${Object.entries(gearStats(g)).map(([k,v])=>`${DB.STATS[k].name} +${v}`).join(' · ')}</div>
  <span class="lbl">Bag (${S.save.bag.length}/${CFG.bagMax})</span>
  ${S.save.bag.map(x=>`<div class="item ${it&&it.id===x.id?'sel':''}" data-i="${x.id}">${rarSpan(x)}<span class="muted num">${x.slot} · ${x.ilvl}</span></div>`).join('')||'<div class="muted">Empty. Loot drops in dungeons.</div>'}
  ${it?`<div class="det">${rarSpan(it)}<div class="muted">${DB.RARITY[it.rar].name} ${it.slot}${it.cls?' · '+DB.CLASSES[it.cls].name+' only':''} · ilvl ${it.ilvl}</div>
-  ${Object.entries(it.stats).map(([k,v])=>`+${v} ${DB.STATS[k].name}`).join('<br>')}<div class="row" style="margin-top:6px">${Object.keys(DB.CLASSES).filter(k=>!it.cls||it.cls===k).map(k=>`<button data-e="${k}">Equip on ${k===sel.cls?'you':DB.CLASSES[k].ally.split(' ').pop()}</button>`).join('')}<button data-x="1">Discard</button></div></div>`:''}</section>`;
+  ${Object.entries(it.stats).map(([k,v])=>`+${v} ${DB.STATS[k].name}`).join('<br>')}${it.perk?`<br><span style="color:var(--gold)">${DB.PERKS[it.perk].name}: ${DB.PERKS[it.perk].tip}</span>`:''}<div class="row" style="margin-top:6px">${Object.keys(DB.CLASSES).filter(k=>!it.cls||it.cls===k).map(k=>`<button data-e="${k}">Equip on ${k===sel.cls?'you':DB.CLASSES[k].name}</button>`).join('')}<button data-x="1">Discard</button></div></div>`:''}</section>`;
  L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{sel.d=+b.dataset.d;renderLobby()});L.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{sel.mode=b.dataset.m;renderLobby()});
- L.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{sel.cls=S.save.cls=b.dataset.c;save();renderLobby()});L.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sel.member=b.dataset.g;renderLobby()});
+ L.querySelector('[data-party]').onclick=()=>{S.save.party=!S.save.party;save();lobbyParty();renderLobby()};L.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{sel.cls=sel.member=S.save.cls=b.dataset.c;save();lobbyParty();renderLobby()});L.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{sel.member=b.dataset.g;renderLobby()});
  L.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{sel.item=S.save.bag.find(x=>x.id===b.dataset.i);renderLobby()});
  L.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{const s=b.dataset.u,cur=S.save.gear[sel.member][s];if(cur&&S.save.bag.length<CFG.bagMax){S.save.bag.push(cur);delete S.save.gear[sel.member][s];save();lobbyParty();renderLobby()}});
  L.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const k=b.dataset.e,cur=S.save.gear[k][it.slot];S.save.bag=S.save.bag.filter(x=>x.id!==it.id);if(cur)S.save.bag.push(cur);S.save.gear[k][it.slot]=it;sel.item=null;sel.member=k;save();lobbyParty();renderLobby()});
  L.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{S.save.bag=S.save.bag.filter(x=>x.id!==it.id);sel.item=null;save();renderLobby()});$('#go').onclick=startRun}
-function lobbyParty(){(R.lobbyRigs||[]).forEach(r=>R.scene.remove(r.root));R.lobbyRigs=Object.keys(DB.CLASSES).map((k,i)=>{const r=MODEL[k](S.save.gear[k]);r.a={moveAmt:0,ph:0,atkT:0,castT:0,flash:0,stun:0,seed:i*2.3};r.root.position.set(8.6+i*1.4,0,16.4+(i===1?.4:0));r.root.rotation.y=.15*(1-i);R.scene.add(r.root);return r})}
+function lobbyParty(){(R.lobbyRigs||[]).forEach(r=>R.scene.remove(r.root));R.lobbyRigs=[S.sel.cls,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==S.sel.cls).slice(0,2):[])].map((k,i)=>{const C0=DB.CLASSES[k],r=MODEL[C0.model||k](S.save.gear[k],undefined,C0.look);r.a={moveAmt:0,ph:0,atkT:0,castT:0,flash:0,stun:0,seed:i*2.3};r.root.position.set(8.6+i*1.4,0,16.4+(i===1?.4:0));r.root.rotation.y=.15*(1-i);R.scene.add(r.root);return r})}
 const ICON=new Map(),icon=(rows,col)=>{const k=rows+col;if(!ICON.has(k)){const c=document.createElement('canvas'),g=c.getContext('2d');c.width=c.height=5;g.fillStyle=col;rows.forEach((r,y)=>[...r].forEach((ch,x)=>ch==='#'&&g.fillRect(x,y,1,1)));ICON.set(k,`url(${c.toDataURL()})`)}return ICON.get(k)};
 function pix(cv,rows,fr,col){const g=cv.g||(cv.g=cv.getContext('2d')),h=rows.length,w=rows[0].length,on=(x,y)=>rows[y]&&rows[y][x]==='#',lv=h*(1-clamp(fr,0,1)); // pixel gauge: glyph drains from the top, lit top-left, black outline
  g.clearRect(0,0,w+2,h+2);for(let y=-1;y<=h;y++)for(let x=-1;x<=w;x++){if(on(x,y)){const k=y+.5>=lv?(on(x-1,y)&&on(x,y-1)?1:1.3)*(on(x+1,y)&&on(x,y+1)?1:.68):.2;g.fillStyle=`rgb(${col.map(c=>Math.min(255,c*k|0))})`}
@@ -1193,19 +1245,19 @@ function minimap(cv,p){const U=S.ui,N=S.nav,C=CFG.ui,g=cv.g||(cv.g=cv.getContext
  S.fx.loot.forEach(l=>dot(l,'#ffd36a',2.5));if(S.run.chestAt)dot(S.run.chestAt,'#ffd36a',5,1);for(const f of S.foes)if(!f.dead&&(f.boss||f.aggro||U.seen[Math.floor(f.z/N.cs)*N.NX+Math.floor(f.x/N.cs)]))dot(f,f.boss?'#ff2a1a':f.aggro?'#ff6a5a':'#9a4038',f.boss?6:3,f.boss);
  for(const m of S.party)if(!m.dead&&!m.isPlayer)dot(m,'#7fdc96',3.5,1);
  g.save();g.translate(n/2,n/2);g.rotate(Math.atan2(Math.sin(p.face)+Math.cos(p.face),Math.sin(p.face)-Math.cos(p.face)));g.beginPath();g.moveTo(8,0);g.lineTo(-5,5);g.lineTo(-2,0);g.lineTo(-5,-5);g.closePath();g.fillStyle='#fff';g.fill();g.lineWidth=1.5;g.strokeStyle='#000';g.stroke();g.restore()} // player arrow shows facing
-const kv=([k,v])=>`<div class="kv"><span class="muted">${k}</span><span class="num">${v}</span></div>`,itemTip=it=>`${it.name}: ${DB.RARITY[it.rar].name} ${it.slot}, ilvl ${it.ilvl}. ${Object.entries(it.stats).map(([k,v])=>`+${v} ${DB.STATS[k].name}`).join(', ')}`.replace(/"/g,'&quot;');
+const kv=([k,v])=>`<div class="kv"><span class="muted">${k}</span><span class="num">${v}</span></div>`,itemTip=it=>`${it.name}: ${DB.RARITY[it.rar].name} ${it.slot}, ilvl ${it.ilvl}. ${Object.entries(it.stats).map(([k,v])=>`+${v} ${DB.STATS[k].name}`).join(', ')}${it.perk?'. Grants '+DB.PERKS[it.perk].name+': '+DB.PERKS[it.perk].tip:''}`.replace(/"/g,'&quot;');
 const ORDER={hold:()=>S.cmd.hold=!S.cmd.hold,assist:()=>S.cmd.assist=!S.cmd.assist,leave:()=>{save();toLobby()}};
 const PANEL={ // menu ribbon windows, keyed by DB.MENU id
  bag:()=>`<h3>Backpack ${S.save.bag.length}/${CFG.bagMax}</h3><div class="grid">${[...Array(CFG.bagMax)].map((_,i)=>{const it=S.save.bag[i],c=it&&DB.RARITY[it.rar].col;return it?`<div class="cell" style="color:${c};box-shadow:inset 0 0 0 1px ${c}" title="${itemTip(it)}">${it.slot.slice(0,2)}</div>`:'<div class="cell"></div>'}).join('')}</div><div class="muted">Equip at the lobby between runs.</div>`,
  gear:()=>S.party.map(m=>`<h3>${m.name} · ${DB.CLASSES[m.cls].name}</h3>`+DB.SLOTS.map(sl=>{const it=S.save.gear[m.cls][sl];return`<div class="kv" title="${it?itemTip(it):''}"><span class="muted">${sl}</span>${it?rarSpan(it):'<span class="muted">empty</span>'}</div>`}).join('')).join(''),
  stats:()=>{const p=S.party.find(m=>m.isPlayer),C0=DB.CLASSES[p.cls],g=gearStats(S.save.gear[p.cls]),r=S.run;return`<h3>${C0.name} · ${DB.ROLES[C0.role]}</h3>`+[['Level',S.save.lvl+(S.save.lvl<DB.LEVEL.max?' ('+S.save.xp+' / '+xpNeed(S.save.lvl)+' xp)':' (max)')],['Health',Math.ceil(p.hp)+' / '+p.maxHp],['Mana',Math.floor(p.mp)+' / '+p.maxMp+' (+'+CFG.mana+'/s)'],['Armor',p.armor],
-  ['Power','+'+g.power+'%'],['Haste','+'+g.haste+'%'],['Move speed',p.speed],['Attack',C0.atk.dmg+' every '+C0.atk.cd+'s'],['Weapon',C0.weapon]].map(kv).join('')+`<h3>This run</h3>`+[['Depth',r.depth],['Foe scaling','×'+r.scale.toFixed(2)],['Deaths',r.deaths],['Loot found',r.loot.length],['Seed',r.seed.toString(16)]].map(kv).join('')},
+  ['Power','+'+g.power+'%'],['Haste','+'+g.haste+'%'],['Move speed',p.speed],['Attack',C0.atk.dmg+' every '+C0.atk.cd+'s'],['Weapon',C0.weapon]].map(kv).join('')+`<h3>Boons</h3>`+(Object.keys(DB.PERKS).filter(perk).map(id=>kv([DB.PERKS[id].name+' '+perk(id),DB.PERKS[id].tip])).join('')||'<div class="muted">Level up to choose boons.</div>')+`<h3>This run</h3>`+[['Depth',r.depth],['Foe scaling','×'+r.scale.toFixed(2)],['Deaths',r.deaths],['Loot found',r.loot.length],['Seed',r.seed.toString(16)]].map(kv).join('')},
  orders:()=>`<h3>Orders</h3><div class="row"><button data-k="hold" class="${S.cmd.hold?'on':''}">Companions: ${S.cmd.hold?'Hold':'Follow'}</button><button data-k="assist" class="${S.cmd.assist?'on':''}">Focus: ${S.cmd.assist?'My target':"Tank's target"}</button></div><div class="row" style="margin-top:6px"><button data-k="leave">Abandon run</button></div>`};
 function openTab(id){const U=S.ui,H=$('#hud'),w=H.querySelector('.win');U.tab=id===undefined?U.tab:U.tab===id?null:id;w.hidden=!U.tab;if(U.tab)w.innerHTML=PANEL[U.tab]();H.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===U.tab))}
 function buildHud(){const H=$('#hud'),pl=S.party.find(m=>m.isPlayer),U=S.ui,sk=id=>DB.SKILLS[id],d=S.run.def,P0=d.pal,ids=DB.CLASSES[pl.cls].skills,hex=(h,k)=>'rgb('+rgb(h).map(c=>Math.min(255,c*k|0))+')';H.hidden=false;
  const slot=(id,i)=>`<button class="slot" data-s="${id}" style="background-image:${icon(sk(id).ico,sk(id).col)}" title="${sk(id).name}: ${sk(id).tip} (${sk(id).cost} mana, ${sk(id).cd}s)"><small>${sk(id).cost}</small><div class="cd"></div><kbd>${i+1}</kbd></button>`,P=DB.PIX;
  H.innerHTML=`<div class="vig"></div><div class="tl"><div class="rib">${DB.MENU.map(m=>`<button class="slot" data-t="${m.id}" style="background-image:${icon(m.ico,'#e8e0d0')}" title="${m.name}"><kbd>${m.key}</kbd></button>`).join('')}</div><div class="win vx" hidden></div></div>
- <div class="party">${S.party.map(m=>`<div class="m"><i class="po" style="background-image:${icon(sk(DB.CLASSES[m.cls].skills[0]).ico,sk(DB.CLASSES[m.cls].skills[0]).col)}"></i><div>${m.name} <span class="rs"></span></div><div class="bar hp"><i></i></div><div class="bar mp"><i></i></div></div>`).join('')}</div>
+ <div class="party"${S.party.length<2?" hidden":""}>${S.party.map(m=>`<div class="m"><i class="po" style="background-image:${icon(sk(DB.CLASSES[m.cls].skills[0]).ico,sk(DB.CLASSES[m.cls].skills[0]).col)}"></i><div>${m.name} <span class="rs"></span></div><div class="bar hp"><i></i></div><div class="bar mp"><i></i></div></div>`).join('')}</div>
  <div class="tr"><div class="mapb"><canvas class="map" width="176" height="176"></canvas><div class="mz"><button data-z="1">−</button><button data-z="-1">+</button></div></div><div class="hint"><kbd>N</kbd>Toggle</div>
   <div class="quest"><div class="q1"><span>${d.name}</span><span class="t"></span></div><div class="ob"></div><div class="ob"></div><div class="ob"></div><div class="tip">Slay the boss, raise Dread, then open the chest before time runs out.</div></div>
   <div class="zone">${d.biome}</div><div class="adv">Depth ${S.run.depth} · foes ×${S.run.scale.toFixed(2)}</div><div class="lives"></div><div>${S.run.omens.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join('')}</div></div>
@@ -1213,7 +1265,7 @@ function buildHud(){const H=$('#hud'),pl=S.party.find(m=>m.isPlayer),U=S.ui,sk=i
  <div class="belt"><div class="slots"><button class="slot" data-t="bag" style="background-image:${icon(DB.MENU[0].ico,'#c9a26a')}"><kbd>Tab</kbd></button>${slot(ids[0],0)}${slot(ids[1],1)}
   <div class="heart" title="Health"><canvas width="${P.heart[0].length+2}" height="${P.heart.length+2}"></canvas><b></b></div>${slot(ids[2],2)}${slot(ids[3],3)}<div class="gem" title="Mana"><canvas width="${P.gem[0].length+2}" height="${P.gem.length+2}"></canvas><b></b></div></div>
   <div class="xp"><span class="lv"></span><div class="dr" title="Experience: the whole party levels together"><i></i><span></span></div></div></div>
- <div class="coin" title="Loot found this run"><i></i><b></b></div><div class="toast"></div><div class="alert" hidden></div>`;
+ <div class="coin" title="Loot found this run"><i></i><b></b></div><div class="toast"></div><div class="alert" hidden></div><div class="pick" hidden></div>`;
  H.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>useSkill(pl,b.dataset.s));H.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openTab(b.dataset.t));H.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>U.zoom=clamp(U.zoom+ +b.dataset.z,0,2));
  H.querySelector('.win').onclick=e=>{const k=e.target.dataset.k;if(k){ORDER[k]();if(S.mode==='run')openTab()}};const cv=H.querySelectorAll('canvas');
  Object.assign(U,{tab:null,mm:null,zoom:1,rows:[...H.querySelectorAll('.party .m')],map:cv[0],hp:cv[1],mp:cv[2],tx:H.querySelectorAll('.heart b,.gem b'),ob:H.querySelectorAll('.ob'),mapC:[hex(P0.floor[0],300),hex(P0.floor[0],150),hex(P0.wall[0],110)]}); // map colours: floor, floor edge, wall
@@ -1239,15 +1291,14 @@ function updateHud(dt){if(S.mode!=='run')return;const r=S.run,H=$('#hud'),U=S.ui
 
 // §15 INPUT
 function ground(cx,cy){const m=new THREE.Vector2(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);R.ray.setFromCamera(m,R.cam);const p=new THREE.Vector3();return R.ray.ray.intersectPlane(R.plane,p)?{x:p.x,z:p.z}:null}
-function initInput(){const c=$('#c'),I=S.in; // WASD or left click = move, right click (hold) = attack toward the cursor, 1-4 = skills, Tab/B/G/C/O = menu, N = minimap, wheel = zoom
- addEventListener('pointerdown',()=>S.mode==='title'&&enterLobby());c.addEventListener('pointerdown',e=>{if(S.mode!=='run')return;const g=ground(e.clientX,e.clientY),pl=S.party.find(m=>m.isPlayer);if(!g||!pl)return;I.ground=g;
-  const tap=e.pointerType!=='mouse'&&S.foes.some(f=>!f.dead&&dist(f,g)<f.radius+.7); // touch has no right button: tapping a foe attacks it
-  if(e.button===2||tap)I.fire=true;else if(e.button===0){I.down=true;pl.order={x:g.x,z:g.z}}});
- c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=I.fire=false});
+function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold left on a foe = attack it; Space = attack toward the cursor; 1-4 = skills (1-3 also pick a boon); Tab/B/G/C/O = menu, N = minimap, wheel = zoom
+ addEventListener('pointerdown',()=>S.mode==='title'&&enterLobby());c.addEventListener('pointerdown',e=>{if(S.mode!=='run'||e.button)return;I.ground=ground(e.clientX,e.clientY);I.down=true});
+ c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=false});
  c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
  addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title')return enterLobby();if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
+  if(S.pick)return void(S.pick[i]&&pickPerk(S.pick[i]));if(k===' ')e.preventDefault();
   if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}});
- addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=I.fire=false});addEventListener('resize',resize)}
+ addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=false});addEventListener('resize',resize)}
 
 // §16 LOOP
 function addCut(mat){mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,{uP:R.cut.p,uC:R.cut.c,uOn:R.cut.on});
@@ -1271,16 +1322,16 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.lantern=new THREE.PointLight(0xffc98a,0,9,2);R.bossLight=new THREE.PointLight(0x9dffc8,0,12,2);R.flash=new THREE.PointLight(0xffffff,0,9,2);R.time={value:0};R.scene.add(R.lantern,R.bossLight,R.flash);
  R.cut={p:{value:new THREE.Vector3()},c:{value:new THREE.Vector3()},on:{value:0}};R.matW=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});addCut(R.matW);
  R.matWE=new THREE.MeshBasicMaterial({vertexColors:true});addCut(R.matWE);R.matE=new THREE.MeshBasicMaterial({vertexColors:true});R.cube=new THREE.BoxGeometry(1,1,1);
- R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
+ R.mark=new THREE.Mesh(new THREE.RingGeometry(.84,1,4,1),new THREE.MeshBasicMaterial({color:'#ff4a2a',side:THREE.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));R.mark.rotation.x=-Math.PI/2;R.mark.visible=false;R.scene.add(R.mark);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
- for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt)}
+ for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt);a.calm=fight?0:a.calm+dt;if(S.run.solo&&a.calm>CFG.solo.calm)a.hp=Math.min(a.maxHp,a.hp+a.maxHp*CFG.solo.regen*dt);if(a.isPlayer)for(const id in PERK){const n=PERK[id].tick&&perk(id);if(n)PERK[id].tick(a,dt,n)}}
   if(a.strike&&a.atkT<=a.atkDur*(1-CFG.fx.strike)){const f=a.strike;a.strike=null;if(a.stun<=0){a.team==='foe'&&swoosh(a);f!==1&&f()}} // the blow lands here; a stun during the wind-up cancels it
   a.buffs=a.buffs.filter(b=>{b.t-=dt;b.acc+=dt;if(Math.random()<dt*12)chips(a.x+(Math.random()-.5)*.7,.2+Math.random()*1.4,a.z+(Math.random()-.5)*.7,DB.BUFFS[b.id]||'#fff',1,{sp:.1,up:1,g:-1.2,life:.6,s:1.3});if(b.acc>=.5){b.acc=0;if(b.dps)hit(b.src,a,b.dps*.5);if(b.hps)heal(b.src,a,b.hps*.5)}return b.t>0});
-  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*1.4;chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
-   if(p>=1){a.leap=null;a.rig.root.position.y=0;strikeNow(a);for(const f of near(S.foes,a,L.s.r))hit(a,f,P(a,L.s.dmg));boom(a.x,a.z,'#ff8a3a',L.s.r)}}}
+  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*(L.h??1.4);chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
+   if(p>=1){a.leap=null;a.rig.root.position.y=0;if(!L.quiet){strikeNow(a);for(const f of near(S.foes,a,L.s.r))hit(a,f,P(a,L.s.dmg));boom(a.x,a.z,'#ff8a3a',L.s.r)}}}}
  for(const a of S.party)if(!a.dead)a.isPlayer?playerCtl(a,dt):partyAI(a,dt);for(const f of S.foes)if(!f.dead)foeAI(f,dt);
  for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],b=all[j];if(a.dead||b.dead||a.charge||b.charge)continue;const d=dist(a,b),m=a.radius+b.radius;
   if(d<m&&d>1e-4){const k=(m-d)/d*.5;move(a,(a.x-b.x)*k*(b.boss?2:1),(a.z-b.z)*k*(b.boss?2:1));if(!b.boss)move(b,(b.x-a.x)*k,(b.z-a.z)*k)}}}
@@ -1289,7 +1340,8 @@ function animate(dt){const all=[...S.party,...S.foes];for(const a of all){const 
  if(a.dead&&a.deathT!==undefined){const d=a.deathT+=dt,k=Math.min(1,d*1.6),J=POSE(r,Math.min(1,dt*8)); // knees give, then the body topples and settles
   r.root.rotation.x=-1.48*k*k*(1+Math.max(0,.25-Math.abs(d-.75))*.5);for(const n of['shinL','shinR'])J(n,1.1*(1-k));for(const n of['armL','armR'])J(n,-.6,0,n==='armL'?.5:-.5);J('head',.4);
   if(a.team==='foe'&&d>6){R.scene.remove(r.root)}continue}
- ANIM[r.kind](r,a,dt);r.mat.emissive.setRGB(a.flash>0?.22:0,a.flash>0?.12:0,a.flash>0?.1:0)}
+ ANIM[r.kind](r,a,dt);const hv=S.in.hover===a;r.mat.emissive.setRGB(a.flash>0?.22:hv?.4:0,a.flash>0?.12:hv?.1:0,a.flash>0?.1:hv?.06:0)}
+ const h=S.mode==='run'&&S.in.hover&&!S.in.hover.dead?S.in.hover:null;R.mark.visible=!!h;if(h){R.mark.position.set(h.x,.14,h.z);R.mark.scale.setScalar(h.radius+.55);R.mark.rotation.z=S.t*1.5} // hovered foe glows and gets a turning target bracket
  if(S.mode==='lobby'||S.mode==='title')(R.lobbyRigs||[]).forEach(r=>ANIM.hum(r,r.a,dt))}
 function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/CFG.titleT%1);R.cam.position.set(K[1],K[2],K[3]);R.cam.lookAt(K[4],K[5],K[6]);tx=K[4];tz=K[6]}
  else if(S.mode==='lobby'){const a=-.55+Math.sin(S.t*.08)*.25;tx=10;tz=15;R.cam.position.set(tx+Math.sin(a)*17,9+Math.sin(S.t*.1),tz+Math.cos(a)*17);R.cam.lookAt(10,5.5,12)}
@@ -1301,7 +1353,7 @@ function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/
  R.pool.forEach((l,i)=>{const s=l.userData.s,g=R.glow[i],fl=.85+.15*Math.sin(S.t*11+i*3)*Math.sin(S.t*7.3+i)+.06*Math.sin(S.t*31+i);l.intensity=s?s.i*fl:0;g.visible=!!s;if(!s)return;
   g.position.copy(l.position);g.material.color.set(s.c);g.material.opacity=.5*fl;g.scale.setScalar(1.5*s.i*fl);if(S.mode==='run'&&Math.random()<dt*7)chips(s.x+(Math.random()-.5)*.2,s.y,s.z+(Math.random()-.5)*.2,s.c,1,{sp:.1,up:.9,g:-1.3,life:1.1,s:.7})})} // flicker, halo, rising embers
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;S.t+=dt;
- if(S.mode==='run'){updateActors(dt);updateFx(dt);updateRun(dt)}else if(S.mode==='summary')updateFx(dt);
+ if(S.mode==='run'&&S.picks>0&&!S.pick)offerPerks();if(S.mode==='run'&&!S.pick){updateActors(dt);updateFx(dt);updateRun(dt)}else if(S.mode==='summary')updateFx(dt);
  animate(dt);updateCam(dt);updateHud(dt);R.ren.render(R.scene,R.cam);requestAnimationFrame(loop)}
 init();
 </script>
