@@ -95,6 +95,12 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 .boss .wn{font-family:var(--body);font-size:14px;color:var(--gold);margin-top:3px}.boss .wn .bar{height:9px;margin-top:2px}.boss .wn .bar>i{background:var(--gold)}
 .fb .bar{height:8px}.fb .cast{height:7px;margin-top:2px}.fb .cast>i{background:#d6a24a}
 .n{position:absolute;font-family:'Silkscreen',monospace;font-weight:700;text-shadow:0 1px 3px #000;transform:translate(-50%,-50%);white-space:nowrap}
+#pick{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:4vh 16px 5vh;pointer-events:none;z-index:4;background:radial-gradient(ellipse at 50% 55%,#0000 45%,#000b 100%)}
+#pick h2{margin:0;font:700 clamp(20px,3.4vw,40px) 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.14em;color:#f5c45a;text-shadow:0 3px 0 #96661c,0 6px 0 #2a1904,0 0 30px #d6741a}
+#pick .card{pointer-events:auto;width:min(560px,94vw);background:#0b0a0de6 padding-box;border:12px solid transparent;border-image:var(--vx) 6 / 12px;padding:10px 12px;display:grid;gap:6px;font:700 11px/1.5 'Silkscreen',monospace;text-transform:uppercase;color:#d8cdb8}
+#pick .card h3{margin:0;font:700 22px 'Silkscreen',monospace;color:#fff}#pick .card h3 small{font-size:11px;color:#f5c45a;margin-left:8px}#pick .sk{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#pick .sk div{display:flex;gap:6px;align-items:center;font-size:9px;line-height:1.3;color:#a89f8c}#pick .sk i{flex:none;width:30px;height:30px;background:#000 center/80% no-repeat;image-rendering:pixelated;border:1px solid #6b6258}
+#pick .row{display:flex;gap:8px;justify-content:flex-end}#pick .row button{font:700 13px 'Silkscreen',monospace;text-transform:uppercase;padding:8px 14px}
 #sum,#load{position:fixed;inset:0;display:grid;place-items:center;background:#000a}
 #sum>div{background:var(--panel) padding-box;border:12px solid transparent;border-image:var(--vx) 6 / 12px;padding:12px;width:min(460px,92vw);display:flex;flex-direction:column;gap:10px}
 #load{font-family:var(--display);font-size:32px;color:var(--gold)}
@@ -106,7 +112,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 <div id="title"><div class="lamp"></div><h1><span>Grave</span><span>Lantern</span></h1><p class="sub">A voxel dungeon crawl beneath an open world</p><nav><button id="tnew">New game</button><button id="tgo">Load game</button></nav><p class="keys"><b>WASD</b> or hold <b>Left click</b> move · hold on a foe to fight · <b>Space</b> roll · <b>1–4</b> skills</p></div>
 <div id="lobby"></div>
 <div id="hud" hidden></div>
-<div id="sum" hidden></div>
+<div id="pick" hidden></div><div id="sum" hidden></div>
 <div id="load" hidden>The dungeon takes shape…</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -135,7 +141,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
  town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.45,cd:.8,inv:.45,mid:1,ball:.62},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
- mana:7,props:{size:[1,.6],cell:16,res:.04},water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
+ mana:7,pick:{zone:1,x:10,z:21.4,gap:1.25,h:.36,arc:.22,cam:[10,2.1,27.6,10,1.3,21.4],hit:[70,170]},props:{size:[1,.6],cell:16,res:.04},water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{robe:[.36,.22],cloth:[.2,.32,5,.014,.03],k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
@@ -221,7 +227,7 @@ const DB={
   ore:{name:'Ore vein',at:[.7,.95],tool:'pick',reach:1.9,trade:'mining',item:'ore',rare:'gem',time:3.6,dur:1.2,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'mine'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',reach:4.5,hold:1,trade:'fishing',item:'fish',rare:'pearl',time:7,dur:1.2,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'fish'},
   wood:{name:'Tree',at:[.6,.9],tool:'hatchet',reach:1.9,trade:'woodcutting',item:'wood',rare:'amber',time:3.3,dur:1.1,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'fell'}},
  TRADES:{mining:'Mining',fishing:'Fishing',woodcutting:'Woodcutting',smithing:'Smithing',cooking:'Cooking'},TRADE:{base:40,grow:1.18,max:50,speed:.03,rare:.06,rareLv:.004}, // trade skills: xp to next = base*grow^(lvl-1); each level works faster and finds rares more often
- CLOTH:{skirt:[0,.9],hem:[.45,.9],cape:[0,.95],cloak:[0,.95]}, // rig nodes that are cloth, by node name: [how far below the node's pivot the cloth already hangs at its top, total hanging length in metres]. The further down, the more it ripples and trails (newMat)
+ CLOTH:{skirt:[0,.9,.2],hem:[.45,.9,.2],cape:[0,.95,1],cloak:[0,.95,1]}, // rig nodes that are cloth, by node name: [how far below the node's pivot the cloth already hangs at its top, total hanging length in metres, how much it trails behind movement: capes stream, skirts stay round the legs]. The further down, the more it ripples and trails (newMat)
  MATS:{ore:'Ore',gem:'Gem',fish:'Fish',pearl:'Pearl',wood:'Wood',amber:'Amber',ration:'Ration'},
  RECIPES:[{id:'ration',name:'Cook a ration',trade:'cooking',need:{fish:2},xp:15,make:'ration',tip:'Q in the field: restores 40% health'},{id:'weapon',name:'Forge a weapon',trade:'smithing',need:{ore:6,wood:2},xp:40,slot:'weapon'},
   {id:'armour',name:'Forge armour',trade:'smithing',need:{ore:5},xp:30,slot:'armour'},{id:'charm',name:'Carve a charm',trade:'smithing',need:{wood:3,gem:1},xp:35,slot:'trinket'}],
@@ -391,15 +397,15 @@ function bake(key,prims,mt,pv,P={},res=CFG.evox,thin=0){if(BAKE.has(key))return 
  const out=meshVG(g,[(pv[0]-mn[0])/res,(pv[1]-mn[1])/res,(pv[2]-mn[2])/res],res);BAKE.set(key,out);return out}
 function mesh2(geo,mat){const grp=new THREE.Group();geo.forEach((g,k)=>{if(!g)return;const m=new THREE.Mesh(g,k?R.matE:mat);m.castShadow=!k;grp.add(m)});return grp}
 function rig(kind,key,nodes,mt,P,res){const r={kind,root:new THREE.Group(),body:new THREE.Group(),mat:newMat()},at={body:[0,0,0]};r.root.add(r.body);
- for(const nd of nodes){const par=nd.p||'body',pa=at[par],cl=nd.prims&&DB.CLOTH[nd.n],cm=cl&&newMat({v:r.cl=r.cl||new THREE.Vector4(),o:cl}),g=nd.prims?mesh2(bake(key+':'+nd.n,nd.prims,mt,nd.at,P,res),cm||r.mat):new THREE.Object3D();if(cm)(r.cloths=r.cloths||[]).push(cm);
+ for(const nd of nodes){const par=nd.p||'body',pa=at[par],cl=nd.prims&&DB.CLOTH[nd.n],cm=cl&&newMat({v:r.cl=r.cl||new THREE.Vector4(0,0,0,0),o:cl}),g=nd.prims?mesh2(bake(key+':'+nd.n,nd.prims,mt,nd.at,P,res),cm||r.mat):new THREE.Object3D();if(cm)(r.cloths=r.cloths||[]).push(cm);
   g.position.set(nd.at[0]-pa[0],nd.at[1]-pa[1],nd.at[2]-pa[2]);at[nd.n]=nd.at;r[par].add(g);r[nd.n]=g;if(nd.hide)g.visible=false}return r}
 const hold=(r,hand,key,prims,mt,rx=Math.PI/2,pos,ry=0)=>{const o=mesh2(bake(key,prims,mt,[0,0,0],{},CFG.evox,1),r.mat);o.rotation.set(rx,ry,0);if(pos)o.position.set(...pos);r[hand].add(o);return o};
 
 // §5 MODEL
 function newMat(cl){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0}); // + cool rim light so figures read against dark floors. cl = cloth: every vertex is pushed by ripples, sway and a trailing lag that grow toward the free edge, so cloth voxels move like cloth instead of as one stiff block
- m.customProgramCacheKey=()=>cl?'cloth':'body';m.onBeforeCompile=sh=>{if(cl){sh.uniforms.uCl={value:cl.v};sh.uniforms.uCo={value:new THREE.Vector2(cl.o[0],cl.o[1])};sh.vertexShader='uniform vec4 uCl;uniform vec2 uCo;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-  float cw=clamp((uCo.x-position.y)/uCo.y,0.,1.);cw*=cw;transformed.z+=cw*(-uCl.y+sin(uCl.z*2.6+position.x*8.+position.y*5.)*(.02+uCl.x*.05));
-  transformed.x+=cw*(uCl.w+sin(uCl.z*1.9+position.y*6.+position.z*5.)*(.015+uCl.x*.03));transformed.y+=cw*abs(uCl.y)*.3;`)}
+ m.customProgramCacheKey=()=>cl?'cloth':'body';m.onBeforeCompile=sh=>{if(cl){sh.uniforms.uCl={value:cl.v};sh.uniforms.uCo={value:new THREE.Vector3(cl.o[0],cl.o[1],cl.o[2])};sh.vertexShader='uniform vec4 uCl;uniform vec3 uCo;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+  float cw=clamp((uCo.x-position.y)/uCo.y,0.,1.);cw*=cw;transformed.z+=cw*(-uCl.y*uCo.z+sin(uCl.z*2.6+position.x*8.+position.y*5.)*(.02+uCl.x*.05));
+  transformed.x+=cw*(uCl.w+sin(uCl.z*1.9+position.y*6.+position.z*5.)*(.015+uCl.x*.03));transformed.y+=cw*abs(uCl.y)*.3*uCo.z;`)}
   sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>',`#include <dithering_fragment>
  gl_FragColor.rgb+=pow(1.-clamp(dot(normalize(vViewPosition),normal),0.,1.),3.)*${CFG.anim.rim.toFixed(2)}*(diffuseColor.rgb*.6+vec3(.1,.12,.16));`)};return m}
 const pb=(c,s,m,o)=>({t:'box',c,s,m,...o}),pe=(c,s,m,o)=>({t:'ell',c,s,m,...o}),pc=(a,b,r,m,o)=>({t:'cap',a,b,r,m,...o}),py=(c,r,h,m,o)=>({t:'cyl',c,r,h,m,...o}),pf=(bb,f,m)=>({t:'fn',bb,f,m});
@@ -639,6 +645,7 @@ const MODEL={
   r.hot='spirit';r.emit=[['box',[0,1.3,.1],12,1.5],['box',[.4,.3,.1],3,1],['box',[-.4,.3,.1],3,1]];return r},
  drop(id,col){const mt={c:[col,ITEMV[id]&&ITEMV[id].glow?'none':'plate',ITEMV[id]&&ITEMV[id].glow?1:0],m:['#aeb4bc','plate'],d:['#2a2622','leather'],w:['#6a4a2a','wood'],wh:['#ffffff','none',1]}; // an item lying in the world, shaped like what it is: ITEMV[id], else the held model HELD[id] shrunk and recoloured
   return rig('static','drop'+id+col,[{n:'box',at:[0,0,0],prims:ITEMV[id]?ITEMV[id].p():scl(tr(HELD[id].prims({L:.8,w:1}).map(q=>({...q,m:/gold|^go$|glow|core|fuller|ln/.test(q.m)?'c':/wood|grip|tw|wd|bead|str|tome/.test(q.m)?'w':'m'})),[0,-.42,0]),.55)}],mt)},
+ plinth(){return rig('static','plinth',[{n:'box',at:[0,0,0],prims:[pb([0,.06,0],[.52,.06,.52],'st'),pb([0,.18,0],[.44,.06,.44],'s2'),pb([0,.29,0],[.38,.05,.38],'st'),pb([0,.345,0],[.4,.012,.4],'s2'),pf([[-.42,.42],[.33,.37],[-.42,.42]],(x,y,z)=>Math.max(Math.abs(x),Math.abs(z))>.385&&Math.max(Math.abs(x),Math.abs(z))<.415,'go'),...[0,1,2,3].map(i=>pe([Math.cos(i*1.571+.785)*.5,.14,Math.sin(i*1.571+.785)*.5],[.05,.05,.05],'go'))]}],{st:['#5a5662','stone'],s2:['#474350','stone'],go:['#b48a3a','plate']})}, // character-select pedestal
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
 function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
@@ -1312,7 +1319,7 @@ function clearRun(){R.props.clear();for(const a of[...S.party,...S.foes,...S.nod
  for(const k of['tele','proj','haz','loot','debris','lob'])S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.g||o.o));for(const k in S.fx)if(k!=='nums')S.fx[k]=[];
  S.fx.nums.forEach(n=>n.el.remove());S.fx.nums=[];R.world.children.slice().forEach(m=>{m.geometry.dispose();R.world.remove(m)});if(S.chest){R.scene.remove(S.chest.root);S.chest=null}}
 const zoneDef=i=>{const Z=DB.ZONES[i],D0=DB.DUNGEONS[Z.d];return{...D0,...DB.ZONE,id:Z.id,name:Z.name,zone:1,pal:{...D0.pal,...Z.pal}}}; // a zone borrows its dungeon's palette and foes, with the shared outdoor layout
-function startRun(zone,out){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],depth=S.save.sigil[DB.DUNGEONS[S.sel.d].id]||1,seed=zone?(hashStr(def.id)^S.save.world)>>>0:S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0; // a zone is fixed by the save's world seed
+function startRun(zone,out){if(zone){S.save.zone=S.sel.d;save()}const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],depth=S.save.sigil[DB.DUNGEONS[S.sel.d].id]||1,seed=zone?(hashStr(def.id)^S.save.world)>>>0:S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0; // a zone is fixed by the save's world seed
  $('#load').hidden=false;$('#lobby').hidden=true;$('#title').classList.add('out');setTimeout(()=>{
   const D=genDungeon(def,seed);S.D=D;S.nav=navBuild(D);R.lobby.visible=false;(R.lobbyRigs||[]).forEach(q=>R.scene.remove(q.root));meshVox(D.W,R.world);setEnv(def.pal,def.lay.amb);R.cut.on.value=1;
   S.run={def,depth,seed,t:0,limit:def.timer,dread:0,dreadReq:1,deaths:0,bossLeft:zone?0:1,done:false,loot:[],scale:CFG.depthScale**(depth-1)*(zone?def.foes:1),omens:zone?[]:DB.OMENS.filter(o=>depth>=o.depth)};
@@ -1445,11 +1452,11 @@ function updateHud(dt){if(S.mode!=='run')return;const r=S.run,H=$('#hud'),U=S.ui
 // §15 INPUT
 function ground(cx,cy){const m=new THREE.Vector2(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);R.ray.setFromCamera(m,R.cam);const p=new THREE.Vector3();return R.ray.ray.intersectPlane(R.plane,p)?{x:p.x,z:p.z}:null}
 function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold left on a foe = attack it; Space = attack toward the cursor; 1-4 = skills (1-3 also pick a boon); Tab/B/G/C/O = menu, N = minimap, wheel = zoom
- {const has=!!localStorage.getItem(CFG.saveKey),n=$('#tnew');$('#title .lamp').style.backgroundImage=icon(['.###.','..#..','.###.','#.#.#','.###.'],'#f5c45a');$('#tgo').hidden=!has;$('#tgo').onclick=enterLobby; // start screen: New game (asks twice before erasing an existing save) and Load game
-  n.onclick=()=>{if(has&&!n.dataset.sure){n.dataset.sure=1;n.textContent='Erase save? Click again';return}localStorage.removeItem(CFG.saveKey);S.save=loadSave();enterLobby()}}c.addEventListener('pointerdown',e=>{if(S.mode!=='run'||e.button)return;I.ground=ground(e.clientX,e.clientY);I.down=true});
- c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=false});
+ {const has=!!localStorage.getItem(CFG.saveKey),n=$('#tnew');$('#title .lamp').style.backgroundImage=icon(['.###.','..#..','.###.','#.#.#','.###.'],'#f5c45a');$('#tgo').hidden=!has;$('#tgo').onclick=()=>{S.sel.cls=S.sel.member=S.save.cls||'templar';S.sel.d=S.save.zone??CFG.pick.zone;startRun(1)}; // start screen: New game (asks twice before erasing an existing save) and Load game
+  n.onclick=()=>{if(has&&!n.dataset.sure){n.dataset.sure=1;n.textContent='Erase save? Click again';return}localStorage.removeItem(CFG.saveKey);S.save=loadSave();n.textContent='New game';delete n.dataset.sure;pickScreen()}}c.addEventListener('pointerdown',e=>{if(S.mode!=='run'||e.button)return;I.ground=ground(e.clientX,e.clientY);I.down=true});
+ c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY);if(S.mode==='pick'){const h=pickAt(e.clientX,e.clientY);if(h!==S.pick.h){S.pick.h=h;c.style.cursor=h==null?'':'pointer';renderPick()}}});c.addEventListener('click',e=>{if(S.mode==='pick'&&S.pick.h!=null){S.pick.s=S.pick.h;renderPick()}});addEventListener('pointerup',()=>{I.down=false});
  c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
- addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title')return enterLobby();if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
+ addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title'||S.mode==='pick')return;if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
   if(S.pick)return;if(k==='q')eat(pl);if(k===' '){e.preventDefault();dodge(pl)}
   if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}});
  addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=false});addEventListener('resize',resize)}
@@ -1485,6 +1492,16 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.props=new THREE.Group();R.scene.add(R.props);R.propMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8});addCut(R.propMat); /* scenery fades out between the camera and the player, like walls */R.cord=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial(),CFG.cord.max);R.cord.setColorAt(0,new THREE.Color());R.cord.count=0;R.cord.frustumCulled=false;R.scene.add(R.cord);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
+function pickScreen(){const ids=Object.keys(DB.CLASSES),P=CFG.pick;S.mode='pick';S.pick={ids,h:null,s:Math.max(0,ids.indexOf(S.sel.cls))};$('#title').classList.add('out');$('#lobby').hidden=true;$('#pick').hidden=false; // character select: every class stands on a plinth in the town square; hover outlines one, click chooses it
+ (R.lobbyRigs||[]).forEach(r=>R.scene.remove(r.root));R.lobbyRigs=ids.map((k,i)=>{const C0=DB.CLASSES[k],r=MODEL[C0.model||k](S.save.gear[k],undefined,C0.look),o=i-(ids.length-1)/2,pd=MODEL.plinth().root;
+  r.a={moveAmt:0,ph:0,atkT:0,castT:0,flash:0,stun:0,seed:i*2.3};r.root.position.set(P.x+o*P.gap,P.h,P.z+Math.abs(o)*P.arc);r.root.rotation.y=-o*.12;pd.position.y=-P.h;r.root.add(pd);R.scene.add(r.root);return r});renderPick()}
+function renderPick(){const k=S.pick.ids[S.pick.h??S.pick.s],C0=DB.CLASSES[k],sk=id=>DB.SKILLS[id];S.pick.shown=k;
+ $('#pick').innerHTML=`<h2>Choose your hero</h2><div class="card"><h3>${C0.name}<small>${C0.role} · ${C0.weapon}</small></h3><div>Health ${C0.hp} · Armour ${C0.armor} · Speed ${C0.speed}</div>
+  <div class="sk">${C0.skills.map(id=>`<div><i style="background-image:${icon(sk(id).ico,sk(id).col)}"></i><span><b style="color:#fff">${sk(id).name}</b><br>${sk(id).tip}</span></div>`).join('')}</div>
+  <div class="row"><button id="pback">Back</button><button id="pgo" class="enter">Begin as ${DB.CLASSES[S.pick.ids[S.pick.s]].name}</button></div></div>`;
+ $('#pback').onclick=()=>{$('#pick').hidden=true;S.mode='title';$('#title').classList.remove('out');lobbyParty()};$('#pgo').onclick=()=>{const c=S.pick.ids[S.pick.s];S.sel.cls=S.sel.member=S.save.cls=c;S.sel.d=CFG.pick.zone;$('#pick').hidden=true;save();startRun(1)}}
+function pickAt(x,y){const P=CFG.pick,v=new THREE.Vector3(),el=R.ren.domElement;let b=null,bd=1e9; // which hero is under the cursor: nearest plinth on screen, inside the hover box
+ R.lobbyRigs.forEach((r,i)=>{v.set(r.root.position.x,P.h+.95,r.root.position.z).project(R.cam);const dx=Math.abs((v.x*.5+.5)*el.clientWidth-x),dy=Math.abs((.5-v.y*.5)*el.clientHeight-y);if(dx<P.hit[0]&&dy<P.hit[1]&&dx<bd){bd=dx;b=i}});return b}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
  for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;a.inv-=dt;a.holdT-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt);a.calm=fight?0:a.calm+dt;if(a.tool&&(a.toolT-=dt)<=0)tool(a,null);if(S.run.solo&&a.calm>CFG.solo.calm)a.hp=Math.min(a.maxHp,a.hp+a.maxHp*CFG.solo.regen*dt);if(a.isPlayer)for(const id in PERK){const n=PERK[id].tick&&perk(id);if(n)PERK[id].tick(a,dt,n)}}
@@ -1506,7 +1523,8 @@ function animate(dt){const all=[...S.party,...S.foes];for(const a of all){const 
   q.rotation.order='YXZ';q.rotation.y=a.face;q.rotation.x=th;q.position.set(a.x-Math.sin(a.face)*o,H-D0.mid*Math.cos(th),a.z-Math.cos(a.face)*o);r.roll=1}
  else if(r.roll){q.rotation.x=0;r.roll=0}}
  for(const n of S.nodes)ANIM.static(n.rig,ONE,dt);if(S.gate)ANIM.static(S.gate,ONE,dt);
- if(S.mode==='lobby'||S.mode==='title')(R.lobbyRigs||[]).forEach(r=>ANIM.hum(r,r.a,dt))}
+ if(S.mode==='pick')R.lobbyRigs.forEach((r,i)=>{const on=i===S.pick.s||i===S.pick.h;r.a.alert=on;r.root.position.y+=((on?CFG.pick.h+.04:CFG.pick.h)-r.root.position.y)*Math.min(1,dt*8)}); // the hovered and the chosen hero stand ready
+ if(S.mode==='lobby'||S.mode==='title'||S.mode==='pick')(R.lobbyRigs||[]).forEach(r=>{ANIM.hum(r,r.a,dt);if(r.cl)r.cl.set(0,0,S.t+r.a.seed,Math.sin(S.t*1.3+r.a.seed)*CFG.anim.cloth[3])})}
 function cord(dt){const a=S.party.find(m=>m.isPlayer),C=CFG.cord,on=S.mode==='run'&&a&&!a.dead&&a.tool==='rod'&&a.cast0===2&&a.job&&a.rig.toolM&&(a.holdT>0||a.atkT>0); // fishing line: a chain of cubes on a voxel grid from the rod tip, sagging, out to a float bobbing on the water
  a&&(a.cordT=on?(a.cordT||0)+dt:0);if(!on){R.cord.count=0;return}
  a.rig.toolM.updateWorldMatrix(true,false);const tip=a.rig.toolM.localToWorld(new THREE.Vector3(0,C.tip,0)),nd=a.job,k=Math.min(1,a.cordT/C.out),ex=lerp(tip.x,nd.x,k),ez=lerp(tip.z,nd.z,k),ey=lerp(tip.y,CFG.fx.y+Math.sin(S.t*3)*.02,k),n=Math.min(C.max-1,Math.ceil(Math.hypot(ex-tip.x,ey-tip.y,ez-tip.z)/C.s)),M=new THREE.Matrix4(),col=new THREE.Color(),g=v=>Math.round(v/C.s)*C.s;
@@ -1516,12 +1534,13 @@ function reflect(){const Q=R.mirror,c=R.cam,v=Q.cam,h=Q.mesh.position.y;Q.mesh.v
  v.fov=c.fov;v.aspect=c.aspect;v.near=c.near;v.far=c.far;v.updateProjectionMatrix();const t=new THREE.Vector3(0,0,-1).applyQuaternion(c.quaternion).add(c.position);
  v.position.set(c.position.x,2*h-c.position.y,c.position.z);v.lookAt(t.x,2*h-t.y,t.z);v.updateMatrixWorld();Q.u.uVP.value.multiplyMatrices(v.projectionMatrix,v.matrixWorldInverse);Q.u.uT.value=S.t;
  R.ren.shadowMap.autoUpdate=false;R.ren.setRenderTarget(Q.rt);R.ren.render(R.scene,v);R.ren.setRenderTarget(null);R.ren.shadowMap.autoUpdate=true;Q.mesh.visible=true}
-function outline(){const a=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node),h=a?a.rig.root:null,Q=R.line,W=CFG.ui.outline*2,el=R.ren.domElement; // silhouette outline round whatever is under the cursor: stamp its shape into the stencil, then draw it 8 times nudged outward wherever the stamp is not
+function outline(){const pk=S.mode==='pick'&&R.lobbyRigs[S.pick.h??S.pick.s],a=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node),h=pk?pk.body:a?a.rig.root:null,Q=R.line,W=CFG.ui.outline*2,el=R.ren.domElement; // silhouette outline round whatever is under the cursor: stamp its shape into the stencil, then draw it 8 times nudged outward wherever the stamp is not
  if(Q.on!==h){for(const[o,on]of[[Q.on,0],[h,1]])if(o)o.traverse(m=>m.isMesh&&(on?m.layers.enable(1):m.layers.disable(1)));Q.on=h}if(!h)return;
- Q.u.uCol.value.set(a.kind?'#ffd36a':'#ff4a2a');const bg=R.scene.background;R.scene.background=null;R.ren.autoClear=false;R.ren.shadowMap.autoUpdate=false;R.cam.layers.set(1); /* a colour background would clear the frame on every pass */
+ Q.u.uCol.value.set(pk?(S.pick.h==null||S.pick.h===S.pick.s?'#ffd36a':'#ffffff'):a.kind?'#ffd36a':'#ff4a2a');const bg=R.scene.background;R.scene.background=null;R.ren.autoClear=false;R.ren.shadowMap.autoUpdate=false;R.cam.layers.set(1); /* a colour background would clear the frame on every pass */
  for(let i=-1;i<8;i++){R.scene.overrideMaterial=i<0?Q.mask:Q.edge;Q.u.uO.value.set(i<0?0:Math.cos(i*Math.PI/4)*W/el.clientWidth,i<0?0:Math.sin(i*Math.PI/4)*W/el.clientHeight);R.ren.render(R.scene,R.cam)}
  R.scene.overrideMaterial=null;R.scene.background=bg;R.cam.layers.set(0);R.ren.autoClear=true;R.ren.shadowMap.autoUpdate=true}
 function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/CFG.titleT%1);R.cam.position.set(K[1],K[2],K[3]);R.cam.lookAt(K[4],K[5],K[6]);tx=K[4];tz=K[6]}
+ else if(S.mode==='pick'){const K=CFG.pick.cam;tx=K[3];tz=K[5];R.cam.position.set(K[0]+Math.sin(S.t*.25)*.25,K[1],K[2]);R.cam.lookAt(K[3],K[4],K[5])}
  else if(S.mode==='lobby'){const a=-.55+Math.sin(S.t*.08)*.25;tx=10;tz=15;R.cam.position.set(tx+Math.sin(a)*17,9+Math.sin(S.t*.1),tz+Math.cos(a)*17);R.cam.lookAt(10,5.5,12)}
  else{const p=S.party.find(m=>m.isPlayer)||{x:0,z:0};S.cam.x=lerp(S.cam.x,p.x,Math.min(1,dt*6));S.cam.z=lerp(S.cam.z,p.z,Math.min(1,dt*6));tx=S.cam.x;tz=S.cam.z;
   const k=S.cam.dist/Math.hypot(1,1.45,1),sh=(S.cam.shake||0)*(Math.random()-.5);S.cam.shake=Math.max(0,(S.cam.shake||0)-dt);R.cam.position.set(tx+k+sh,1.45*k,tz+k+sh);R.cam.lookAt(tx,.8,tz);
