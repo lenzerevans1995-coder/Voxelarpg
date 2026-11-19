@@ -121,14 +121,14 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §12 FX     ZONE[shape] telegraph shapes + GLSL decal, projectiles, hazards, swooshes, bursts, chips, debris, numbers, toasts
  §13 RUN    zones (overworld) and dungeons: startRun(zone), gathering work(), trades, craft(), finish run, loot, save
  §14 UI     lobby; run HUD: icon(), pix() pixel heart/gem gauges, minimap() with fog of war and zoom, PANEL[id] menu windows, buildHud/updateHud; summary
- §15 INPUT  WASD / hold-left move, hold-left on a foe attacks, Space attack, 1-4 skills + boon picks, menu keys
+ §15 INPUT  WASD / hold-left move, hold-left on a foe attacks or works a node, Space dodge, 1-4 skills + boon picks, menu keys
  §16 LOOP   init, title fly-through (CFG.title) → enterLobby(), update + render
 */
 'use strict';
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
- town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
+ town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.3,cd:.8,inv:.35},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
  mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
@@ -194,6 +194,9 @@ const DB={
   cast:{k:[[0,-.3,0,-.5,0,0,-.2,-.5,0],[.32,-1,-.4,-1.6,-.3,-.1,-.3,-.8,0],[.5,-1.55,.1,-.1,.3,.15,-.2,-.6,0],[.75,-1.3,.1,-.2,.2,.1,-.2,-.6,0],[1,-.3,0,-.5,0,0,-.2,-.5,0]]},
   hook:{arc:2,k:[[0,0,0,-.2,0,0,0,-.25,0],[.4,-1.2,0,-1.4,-.8,-.1,.3,-.3,0],[.52,-1.3,0,-.2,.8,.2,.2,-.3,0],[.75,-.6,0,-.2,.4,.15,.1,-.3,0],[1,0,0,-.2,0,0,0,-.25,0]]},
   pound:{arc:1.4,k:[[0,0,0,-.2,0,0,0,-.25,0],[.44,-2.6,0,-.6,0,-.25,-2.6,-.6,0],[.52,-.8,0,-.05,0,.35,-.8,-.05,0],[.76,-.4,0,-.1,0,.3,-.4,-.1,0],[1,0,0,-.2,0,0,0,-.25,0]]}, // both fists overhead
+  mine:{k:[[0,-.3,0,-.5,0,0,-.3,-.5,0],[.42,-2.6,.1,-.7,0,-.25,-2.3,-.9,0],[.56,-.55,.1,-.1,0,.4,-.65,-.3,0],[.78,-.35,.1,-.2,0,.3,-.45,-.4,0],[1,-.3,0,-.5,0,0,-.3,-.5,0]]}, // two-handed overhead pick stroke
+  fell:{g:1.5,gy:Math.PI/2,k:[[0,-.3,0,-.5,0,0,-.3,-.5,0],[.42,-.7,-1.25,-.8,-.85,0,-.7,-.9,1],[.57,-.75,.45,-.2,.6,.12,-.9,-.5,1],[.8,-.7,.55,-.3,.4,.1,-.8,-.5,.8],[1,-.3,0,-.5,0,0,-.3,-.5,0]]}, // side-on axe stroke into the trunk at waist height
+  fish:{k:[[0,-.3,0,-.5,0,0,-.2,-.4,0],[.38,-2.4,0,-.9,0,-.22,-.2,-.4,0],[.62,-.95,0,-.45,0,.16,-.2,-.4,0],[1,-1,0,-.55,0,.05,-.2,-.4,0]]}, // rod back over the shoulder, cast, and hold
   slam:{arc:1.6,k:[[0,0,0,-.2,0,0,0,-.25,0],[.42,-2.7,0,-.5,-.25,-.15,.4,-.3,0],[.5,-.9,0,-.05,.2,.3,.2,-.3,0],[.75,-.4,0,-.1,.1,.25,.1,-.3,0],[1,0,0,-.2,0,0,0,-.25,0]]}},
  TOOLMT:{tw:['#5a3c22','wood'],ti:['#9aa0a8','plate'],tl:['#e8e0c8']}, // materials of the work tools (pick, hatchet, rod)
  TREE:[{name:'Wrath',ids:['might','haste','shard','chain','burst']},{name:'Ward',ids:['vigor','leech','swift','ember','orbit']},{name:'Mastery',skills:1}], // ability tree: one point per level. Wrath and Ward unlock top to bottom; Mastery ranks your own four skills
@@ -208,9 +211,9 @@ const DB={
   {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',treeN:.7,leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
  ZONE:{floor:'earth',foes:.6,lay:{shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:8,links:4,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
   decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
- NODES:{ // gathering nodes: hold left click on one to work it. time = seconds per haul, hauls before it is spent, respawn seconds
-  ore:{name:'Ore vein',at:[.7,.95],tool:'pick',trade:'mining',item:'ore',rare:'gem',time:1.6,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'chop'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',trade:'fishing',item:'fish',rare:'pearl',time:2.4,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'cast'},
-  wood:{name:'Tree',at:[.6,.9],tool:'hatchet',trade:'woodcutting',item:'wood',rare:'amber',time:1.4,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'hack'}},
+ NODES:{ // gathering nodes: hold left click on one to work it. reach = how close you must stand, time = seconds per haul, dur = seconds per stroke, hold = one cast then wait (fishing), hauls before it is spent, respawn seconds
+  ore:{name:'Ore vein',at:[.7,.95],tool:'pick',reach:1.9,trade:'mining',item:'ore',rare:'gem',time:3.6,dur:1.2,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'mine'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',reach:4.5,hold:1,trade:'fishing',item:'fish',rare:'pearl',time:7,dur:1.2,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'fish'},
+  wood:{name:'Tree',at:[.6,.9],tool:'hatchet',reach:1.9,trade:'woodcutting',item:'wood',rare:'amber',time:3.3,dur:1.1,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'fell'}},
  TRADES:{mining:'Mining',fishing:'Fishing',woodcutting:'Woodcutting',smithing:'Smithing',cooking:'Cooking'},TRADE:{base:40,grow:1.18,max:50,speed:.03,rare:.06,rareLv:.004}, // trade skills: xp to next = base*grow^(lvl-1); each level works faster and finds rares more often
  MATS:{ore:'Ore',gem:'Gem',fish:'Fish',pearl:'Pearl',wood:'Wood',amber:'Amber',ration:'Ration'},
  RECIPES:[{id:'ration',name:'Cook a ration',trade:'cooking',need:{fish:2},xp:15,make:'ration',tip:'Q in the field: restores 40% health'},{id:'weapon',name:'Forge a weapon',trade:'smithing',need:{ore:6,wood:2},xp:40,slot:'weapon'},
@@ -443,7 +446,7 @@ const HELD={ // held items, authored in grip space (origin = palm, +y = up the h
  staff:{at:'handR',rx:.2,pos:[0,0,.05],prims:()=>[pc([0,-.9,0],[0,.75,0],.016,'bead'),...tr(scl(tr(SKULL(),[0,-1.63,0]),.7),[0,.86,0]),pe([0,.86,.02],[.03,.03,.03],'glow'),hoop([0,.72,0],.016,.03,.71,.74,'iron')]},
  scythe:{at:'handR',rx:.3,pos:[0,.1,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
   pf([[-.012,.012],[1.2,1.86],[-.02,.62]],(x,y,z)=>{const dy=y-1.25,r0=Math.hypot(dy,z),th=Math.atan2(dy,z);if(th<.15||th>1.58)return false;const w=.006+.085*(th-.15)/1.43;return Math.abs(x)<.01&&r0<.57&&r0>.57-w},'bl')]}};
-function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);m.userData={rx:H.rx??Math.PI/2,ry:H.ry||0,plumb:H.plumb};if(H.shield)r.shield=1;if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
+function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);m.userData={rx:H.rx??Math.PI/2,ry:H.ry||0,plumb:H.plumb};if(H.shield)r.shield=1;if(at!=='handR')(r.offs=r.offs||[]).push(m);if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
 const SLOTS3=['head','chest','legs'],wornId=g=>SLOTS3.map(sl=>g[sl]?1:0).join('');
 const dress=(B,K,g)=>Object.fromEntries(['leg','torso','head','arm'].map(p=>[p,()=>[...B[p],...SLOTS3.flatMap(sl=>((g[sl]?K[sl]:K.bare&&K.bare[sl])||{})[p]||[])]])); // modular gear: base body part + the pieces of every filled slot (K.bare = what shows when a slot is empty)
 const MODEL={
@@ -608,21 +611,9 @@ const MODEL={
    wood:[TR[P.tree||'oak'],[pc([0,0,0],[0,.32,0],.19,'w'),pe([0,.33,0],[.17,.02,.17],'w3'),...roots]],
    fish:[[...[[.35,.2],[-.3,.3],[.05,-.4]].map(([x,z])=>pe([x,.03,z],[.16,.015,.16],'l2')),pe([0,.04,0],[.07,.03,.12],'gl'),pc([0,.04,-.1],[0,.05,-.2],.03,'gl',{r2:.05})],[pe([.3,.03,.2],[.14,.015,.14],'l2')]]};
   const r=rig('static','node'+kind+P.stone+(P.tree||''),[{n:'box',at:[0,0,0],prims:K[kind][0]},{n:'stub',at:[0,0,0],hide:1,prims:K[kind][1]}],mt);r.hot='spirit';r.emit=[['box',[0,kind==='wood'?1.6:.55,0],2,.9]];return r},
- gate(P,kind){ // dungeon entrance, one design per zone id, built facing +z with the dark doorway at z=0 so it can be backed into a rock face: marsh = pillared mausoleum, moor = turfed barrow with a trilithon door, dunes = pylon gate with a winged sun, tundra = twin-towered gatehouse with a portcullis
-  const mt={st:[P.stone,'stone'],tr:[P.trim,'stone'],ru:[P.rune,'none',1],dk:['#06050a'],ir:[P.iron,'plate'],go:[P.gold,'plate'],tf:[P.turf?P.turf[2]:P.stone,'fur'],ac:[P.accent,'cloth'],sn:[P.snow||'#eef4fb'],wx:[P.wax],fl:[P.flame,'none',1],bone:[P.bone,'bone'],eye:[P.rune,'none',1]};
-  const door=[pb([0,1.25,-.12],[.72,1.25,.1],'dk'),pb([0,.06,.5],[1.1,.06,.5],'tr')],glyph=(x,y,z)=>pb([x,y,z],[.07,.1,.012],'ru'),G={
-   marsh:[...door,pb([0,1.7,-.45],[2.1,1.7,.3],'st'),pb([0,.12,1],[2.1,.12,.5],'tr'),pb([0,.3,.72],[1.9,.1,.3],'tr'),...both([...[1,1.75].flatMap(x=>[py([x,1.6,.5],.15,1.25,'st'),pb([x,.42,.5],[.21,.07,.21],'tr'),pb([x,2.9,.5],[.21,.07,.21],'tr')]),
-     py([2.2,.5,1.1],.06,.25,'wx'),pe([2.2,.82,1.1],[.04,.06,.04],'fl')]),pb([0,3.1,.35],[2.1,.14,.5],'tr'),pf([[-2.1,2.1],[3.24,4.2],[-.1,.8]],(x,y)=>Math.abs(x)<2.05-(y-3.24)*2.2,'st'),pb([0,4.4,.35],[.06,.3,.06],'ir'),pb([0,4.5,.35],[.2,.05,.06],'ir'),
-    ...[-2,-1,0,1,2].map(i=>pc([i*.27,.1,.02],[i*.27,2.3,.02],.028,'ir')),pb([0,2.35,.02],[.72,.04,.04],'ir'),...[-1,0,1].map(i=>glyph(i*.5,3.6,.81))],
-   moor:[...door,pf([[-3,3],[0,2.9],[-3,.5]],(x,y,z)=>(x/2.9)**2+(y/2.8)**2+((z+1.2)/1.75)**2<1&&!(Math.abs(x)<.74&&y<2.5&&z>-.2),'tf'),...both([pb([.98,1.3,.3],[.3,1.3,.34],'st',{n:.05,nf:5}),pe([1.9,.2,.9],[.3,.22,.28],'st',{n:.04,nf:6}),pe([2.6,.16,.5],[.24,.18,.24],'st',{n:.04,nf:6}),
-     ...[.7,1.3,1.9].map(y=>glyph(.98,y,.65))]),pb([0,2.82,.3],[1.5,.26,.42],'st',{n:.05,nf:5}),...tr(scl(tr(SKULL(),[0,-1.63,0]),2.2),[0,3.25,.55]),...[0,1,2,3,4].map(i=>pf([[-.4,.4],[2.6,3.05],[.72,.74]],(x,y)=>Math.abs(Math.hypot(x,y-2.82)-.06-i*.07)<.016&&i<3,'ru'))],
-   dunes:[...door,...both([pf([[.65,2.6],[0,4.4],[-.6,.6]],(x,y,z)=>Math.abs(x-1.6)<.92-y*.07&&Math.abs(z)<.55-y*.04,'st'),pb([1.6,4.45,0],[.75,.1,.52],'go'),pb([1.6,4.62,0],[.85,.07,.6],'st'),...[1,1.9,2.8].map(y=>pb([1.6,y,.52-y*.04],[.6-y*.05,.05,.02],'ac')),
-     ...[1.45,2.35].map(y=>glyph(1.6,y,.52-y*.04)),pf([[2.7,3.3],[0,3],[.6,1.2]],(x,y,z)=>Math.abs(x-3)+Math.abs(z-.9)<.26-y*.06,'st'),pf([[2.8,3.2],[2.9,3.3],[.7,1.1]],(x,y,z)=>Math.abs(x-3)+Math.abs(z-.9)<(3.25-y)*.3,'go')]),
-    pb([0,2.9,0],[.8,.35,.48],'st'),pe([0,2.95,.5],[.26,.26,.06],'go'),...both([pf([[.2,1],[2.8,3.15],[.48,.54]],(x,y)=>y<3.12-(x-.2)*.25&&y>2.9-(x-.2)*.05,'go')]),pb([0,.14,1.1],[2.6,.14,.5],'tr'),pb([0,.34,.8],[2.3,.1,.25],'tr')],
-   tundra:[...door,...both([py([1.55,2.2,.1],.72,2.2,'st'),pe([1.55,4.75,.1],[.6,.5,.6],'sn'),...[0,1,2,3,4,5].map(i=>pb([1.55+Math.cos(i*1.047)*.68,4.5,.1+Math.sin(i*1.047)*.68],[.14,.16,.14],'st')),pb([1.55,2.6,.83],[.05,.25,.02],'dk'),
-     pb([1.55,1.9,.86],[.28,.6,.02],'ac'),glyph(1.55,2,.88),pe([1.55,.25,.9],[.5,.18,.3],'sn')]),pb([0,3.1,-.05],[.9,.5,.42],'st'),...[-2,-1,0,1,2].map(i=>pb([i*.36,3.74,-.05],[.12,.14,.42],'st')),pe([0,3.95,-.05],[.9,.1,.44],'sn'),
-    ...[-2,-1,0,1,2].map(i=>pc([i*.27,.5,.04],[i*.27,2.5,.04],.03,'ir',{r2:.03})),...[.9,1.5,2.1].map(y=>pb([0,y,.04],[.72,.03,.03],'ir')),...[-3,-2,-1,0,1,2,3].map(i=>pc([i*.2,2.58,.2],[i*.2,2.3-(i&1)*.14,.2],.03,'sn',{r2:.004}))]};
-  const r=rig('static','gate'+kind+P.stone,[{n:'box',at:[0,0,0],prims:G[kind]||G.marsh}],mt,undefined,.04);r.hot='spirit';r.emit=[['box',[0,1.3,.25],10,1.6],['box',[.6,2.2,.3],3,1],['box',[-.6,2.2,.3],3,1]];return r},
+ gate(P){const mt={dk:['#050408'],ru:[P.rune,'none',1]}; // the way down: a dark veil in the doorway with a ring of burning glyphs (the stonework round it is stamped by GATE[zone])
+  const r=rig('static','gate'+P.rune,[{n:'box',at:[0,0,0],prims:[pb([0,1.2,0],[.68,1.15,.03],'dk'),...[0,1,2,3,4,5,6,7,8].map(i=>{const a=i/9*TAU;return pe([Math.cos(a)*.42,1.3+Math.sin(a)*.42,.05],[.05,.07,.02],'ru')}),pe([0,1.3,.05],[.1,.1,.02],'ru')]}],mt);
+  r.hot='spirit';r.emit=[['box',[0,1.3,.1],12,1.5],['box',[.4,.3,.1],3,1],['box',[-.4,.3,.1],3,1]];return r},
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
 function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
@@ -646,6 +637,7 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   if(a.leap){th=[-1.3,-.4];kn=[1.7,1.2];ar=[-2.7,-2.7];fo=[-.4,-.4];ln=.3}
   if(st){ar=[.1,.1];fo=[-.15,-.15];tw=Math.sin(t*5)*.12}
   if(a.windT>0){ar=[-2.5,-2.5];fo=[-.4,-.4];az=[-.12,.12];ln=-.28}
+  if(a.holdT>0&&!(a.atkT>0)){ar[1]=-1;fo[1]=-.55;ln+=.05} // holding a cast rod out over the water
   if(a.atkT>0){const p0=1-a.atkT/a.atkDur,K=key(DB.SWINGS[a.sw||'slash'].k,a.team==='party'?.07+.86*p0:p0),i=a.alt&&a.atkN&1?0:1,sd=i?1:-1;gb=K[8]||0;ar[i]=K[1];az[i]=K[2]*sd;fo[i]=K[3];tw+=K[4]*sd;ln+=K[5]*.6;wr[i]=clamp((K[1]+1.4)/1.2,-1,1)*.55;const w=Math.sin((1-a.atkT/a.atkDur)*Math.PI);th[1-i]-=.4*w;kn[1-i]+=.45*w;th[i]+=.3*w;kn[i]+=.2*w;by-=.04*w; // wrist cocks then snaps; the off-side leg steps into the blow
    ar[1-i]=K[6];fo[1-i]=K[7]}
   if(a.castT>0){ar=[-1.5,-1.5];fo=[-.3,-.3];ln+=.1}
@@ -804,6 +796,25 @@ Object.assign(STAMP,{tree(W,M,x,z,r,y0=2){if(TREEV[W.tree]){TREEV[W.tree](W,M,x,
  chains(W,M,x,z,r,nx,nz){for(let k=0;k<3;k++){const L=r.int(8,16),T=CFG.wallH;W.line([x+(nz?k*2:0),T,z+(nx?k*2:0)],[x+(nz?k*2:0),T-L,z+(nx?k*2:0)],j=>j%2?M.groove:M.iron)}},
  pillar(W,M,x,z,r,h){W.disc(x,z,2,3,5.5,M.trim);W.disc(x,z,4,4,4.5,M.trim);W.disc(x,z,2,h,3.2,(px,y,pz)=>Math.floor(Math.atan2(pz-z,px-x)/TAU*12+12)%2?M.wall[0]:M.wall[2]);
   for(const[ox,oz]of[[3.6,0],[-3.6,0],[0,3.6],[0,-3.6]])W.disc(x+ox,z+oz,5,h,1.3,(px,y)=>y%9===0?M.trim:M.wall[1]);W.disc(x,z,h-2,h-2,4.5,M.trim);W.disc(x,z,h-1,h,5.5,M.trim);W.block(x-5,z-5,x+5,z+5)}});
+const GATE={ // dungeon entrance per zone id, stamped in world voxels through P(l,o,y,m). Called twice: before the doorway is cut (the building), then with door=1 (what stands in the opening)
+ marsh(P,M,at,W,door){if(door){for(let l=-6;l<=6;l+=3)for(let y=2;y<26;y++)P(l,1,y,M.iron);for(let l=-7;l<=7;l++)P(l,1,14,M.iron);return} // pillared mausoleum: steps, four columns, entablature, pediment, cross; iron bars in the door
+  for(let l=-20;l<=20;l++){for(let o=-10;o<=-1;o++)P(l,o,2,M.trim);for(let o=-6;o<=-1;o++)Math.abs(l)<19&&P(l,o,3,M.trim);for(let y=2;y<34;y++)for(let o=0;o<=2;o++)Math.abs(l)<19&&P(l,o,y,ashlar(M,l+400,y,o))}
+  for(const l of[-16,-10,10,16]){const[cx,cz]=at(l,-4);W.disc(cx,cz,4,30,1.7,M.trim);W.disc(cx,cz,4,5,2.4,M.stone);W.disc(cx,cz,29,30,2.4,M.stone)}
+  for(let y=31;y<46;y++)for(let l=-20;l<=20;l++)for(let o=-7;o<=2;o++)if(y<34||Math.abs(l)<=20-(y-34)*1.8)P(l,o,y,y<34||o===-7?M.trim:M.wall[2]);for(let y=46;y<53;y++)P(0,-3,y,M.iron);for(let l=-2;l<=2;l++)P(l,-3,50,M.iron);
+  for(const l of[-19,19]){for(let y=3;y<8;y++)P(l,-9,y,M.wax);P(l,-9,8,M.flame)}},
+ moor(P,M,at,W,door){if(door)return;for(const sd of[-1,1])for(let l=8;l<=13;l++)for(let o=-4;o<=2;o++)for(let y=2;y<28;y++)if(noise3(l*.5,y*.3,o*.5+sd)>.14)P(l*sd,o,y,hash3(l*sd,y,o)<.12?M.moss:M.stone); // barrow: two leaning megaliths and a capstone under the turf, spiral glyphs, kerb stones
+  for(let l=-17;l<=17;l++)for(let o=-5;o<=3;o++)for(let y=28;y<34;y++)if(Math.abs(l)<17-(y-28)*.6&&noise3(l*.3,y*.5,o*.4)>.12)P(l,o,y,y===33&&hash3(l,o,3)<.5?M.moss:M.stone);
+  for(const sd of[-1,1]){for(const y of[8,14,20])for(let k=0;k<3;k++)P(sd*10+k-1,-5,y+(k&1),M.rune);const[cx,cz]=at(sd*19,-7);W.disc(cx,cz,2,5,3,M.stone);W.disc(cx,cz,6,6,2,M.moss)}
+  for(let a=0;a<6.3;a+=.35)P(Math.round(Math.cos(a)*3),-6,Math.round(30.5+Math.sin(a)*2.5),M.rune)},
+ dunes(P,M,at,W,door){if(door)return;for(const sd of[-1,1])for(let y=2;y<50;y++)for(let l=8;l<=23;l++)for(let o=-5;o<=6;o++)if(Math.abs(l-15.5)<=7.6-y*.07&&o>=-5+y*.05) // pylon gate: two battered towers with gold cornices and lapis bands, a lintel carrying a winged sun, steps
+    P(l*sd,o,y,y>46?M.gold:y%12===0?M.accent:ashlar(M,l+200,y,o));
+  for(let l=-9;l<=9;l++)for(let o=-3;o<=5;o++)for(let y=27;y<36;y++)P(l,o,y,y===35?M.gold:ashlar(M,l+300,y,o));for(let l=-11;l<=11;l++)for(let y=28;y<34;y++){const dq=Math.hypot(l,y-31);if(dq<3.2||(Math.abs(l)<11&&Math.abs(y-31-Math.abs(l)*.12)<1.2&&Math.abs(l)>2))P(l,-4,y,M.gold)}
+  for(let l=-24;l<=24;l++){for(let o=-12;o<=-1;o++)P(l,o,2,M.trim);for(let o=-8;o<=-1;o++)Math.abs(l)<22&&P(l,o,3,M.trim)}},
+ tundra(P,M,at,W,door){if(door){for(let l=-6;l<=6;l+=2)for(let y=2;y<26;y++)P(l,0,y,M.iron);for(let y=7;y<26;y+=6)for(let l=-7;l<=7;l++)P(l,0,y,M.iron);return} // castle gatehouse: two round towers with battlements and snow caps, a crenellated wall over the door, banners, icicles; portcullis in the door
+  for(const sd of[-1,1]){const[cx,cz]=at(sd*16,0);W.disc(cx,cz,2,46,7.5,(px,y,pz)=>ashlar(M,px,y,pz));W.disc(cx,cz,47,49,7.5,(px,y,pz)=>Math.hypot(px-cx,pz-cz)>5.8&&(Math.floor(Math.atan2(pz-cz,px-cx)*2.6)&1)?M.trim:-1);W.disc(cx,cz,47,47,5.8,M.snow);
+   for(let y=14;y<32;y++)for(let l=-2;l<=2;l++)P(sd*16+l,-8,y,y===14&&l&1?-1:l===0&&y%6===2?M.gold:M.accent)}
+  for(let l=-9;l<=9;l++)for(let o=-1;o<=3;o++){for(let y=27;y<40;y++)P(l,o,y,ashlar(M,l+100,y,o));if((l+20)%4<2)for(let y=40;y<43;y++)P(l,o,y,M.trim);P(l,o,(l+20)%4<2?43:40,M.snow)}
+  for(let l=-7;l<=7;l+=2)for(let y=26;y>26-2-(l*l)%4;y--)P(l,-1,y,M.ice[1])}};
 function cheb(N,seed){const d=new Int16Array(N*N);for(let i=0;i<N*N;i++)d[i]=seed(i)?0:999;
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){const i=z*N+x;let v=d[i];if(x>0)v=Math.min(v,d[i-1]+1);if(z>0){v=Math.min(v,d[i-N]+1);if(x>0)v=Math.min(v,d[i-N-1]+1);if(x<N-1)v=Math.min(v,d[i-N+1]+1)}d[i]=v}
  for(let z=N-1;z>=0;z--)for(let x=N-1;x>=0;x--){const i=z*N+x;let v=d[i];if(x<N-1)v=Math.min(v,d[i+1]+1);if(z<N-1){v=Math.min(v,d[i+N]+1);if(x<N-1)v=Math.min(v,d[i+N+1]+1);if(x>0)v=Math.min(v,d[i+N-1]+1)}d[i]=v}return d}
@@ -839,11 +850,13 @@ function genDungeon(def,seed){
   const l=ln+sg*k,ringV=inArch(dx,y-sp,Ln+4,Rr+2)&&!(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr));W.set(ax?l:a,y,ax?a:l,y===T0-1?M.top:ringV?(Math.floor(Math.atan2(y-sp,dx)*5)%2?M.trim:M.wall[2]):y>=T0-3?M.trim:ashlar(M,ax?l:a,y,ax?a:l))}};
  if(L.gate)for(const q of rooms){const X0=q.x*CV,Z0=q.z*CV,X1=(q.x+q.w)*CV-1,Z1=(q.z+q.h)*CV-1; // arched gateways where a passage crosses the room boundary
   for(const[a0,a1,ln,ax,sg]of[[X0,X1,Z0-1,0,-1],[X0,X1,Z1+1,0,1],[Z0,Z1,X0-1,1,-1],[Z0,Z1,X1+1,1,1]]){let s=-1;for(let a=a0;a<=a1+1;a++){const o=a<=a1&&open[(ax?a:ln)*SX+(ax?ln:a)];if(o&&s<0)s=a;if(!o&&s>=0){if(a-s>6&&a-s<40)frame(s,a-1,ln,ax,sg);s=-1}}}}
- let gate=null;if(def.zone){const q=rooms[0],v=CFG.vox,a0=Math.atan2(q.cz-rooms[start].cz,q.cx-rooms[start].cx); // find the bank on the side away from where you arrive (fanning out if that way is open)
-  for(let k=0;k<12&&!gate;k++){const a=a0+(k%2?-1:1)*Math.ceil(k/2)*.45,c=Math.cos(a),sn=Math.sin(a);let d=12;while(d<260&&dIn[Math.round(q.cz+sn*d)*SX+Math.round(q.cx+c*d)]>1)d++;const x=q.cx+c*d,z=q.cz+sn*d;if(d<30||d>=260||x<50||z<50||x>SX-50||z>SX-50)continue;
-   gate={x:x*v,z:z*v,face:Math.atan2(-c,-sn)};for(let e=0;e<=d;e+=4)for(let b=-10;b<=10;b++)for(let f=-10;f<=10;f++)lane[Math.round(q.cz+sn*e+b)*SX+Math.round(q.cx+c*e+f)]=1; // keep the approach to the door clear of props
-   for(let t=-40;t<=40;t++)for(let o=1;o<=26;o++){const px=Math.round(x+c*o-sn*t),pz=Math.round(z+sn*o+c*t),H=Math.round(W.sy-10-Math.abs(t)*.42-noise2(px*.2,pz*.2,41)*6); // raise a rock face behind it, so the doorway reads as cut into the hill
-    if(open[pz*SX+px])continue;for(let y=0;y<H;y++)W.set(px,y,pz,y>=H-1&&M.turf?M.turf[1]:noise3(px*.25,y*.4,pz*.25)>.55?M.wall[1]:M.stone)}}}
+ let gate=null;if(def.zone){const q=rooms[0],v=CFG.vox,ax=q.cx-rooms[start].cx,az=q.cz-rooms[start].cz; // dungeon entrance: on the bank of the gate glade, facing a compass direction so it can be built square in world voxels; prefer the side away from where you arrive
+  for(const[c,sn]of[[1,0],[-1,0],[0,1],[0,-1]].sort((a,b)=>(b[0]*ax+b[1]*az)-(a[0]*ax+a[1]*az))){let d=12;while(d<260&&dIn[(q.cz+sn*d)*SX+q.cx+c*d]>1)d++;const x=q.cx+c*d,z=q.cz+sn*d;if(gate||d<30||d>=260||x<50||z<50||x>SX-50||z>SX-50)continue;
+   gate={x:x*v,z:z*v,face:Math.atan2(-c,-sn)};for(let e=0;e<=d;e+=4)for(let b=-10;b<=10;b++)for(let f=-10;f<=10;f++)lane[(q.cz+sn*e+b)*SX+q.cx+c*e+f]=1; // keep the approach clear of props
+   const P=(l,o,y,m)=>m>=0&&W.set(x+c*o-sn*l,y,z+sn*o+c*l,m),at=(l,o)=>[x+c*o-sn*l,z+sn*o+c*l]; // l = sideways, o = depth into the hill (negative = out front), y = height
+   for(let l=-40;l<=40;l++)for(let o=1;o<=26;o++){const[px,pz]=at(l,o),H=Math.round(W.sy-10-Math.abs(l)*.42-noise2(px*.2,pz*.2,41)*6);if(!open[pz*SX+px])for(let y=0;y<H;y++)W.set(px,y,pz,y>=H-1&&M.turf?M.turf[1]:noise3(px*.25,y*.4,pz*.25)>.55?M.wall[1]:M.stone)} // rock face behind
+   GATE[def.id](P,M,at,W);for(let l=-7;l<=7;l++)for(let o=-1;o<=13;o++)for(let y=1;y<=26;y++)P(l,o,y,y===1?M.trim:o===13?M.groove:y>19&&Math.hypot(l,y-19)>7.4?-1:0); // the doorway itself: an arched passage cut 1.3 m into the hill, dark at the back
+   GATE[def.id](P,M,at,W,1)}}
  const addL=(x,z,h,c=def.pal.light,i=1.5)=>h!==undefined&&lights.push({x:x*CFG.vox,y:h,z:z*CFG.vox,c,i});
  for(const q of rooms){const X0=q.x*CV,Z0=q.z*CV,X1=(q.x+q.w)*CV-1,Z1=(q.z+q.h)*CV-1;
   if(q.w>=3&&q.h>=3){const ps=q.type==='boss'?[[1,1],[bs-1,1],[1,bs-1],[bs-1,bs-1]]:[[1,1],[q.w-1,1],[1,q.h-1],[q.w-1,q.h-1]];
@@ -936,7 +949,7 @@ function goTo(a,tx,tz,dt,stop=.2){const d=Math.hypot(tx-a.x,tz-a.z);if(d<=stop||
 
 // §8 ACTOR
 function actor(o){const a=Object.assign({x:0,z:0,face:0,hp:1,maxHp:1,radius:.38,speed:3,armor:0,dmgMul:1,haste:1,cd:{},atkCd:0,buffs:[],stun:0,threat:new Map(),
- moving:0,moveAmt:0,ph:0,atkT:0,atkDur:.4,atkN:0,castT:0,flash:0,seed:Math.random()*9,dead:false},o);R.scene.add(a.rig.root);return a}
+ inv:0,holdT:0,moving:0,moveAmt:0,ph:0,atkT:0,atkDur:.4,atkN:0,castT:0,flash:0,seed:Math.random()*9,dead:false},o);R.scene.add(a.rig.root);return a}
 const P=(a,v)=>v*a.dmgMul,hasBuff=(a,id)=>a.buffs.some(b=>b.id===id),buff=(a,b)=>{a.buffs=a.buffs.filter(x=>x.id!==b.id);b.acc=0;a.buffs.push(b)};
 function gearStats(g){const s={power:0,vit:0,armor:0,haste:0};for(const k in g)if(g[k])for(const st in g[k].stats)s[st]+=g[k].stats[st];return s}
 function spawnMember(cls,isPlayer,x,z){const C0=DB.CLASSES[cls],st=gearStats(S.save.gear[cls]);
@@ -949,7 +962,7 @@ function spawnFoe(type,x,z,pack,o={}){const d=S.run.def,E=DB.ENEMIES[type],k=S.r
 function spawnBoss(x,z){const d=S.run.def,B=DB.BOSSES[d.boss],k=S.run.scale,ab={};for(const n in B.abil)ab[n]=B.abil[n].first;
  const a=actor({team:'foe',type:d.boss,boss:1,name:d.bossName,maxHp:B.hp*k*(S.run.solo?CFG.solo.boss*(B.solo||1):1),dmg:B.dmg*k*(S.run.solo?CFG.solo.dmg*(B.solo||1):1),range:B.range,speed:B.speed,radius:B.radius,armor:B.armor,x,z,home:{x,z},pack:'boss',ab,phase:1,
   spawn:{boss:1,x,z},rig:MODEL[d.boss](d.bp),swL:[].concat(B.sw||'slash'),atkDur:.7});a.hp=a.maxHp;S.foes.push(a);foeBar(a);S.run.bossLeft=1;return a}
-function hit(src,t,amt,o={}){if(!t||t.dead)return 0;let v=amt*100/(100+(t.armor||0));
+function hit(src,t,amt,o={}){if(!t||t.dead)return 0;if(t.inv>0){num(t,'Dodged','#c8c0b0');return 0}let v=amt*100/(100+(t.armor||0));
  if(hasBuff(t,'bulwark'))v*=.5;if(hasBuff(t,'vuln'))v*=1.5;if(src&&src.team==='foe'&&omen('frenzy')&&src.hp<src.maxHp*.3)v*=1.2;
  v=Math.max(1,Math.round(v));t.hp-=v;t.flash=.12;
  if(t.team==='foe'&&src){t.threat.set(src,(t.threat.get(src)||0)+v*(src.role==='tank'?3:1));if(!t.aggro)aggroPack(t)}
@@ -1021,6 +1034,9 @@ function offerPerks(){const T=treeOf(S.sel.cls),el=$('.pick');S.pick=T.flatMap(c
  el.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>pickPerk(b.dataset.p))}
 function pickPerk(id){const pl=S.party.find(m=>m.isPlayer);S.save.perks[id]=(S.save.perks[id]||0)+1;PERK[id]&&PERK[id].on&&pl&&PERK[id].on(pl);S.pick=null;S.picks--;$('.pick').hidden=true;save();if(S.picks>0)offerPerks()}
 const ranked=(s,n)=>n?{...s,...Object.fromEntries(['dmg','heal','hps','dps'].filter(k=>s[k]).map(k=>[k,s[k]*(1+DB.RANK.eff*n)])),cd:s.cd*(1-DB.RANK.cd*n)}:s; // a skill at Mastery rank n
+function dodge(a){const D0=CFG.dodge,k=S.in.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),g=S.in.ground;if(!a||a.dead||a.stun>0||a.leap||(a.cd.dodge||0)>0)return; // roll the way you are moving, else toward the cursor
+ const d=mx||mz?Math.atan2(mx+mz,mz-mx):g?ang(a,g):a.face;let R0=D0.range;while(R0>.5&&!walk(a.x+Math.sin(d)*R0,a.z+Math.cos(d)*R0))R0-=.4;if(R0<=.5)return;
+ a.face=d;a.order=null;a.atkT=0;a.strike=null;a.inv=D0.inv;a.cd.dodge=D0.cd;a.leap={fx:a.x,fz:a.z,tx:a.x+Math.sin(d)*R0,tz:a.z+Math.cos(d)*R0,t:0,d:D0.dur,h:.3,quiet:1,s:{}};chips(a.x,.2,a.z,'#c8c0b0',8,{sp:.8,up:1.5,s:1.5})}
 function useSkill(a,id){const s=ranked(DB.SKILLS[id],a.isPlayer?S.save.perks[id]||0:0);if(a.dead||a.stun>0||(a.cd[id]||0)>0||a.leap||a.mp<s.cost)return 0;if(SKILL[id](a,s)){a.cd[id]=s.cd/a.haste;a.mp-=s.cost;return 1}return 0}
 const ready=(a,id)=>!((a.cd[id]||0)>0);
 function basic(a,t,dir){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=t?ang(a,t):dir;a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1));a.atkDur=clamp(a.atkCd*.95,.26,.7); // the swing fills the whole cycle, so held attacks flow into each other
@@ -1059,11 +1075,11 @@ function partyAI(a,dt){a.noMove=S.cmd.hold;const e=escape(a);if(e){goTo(a,e.x,e.
  AI[a.role](a,dt)}
 function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk,g=I.ground;
  const hv=I.hover=g?S.foes.reduce((b,f)=>!f.dead&&dist(f,g)<f.radius+.75&&(!b||dist(f,g)<dist(b,g))?f:b,null):null; // foe under the cursor (highlighted in animate)
- const nd=I.node=!hv&&g?S.nodes.find(n=>n.left>0&&dist(n,g)<1.2):null;if(I.down&&nd){a.order=null;if(dist(a,nd)>1.9)goTo(a,nd.x,nd.z,dt,1.7);else work(a,nd,dt)} // held on a gathering node: walk up and work it
+ const nd=I.node=!hv&&g?S.nodes.find(n=>n.left>0&&dist(n,g)<1.2):null;if(I.down&&nd){const R0=DB.NODES[nd.kind].reach;a.order=null;if(dist(a,nd)>R0)goTo(a,nd.x,nd.z,dt,R0-.2);else work(a,nd,dt)} // held on a gathering node: walk up and work it
  else if(I.down&&g){if(hv){const R0=C0.range+hv.radius;a.target=hv;a.order=null;if(dist(a,hv)>R0||(C0.ranged&&!los(a,hv)))goTo(a,hv.x,hv.z,dt,R0-.3);else basic(a,hv)}else a.order={x:g.x,z:g.z}} // held on a foe: close in and keep attacking; held on ground: walk there
  if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);if(!(a.atkT>0))a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
  else if(a.order&&goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null;
- if(!(I.down&&hv)){const t=k[' ']&&g?null:nearest(combatFoes().filter(f=>dist(a,f)<=C0.range+f.radius&&(!C0.ranged||los(a,f))),a);if(t)basic(a,t);else if(k[' ']&&g)basic(a,null,ang(a,g))}} // otherwise strike whatever comes into reach on your own; Space attacks toward the cursor
+ if(!(I.down&&hv)&&!nd){const t=nearest(combatFoes().filter(f=>dist(a,f)<=C0.range+f.radius&&(!C0.ranged||los(a,f))),a);if(t)basic(a,t)}} // otherwise strike whatever comes into reach on your own
 function foeAI(f,dt){f.alert=f.aggro;if(f.stun>0){f.cast=null;return}
  if(!f.aggro){for(const m of S.party)if(!m.dead&&dist(f,m)<CFG.aggroR&&los(f,m)){aggroPack(f);break}if(!f.aggro)return}
  const t=f.tgt=pickTarget(f);if(!t)return;if(f.boss)return BOSS[f.type](f,t,dt);const E=DB.ENEMIES[f.type],fr=omen('frenzy')&&f.hp<f.maxHp*.3?.7:1;f.windT=Math.max(0,(f.windT||0)-dt);
@@ -1236,11 +1252,12 @@ function makeItem(src,ilvl,o={}){const d=S.run?S.run.def:DB.DUNGEONS[0],rar=o.ra
  return{perk:slot==='weapon'&&rar>0?r.pick(DB.WPERKS):undefined,id:Math.random().toString(36).slice(2,9),name:`${r.pick(d.prefix)} ${base}${rar===4?' of the Last Vigil':''}`,slot,cls,rar,ilvl,stats,from:d.id}}
 const tradeNeed=l=>Math.round(DB.TRADE.base*DB.TRADE.grow**(l-1));
 function tradeXp(id,v){const T=S.save.trades[id];T.xp+=Math.round(v);while(T.lvl<DB.TRADE.max&&T.xp>=tradeNeed(T.lvl)){T.xp-=tradeNeed(T.lvl);T.lvl++;toast(`${DB.TRADES[id]} level ${T.lvl}!`)}save()}
-function tool(a,id){const r=a.rig;if(a.tool===id)return;if(r.toolM)r.handR.remove(r.toolM);r.toolM=id?equip(r,id,DB.TOOLMT):null;if(r.weapon)r.weapon.visible=!id;a.tool=id} // swap the weapon for a work tool (pick, hatchet, rod) and back
-function work(a,nd,dt){const N=DB.NODES[nd.kind],T=S.save.trades[N.trade],C=DB.TRADE;a.face=ang(a,nd);tool(a,N.tool);a.toolT=.5;a.workT=(a.workT||0)+dt*(1+T.lvl*C.speed); // hold on a node: swing at it; every N.time seconds (faster with trade level) it yields
- if(a.atkT<=0){a.sw=N.sw;a.atkDur=.55;a.atkT=.55;a.atkN++;chips(nd.x,.7,nd.z,N.col,5,{sp:.8,up:3,s:1.4})}if(a.workT<N.time)return;
- const rare=Math.random()<C.rare+T.lvl*C.rareLv,it=rare?N.rare:N.item;a.workT=0;nd.left--;S.save.mats[it]=(S.save.mats[it]||0)+1;num(nd,'+1 '+DB.MATS[it],rare?'#ffd36a':'#ffffff');if(rare)smite(nd,'#ffd36a');
- tradeXp(N.trade,N.xp*(rare?3:1));nd.rig.box.scale.setScalar(nd.kind==='ore'?.6+.4*nd.left/N.hauls:1);chips(nd.x,.6,nd.z,nd.kind==='ore'?'#8a8478':N.col,10,{sp:1.2,up:4,s:1.9}); // each haul knocks a piece off
+function tool(a,id){const r=a.rig;if(a.tool===id)return;if(r.toolM)r.handR.remove(r.toolM);r.toolM=id?equip(r,id,DB.TOOLMT):null;if(r.weapon)r.weapon.visible=!id;(r.offs||[]).forEach(m=>m.visible=!id);a.tool=id} // swap the weapon for a work tool (pick, hatchet, rod) and back
+function work(a,nd,dt){const N=DB.NODES[nd.kind],T=S.save.trades[N.trade],C=DB.TRADE;a.face=ang(a,nd);tool(a,N.tool);a.toolT=.5;a.workT=(a.workT||0)+dt*(1+T.lvl*C.speed);if(a.job!==nd){a.job=nd;a.workT=0;a.cast0=0} // hold on a node: stroke at it; every N.time seconds (faster with trade level) it yields
+ if(N.hold&&a.cast0&&a.atkT<=0){a.holdT=.3;if(Math.random()<dt*.9)ring(nd,.5,N.col,.5)} // fishing: once cast, stand still and wait, ripples round the float
+ else if(a.atkT<=0){a.sw=N.sw;a.atkN&=~1;a.atkDur=a.atkT=N.dur;a.cast0=1;a.strike=()=>N.hold?ring(nd,.6,N.col,.4):chips(nd.x,.7,nd.z,nd.kind==='ore'?'#8a8478':N.col,7,{sp:.9,up:3,s:1.5})} // one stroke; chips fly when it lands, not when it starts
+ if(a.workT<N.time)return;const rare=Math.random()<C.rare+T.lvl*C.rareLv,it=rare?N.rare:N.item;a.workT=0;a.cast0=0;nd.left--;S.save.mats[it]=(S.save.mats[it]||0)+1;num(nd,'+1 '+DB.MATS[it],rare?'#ffd36a':'#ffffff');if(rare)smite(nd,'#ffd36a');
+ tradeXp(N.trade,N.xp*(rare?3:1));nd.rig.box.scale.setScalar(nd.kind==='ore'?.6+.4*nd.left/N.hauls:1);if(N.hold)chips(nd.x,.3,nd.z,'#dff4ff',10,{sp:.6,up:4,s:1.4}); // the catch breaks the surface
  if(nd.left<=0){nd.t=N.respawn;nd.fall=nd.kind==='wood'?.7:.01}}
 const canCraft=R0=>Object.entries(R0.need).every(([k,n])=>(S.save.mats[k]||0)>=n);
 function craft(id){const R0=DB.RECIPES.find(q=>q.id===id),sv=S.save,lv=sv.trades[R0.trade].lvl;if(!canCraft(R0)||(R0.slot&&sv.bag.length>=CFG.bagMax))return;for(const k in R0.need)sv.mats[k]-=R0.need[k];
@@ -1267,7 +1284,7 @@ function startRun(zone){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],dep
   for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
   D.corr.forEach(m=>D.r.chance(.4)&&Math.hypot(m[0]-st.cx,m[1]-st.cz)*v>CFG.aggroR+4&&addPack(m[0],m[1],['warrior','warrior']));S.run.dreadReq=Math.max(1,Math.round(tot*CFG.dreadReq));
   S.nodes=D.nodes.map(o=>{const N=DB.NODES[o.kind],rg=MODEL.node(o.kind,def.pal);rg.root.position.set(o.x,o.kind==='fish'?-.08:0,o.z);rg.root.rotation.y=o.x*7;R.scene.add(rg.root);return{...o,radius:.8,left:N.hauls,t:0,rig:rg}});
-  if(zone){const G0=D.gate||{x:D.boss.cx*v,z:D.boss.cz*v,face:0},fx=Math.sin(G0.face),fz=Math.cos(G0.face);S.gate=MODEL.gate(def.pal,def.id);S.gate.root.position.set(G0.x,0,G0.z);S.gate.root.rotation.y=G0.face;R.scene.add(S.gate.root);
+  if(zone){const G0=D.gate||{x:D.boss.cx*v,z:D.boss.cz*v,face:0},fx=Math.sin(G0.face),fz=Math.cos(G0.face);S.gate=MODEL.gate(def.pal);S.gate.root.position.set(G0.x-fx*.25,0,G0.z-fz*.25);S.gate.root.rotation.y=G0.face;R.scene.add(S.gate.root);
    S.run.gateAt={x:G0.x+fx*.9,z:G0.z+fz*.9};D.lights.push({x:G0.x+fx*1.6,y:2.2,z:G0.z+fz*1.6,c:def.pal.rune,i:2.2})}
   else{const b=spawnBoss(D.boss.cx*v,D.boss.cz*v);b.bossLight=def.boss==='rider';if(b.bossLight){R.bossLight.color.set(def.bp.lantern);R.bossLight.intensity=2.2}}
   const p=S.party[0];S.cam.x=p.x;S.cam.z=p.z;S.mode='run';$('#load').hidden=true;buildHud();toast(zone?`${def.name}: find the dungeon gate`:`${def.name} · Depth ${depth}`)},40)}
@@ -1305,7 +1322,7 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  <div class="lbl">Layout</div><div class="row"><button data-m="charted" class="${sel.mode==='charted'?'on':''}">Charted (weekly seed)</button><button data-m="uncharted" class="${sel.mode==='uncharted'?'on':''}">Uncharted</button></div>
  <div class="det"><b>Depth ${dep}</b> · foes ×${(CFG.depthScale**(dep-1)).toFixed(2)} · timer ${fmt(d.timer)}<br>${om.length?om.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join(''):'<span class="muted">No omens yet. They begin at Depth 3.</span>'}</div>
  <button class="enter" id="go">Set out for ${DB.ZONES[sel.d].name}</button><button id="dive">Go straight down into the dungeon</button>
- <div class="help">WASD or hold left click to move. Hold left click on a foe to attack it; you also strike anything that comes into reach. Space attacks toward the cursor. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
+ <div class="help">WASD or hold left click to move. Hold left click on a foe to attack it; you also strike anything that comes into reach. Space dodges. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
  <header><h1>Grave Lantern</h1><div class="lbl">Morrowgate · party level ${S.save.lvl}</div></header>
  <section><span class="lbl">Your party</span><h2>Choose your role</h2>
  <div class="row">${Object.entries(DB.CLASSES).map(([k,c])=>`<button data-c="${k}" class="${sel.cls===k?'on':''}">${c.name}<br><small class="muted">${DB.ROLES[c.role]}</small></button>`).join('')}</div>
@@ -1392,7 +1409,7 @@ function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold l
  c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=false});
  c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
  addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title')return enterLobby();if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
-  if(S.pick)return;if(k==='q')eat(pl);if(k===' ')e.preventDefault();
+  if(S.pick)return;if(k==='q')eat(pl);if(k===' '){e.preventDefault();dodge(pl)}
   if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}});
  addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=false});addEventListener('resize',resize)}
 
@@ -1423,7 +1440,7 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
- for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt);a.calm=fight?0:a.calm+dt;if(a.tool&&(a.toolT-=dt)<=0)tool(a,null);if(S.run.solo&&a.calm>CFG.solo.calm)a.hp=Math.min(a.maxHp,a.hp+a.maxHp*CFG.solo.regen*dt);if(a.isPlayer)for(const id in PERK){const n=PERK[id].tick&&perk(id);if(n)PERK[id].tick(a,dt,n)}}
+ for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;a.inv-=dt;a.holdT-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt);a.calm=fight?0:a.calm+dt;if(a.tool&&(a.toolT-=dt)<=0)tool(a,null);if(S.run.solo&&a.calm>CFG.solo.calm)a.hp=Math.min(a.maxHp,a.hp+a.maxHp*CFG.solo.regen*dt);if(a.isPlayer)for(const id in PERK){const n=PERK[id].tick&&perk(id);if(n)PERK[id].tick(a,dt,n)}}
   if(a.strike&&a.atkT<=a.atkDur*(1-CFG.fx.strike)){const f=a.strike;a.strike=null;if(a.stun<=0){a.team==='foe'&&swoosh(a);f!==1&&f()}} // the blow lands here; a stun during the wind-up cancels it
   a.buffs=a.buffs.filter(b=>{b.t-=dt;b.acc+=dt;if(Math.random()<dt*12)chips(a.x+(Math.random()-.5)*.7,.2+Math.random()*1.4,a.z+(Math.random()-.5)*.7,DB.BUFFS[b.id]||'#fff',1,{sp:.1,up:1,g:-1.2,life:.6,s:1.3});if(b.acc>=.5){b.acc=0;if(b.dps)hit(b.src,a,b.dps*.5);if(b.hps)heal(b.src,a,b.hps*.5)}return b.t>0});
   if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*(L.h??1.4);chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
