@@ -135,7 +135,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
  town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.45,cd:.8,inv:.45,mid:1,ball:.62},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
- mana:7,water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
+ mana:7,props:{size:[1,.6],cell:16,res:.04},water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{robe:[.36,.22],cloth:[.2,.32,5,.014,.03],k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
@@ -619,7 +619,7 @@ const MODEL={
   const r=rig('bug','scarab',[{n:'shell',at:[0,.2,0],prims:[pe([0,.22,-.04],[.2,.14,.27],'sh'),pb([0,.3,-.04],[.008,.07,.25],'go'),pe([0,.2,.24],[.13,.09,.1],'dk'),pc([0,.24,.3],[0,.36,.46],.03,'go',{r2:.008}),pe([0,.26,.04],[.21,.02,.09],'go'),...both([pe([.07,.24,.3],[.02,.02,.02],'core')])]},
    {n:'legsL',p:'shell',at:[.14,.14,0],prims:[leg(1,.16),leg(1,0),leg(1,-.18)]},{n:'legsR',p:'shell',at:[-.14,.14,0],prims:[leg(-1,.16),leg(-1,0),leg(-1,-.18)]},{n:'sun',p:'shell',at:[0,.56,.02],prims:[pe([0,.58,.02],[.085,.085,.085],'core'),hoop([0,.58,.02],.095,.12,.57,.59,'go')]}],mt);
   r.root.scale.setScalar(1.7);r.hot='spirit';r.emit=[['sun',[0,.08,0],12,1.3]];return r},
- node(kind,P){ // gathering nodes: 'box' is the thing you work, 'stub' what is left while it regrows (rubble, a stump). Trees follow the zone: P.tree = oak | pine | palm
+ node(kind,P,res){ // gathering nodes: 'box' is the thing you work, 'stub' what is left while it regrows (rubble, a stump). Trees follow the zone: P.tree = oak | pine | palm
   const mt={st:[P.stone,'stone'],o:['#d08a4a','plate'],o2:['#ffd08a','none',1],w:[P.wood,'wood'],w2:['#2a1c12','wood'],w3:['#c9a878','wood'],lf:[P.leaf||'#3f6a3a','fur'],l2:[mix(P.leaf||'#3f6a3a','#000000',.28),'fur'],sn:[P.snow||'#eef4fb'],gl:['#bfe9ff','none',1]};
   const lf=(c,sz,m)=>pe(c,sz,m,{n:.08,nf:9}),roots=[0,1,2,3].map(i=>pc([0,.12,0],[Math.cos(i*1.6+.4)*.42,.02,Math.sin(i*1.6+.4)*.42],.07,'w',{r2:.02})),TR={
    oak:[pc([0,0,0],[.06,1.5,.03],.18,'w',{r2:.11}),...roots,pc([.05,1.2,.02],[.6,1.9,.25],.07,'w',{r2:.03}),pc([.05,1.3,0],[-.55,2,-.2],.07,'w',{r2:.03}),pc([.06,1.5,.03],[.05,2.2,-.1],.08,'w',{r2:.03}),
@@ -632,7 +632,8 @@ const MODEL={
     [[.2,.1,.1],[-.25,.08,-.15],[.05,.07,.3],[-.1,.06,-.35],[.35,.06,-.25]].map(c=>pe(c,[.15,.09,.13],'st',{n:.03,nf:9}))],
    wood:[TR[P.tree||'oak'],[pc([0,0,0],[0,.32,0],.19,'w'),pe([0,.33,0],[.17,.02,.17],'w3'),...roots]],
    fish:[[...[[.35,.2],[-.3,.3],[.05,-.4]].map(([x,z])=>pe([x,.03,z],[.16,.015,.16],'l2')),pe([0,.04,0],[.07,.03,.12],'gl'),pc([0,.04,-.1],[0,.05,-.2],.03,'gl',{r2:.05})],[pe([.3,.03,.2],[.14,.015,.14],'l2')]]};
-  const r=rig('static','node'+kind+P.stone+(P.tree||''),[{n:'box',at:[0,0,0],prims:K[kind][0]},{n:'stub',at:[0,0,0],hide:1,prims:K[kind][1]}],mt);r.hot='spirit';r.emit=[['box',[0,kind==='wood'?1.6:.55,0],2,.9]];return r},
+   for(const t in TR)K[t]=[TR[t],[]];K.rock=[[pe([0,.42,0],[.62,.5,.52],'st',{n:.1,nf:5}),pe([.38,.28,.26],[.36,.3,.32],'st',{n:.07,nf:7}),pe([-.36,.24,-.22],[.32,.26,.3],'st',{n:.06,nf:8}),pe([.05,.86,0],[.3,.07,.28],'l2',{n:.03,nf:12}),pe([-.3,.44,-.2],[.16,.05,.16],'lf',{n:.03,nf:12})],[]]; // scenery uses the very same shapes: oak / pine / palm / rock (props())
+  const r=rig('static','node'+kind+P.stone+(P.tree||'')+(res||''),[{n:'box',at:[0,0,0],prims:K[kind][0]},{n:'stub',at:[0,0,0],hide:1,prims:K[kind][1]}],mt,undefined,res);r.hot='spirit';r.emit=[['box',[0,kind==='wood'?1.6:.55,0],2,.9]];return r},
  gate(P){const mt={dk:['#050408'],ru:[P.rune,'none',1]}; // the way down: a dark veil in the doorway with a ring of burning glyphs (the stonework round it is stamped by GATE[zone])
   const r=rig('static','gate'+P.rune,[{n:'box',at:[0,0,0],prims:[pb([0,1.2,0],[.68,1.15,.03],'dk'),...[0,1,2,3,4,5,6,7,8].map(i=>{const a=i/9*TAU;return pe([Math.cos(a)*.42,1.3+Math.sin(a)*.42,.05],[.05,.07,.02],'ru')}),pe([0,1.3,.05],[.1,.1,.02],'ru')]}],mt);
   r.hot='spirit';r.emit=[['box',[0,1.3,.1],12,1.5],['box',[.4,.3,.1],3,1],['box',[-.4,.3,.1],3,1]];return r},
@@ -764,7 +765,7 @@ const WALL={ // wall column builder; G = gen context {W,M,def,L,T0,r}, d = dista
   if(nc&&d===2&&u===16&&T>21)NICHE[G.def.floor](W,M,x,z,5,G.r)},
  bank(G,x,z,d){const{W,M}=G,n=noise2(x*.09,z*.09,17),rk=noise2(x*.2,z*.2,19)>.7?4:0,h=Math.min(W.sy-14,Math.round(2+Math.min(d,8)*2.7+n*9)+rk); // sloped earth bank rising to an open moor, rock outcrops
   for(let y=d>4?h-6:0;y<h;y++)W.set(x,y,z,y>=h-1?(rk?M.stone:M.turf[Math.floor(n*3+hash3(x,z,3)*2)]):rk||noise3(x*.2,y*.4,z*.2)>.62?M.stone:M.floor[(y>>1)%3]);
-  if(!rk&&d>5&&hash3(x,z,33)<.0016*(G.def.pal.treeN??1))STAMP.tree(W,M,x,z,G.r,h)}}; // trees root in soil, never on bare rock, and thin out by biome (pal.treeN)
+  if(!rk&&d>5&&hash3(x,z,33)<.0009*(G.def.pal.treeN??1))STAMP.tree(W,M,x,z,G.r,h)}}; // trees root in soil, never on bare rock, and thin out by biome (pal.treeN)
 const HANG={ // per wall-adjacent floor column: (W,M,x,z,T,h) things hanging on / leaning on walls
  slab(W,M,x,z,T,h){if(h<.018)W.line([x,T-2,z],[x,T-13,z],k=>k%2?0:M.iron);else if(h<.03)W.line([x,T-1,z],[x,T-3-Math.floor(h*200),z],M.web)},
  earth(W,M,x,z,T,h){if(h<.05)for(let y=2;y<6+h*90;y++)W.set(x,y,z,y>8?M.wood:M.turf[3])}, // reeds and cattails at the bank foot
@@ -801,7 +802,7 @@ const STAMP={ // floor stamps block nav; wall stamps get (nx,nz) pointing into t
  statue(W,M,x,z,r){const mo=M.moss??M.stone;W.box(x-4,2,z-4,x+4,5,z+4,M.trim);for(let y=6;y<20;y++){const rad=3.2-(y-6)*.08;W.disc(x,z,y,y,rad,(px,yy,pz)=>hash3(px,y,pz)<.08?mo:M.stone)}
   W.box(x-3,19,z-2,x+3,21,z+2,M.stone);W.disc(x,z,22,25,2.1,M.stone);W.box(x-1,23,z+2,x+1,24,z+2,M.groove);W.box(x-1,15,z+3,x+1,18,z+4,M.stone);
   if(r.chance(.5))for(const s of[-1,1])W.box(x+s*3,13,z-3,x+s*6,24,z-3,(px,y)=>y>22-Math.abs(px-x)?-1:M.stone);W.block(x-4,z-4,x+4,z+4)},
- boulder(W,M,x,z,r){const a=r.int(3,6),b=r.int(3,6),h=r.int(4,11);W.box(x-a,2,z-b,x+a,2+h,z+b,(px,y,pz)=>((px-x)/a)**2+((pz-z)/b)**2+((y-2)/h)**2<1+noise3(px*.4,y*.4,pz*.4)*.5-.25?(y>h&&hash3(px,pz,4)<.4&&M.moss?M.moss:noise3(px*.3,y*.5,pz*.3)>.6?M.wall[1]:M.stone):-1);W.block(x-a+1,z-b+1,x+a-1,z+b-1);return 0}, // a weathered boulder, taller than a man at its largest
+ boulder(W,M,x,z,r){if(W.props){const k=r.range(.8,2);W.props.push(['rock',x,z,2,r.r(),k]);W.block(x-Math.round(4*k),z-Math.round(4*k),x+Math.round(4*k),z+Math.round(4*k));return 0}const a=r.int(3,6),b=r.int(3,6),h=r.int(4,11);W.box(x-a,2,z-b,x+a,2+h,z+b,(px,y,pz)=>((px-x)/a)**2+((pz-z)/b)**2+((y-2)/h)**2<1+noise3(px*.4,y*.4,pz*.4)*.5-.25?(y>h&&hash3(px,pz,4)<.4&&M.moss?M.moss:noise3(px*.3,y*.5,pz*.3)>.6?M.wall[1]:M.stone):-1);W.block(x-a+1,z-b+1,x+a-1,z+b-1);return 0}, // a weathered boulder, taller than a man at its largest
  rubble(W,M,x,z,r){for(let k=0;k<6;k++){const a=r.r()*TAU,d=r.r()*4,s=r.int(1,2);W.box(Math.round(x+Math.cos(a)*d),2,Math.round(z+Math.sin(a)*d),Math.round(x+Math.cos(a)*d)+s,2+s,Math.round(z+Math.sin(a)*d)+s,M.wall[k%3])}
   const al=r.chance(.5);for(let k=-7;k<=7;k++)W.disc(al?x+k:x,al?z:z+k,2,2,0,M.trim),W.box(al?x+k:x-1,2,al?z-1:z+k,al?x+k:x+1,4,al?z+1:z+k,(px,y,pz)=>Math.abs(k)===7?M.trim:M.wall[0]);W.block(x-7,z-7,x+7,z+7)},
 };
@@ -810,7 +811,7 @@ const TREEV={ // world-tree shapes for zones whose palette names one (pal.tree);
   for(let y=6;y<H+2;y++){const t=(y-6)/(H-4),R0=(1-t)*7*(1-.35*((y%6)/6))+.6;W.disc(x+.5,z,y0+y,y0+y,R0,(px,py,pz)=>M.snow&&y%6===5&&hash3(px,py,pz)<.6?M.snow:hash3(px,py,pz)<.85?M.leaf:M.moss)}},
  palm(W,M,x,z,r,y0){const H=Math.min(W.sy-8-y0,r.int(24,32)),t=[x+r.range(-6,6),y0+H,z+r.range(-6,6)];for(const o of[0,1])W.line([x+o,y0,z],[t[0]+o,t[1],t[2]],k=>k%5?M.wood:M.groove); // leaning ringed trunk, drooping fronds
   for(let i=0;i<7;i++){const a=i/7*TAU+r.r(),m=[t[0]+Math.cos(a)*6,t[1]+3,t[2]+Math.sin(a)*6],e=[t[0]+Math.cos(a)*12,t[1]-4,t[2]+Math.sin(a)*12];W.line(t,m,M.leaf);W.line(m,e,M.leaf);W.line([m[0],m[1]+1,m[2]],[e[0],e[1]+1,e[2]],M.moss)}}};
-Object.assign(STAMP,{tree(W,M,x,z,r,y0=2){if(TREEV[W.tree]){TREEV[W.tree](W,M,x,z,r,y0);if(y0===2)W.block(x-1,z-1,x+1,z+1);return}const H=Math.min(W.sy-3-y0,r.int(22,34)),lx=r.range(-4,4),lz=r.range(-4,4),at=t=>[x+lx*t*t,y0+H*t,z+lz*t*t]; // dead tree: leaning trunk, forked bare boughs
+Object.assign(STAMP,{tree(W,M,x,z,r,y0=2){if(W.props){W.props.push([W.tree||'oak',x,z,y0,r.r()]);if(y0===2)W.block(x-1,z-1,x+1,z+1);return 1.3} /* zones: scenery trees are fine-voxel models placed by props(), not world voxels */if(TREEV[W.tree]){TREEV[W.tree](W,M,x,z,r,y0);if(y0===2)W.block(x-1,z-1,x+1,z+1);return}const H=Math.min(W.sy-3-y0,r.int(22,34)),lx=r.range(-4,4),lz=r.range(-4,4),at=t=>[x+lx*t*t,y0+H*t,z+lz*t*t]; // dead tree: leaning trunk, forked bare boughs
   for(const[ox,oz]of[[0,0],[1,0],[0,1]])W.line([x+ox,y0,z+oz],at(ox||oz?.6:1),M.wood);W.disc(x,z,y0,y0+1,1.6,M.wood);
   for(let k=0,n=r.int(4,6);k<n;k++){const p=at(r.range(.45,.95)),a=r.r()*TAU,L=r.range(5,11),e=[p[0]+Math.cos(a)*L,Math.min(W.sy-1,p[1]+L*r.range(.3,.9)),p[2]+Math.sin(a)*L];W.line(p,e,M.wood);
    W.line(e,[e[0]+Math.cos(a+1)*L*.5,Math.min(W.sy-1,e[1]+L*.4),e[2]+Math.sin(a+1)*L*.5],M.wood);
@@ -848,7 +849,7 @@ function cheb(N,seed){const d=new Int16Array(N*N);for(let i=0;i<N*N;i++)d[i]=see
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){const i=z*N+x;let v=d[i];if(x>0)v=Math.min(v,d[i-1]+1);if(z>0){v=Math.min(v,d[i-N]+1);if(x>0)v=Math.min(v,d[i-N-1]+1);if(x<N-1)v=Math.min(v,d[i-N+1]+1)}d[i]=v}
  for(let z=N-1;z>=0;z--)for(let x=N-1;x>=0;x--){const i=z*N+x;let v=d[i];if(x<N-1)v=Math.min(v,d[i+1]+1);if(z<N-1){v=Math.min(v,d[i+N]+1);if(x<N-1)v=Math.min(v,d[i+N+1]+1);if(x>0)v=Math.min(v,d[i+N-1]+1)}d[i]=v}return d}
 function genDungeon(def,seed){
- const r=rng(seed),{cell:CV,wallH,wallT,sy}=CFG,N=def.lay.cells||CFG.cells,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];W.tree=def.pal.tree; // which tree shape this place grows (zones only)
+ const r=rng(seed),{cell:CV,wallH,wallT,sy}=CFG,N=def.lay.cells||CFG.cells,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];W.tree=def.pal.tree;if(def.zone)W.props=[]; // which tree shape this place grows (zones only)
  const free=(x,z,w,h)=>{for(let j=z-1;j<=z+h;j++)for(let i=x-1;i<=x+w;i++)if(occ[j*N+i]>=0)return false;return true};
  const put=(x,z,w,h,type)=>{for(let j=z;j<z+h;j++)for(let i=x;i<x+w;i++)occ[j*N+i]=rooms.length;rooms.push({x,z,w,h,type,cx:(x+w/2)*CV,cz:(z+h/2)*CV})};
  const bs=def.lay.arena.size;for(let t=0;t<300&&!rooms.length;t++){const x=r.int(1,N-1-bs),z=r.int(1,N-1-bs);if(free(x,z,bs,bs))put(x,z,bs,bs,'boss')}
@@ -904,7 +905,7 @@ function genDungeon(def,seed){
   const[nx,nz]=[[0,1],[0,-1],[1,0],[-1,0]][(i&1)+(open[z*SX+x-L.w-3]?0:2)];for(let k=0;k<24&&dIn[z*SX+x]>1;k++){x-=nx;z-=nz}if(dIn[z*SX+x]===1&&!open[(z-nz)*SX+x-nx])addL(x,z,STAMP[L.hall[0]](W,M,x,z,r,nx,nz))});
  for(const[kind,n]of def.nodes||[])for(let i=0,t=0;i<n&&t<60;t++){const q=r.pick(rooms),a=r.r()*TAU,d0=r.range(...DB.NODES[kind].at)*Math.min(q.w,q.h)*CV/2,x=Math.round(q.cx+Math.cos(a)*d0),z=Math.round(q.cz+Math.sin(a)*d0),v=CFG.vox; // gathering nodes scattered through the clearings
   if(q.type==='start'||dIn[z*SX+x]<(kind==='fish'?12:5)||lane[z*SX+x]||W.blk[z*SX+x]||(kind!=='fish'&&W.get(x,0,z)===M.water)||nodes.some(o=>Math.hypot(o.x-x*v,o.z-z*v)<3))continue;i++;nodes.push({kind,x:x*v,z:z*v});if(kind==='fish'){W.disc(x,z,1,4,8,0);W.disc(x,z,0,0,8,M.water);W.disc(x,z,1,1,8,(a,b,c)=>Math.hypot(a-x,c-z)>7?M.stone:-1)}} // a fishing spot is a stone-rimmed pool
- return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,gate,r}}
+ return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,gate,r,props:W.props||[]}}
 
 function genLobby(){ // plaza + procedurally assembled Gothic chapel (grammar: walls → buttresses → windows → roof → tower → portal → rose → spire)
  const P=DB.LOBBY,W=new Vox(200,196,220),M=mats(W,P),lights=[],r=rng(7);
@@ -1302,7 +1303,12 @@ function gainXp(v){const sv=S.save,L=DB.LEVEL;if(sv.lvl>=L.max||!v)return;sv.xp+
 function loadSave(){let s=null;try{s=JSON.parse(localStorage.getItem(CFG.saveKey))}catch(e){}
  if(!s){s={gear:{},bag:[],sigil:{},best:{},cls:'templar'};for(const c in DB.CLASSES){s.gear[c]={};const it=makeItem('starter',5);it.name='Worn '+(DB.BASES.chest[0]);s.gear[c].chest=it}}s.lvl=s.lvl||1;s.xp=s.xp||0;s.perks=s.perks||{};s.mats=s.mats||{};s.trades=s.trades||{};for(const t in DB.TRADES)s.trades[t]=s.trades[t]||{lvl:1,xp:0};s.world=s.world||(Math.random()*4e9>>>0);for(const c in DB.CLASSES)s.gear[c]=s.gear[c]||{};return s}
 const save=()=>{try{localStorage.setItem(CFG.saveKey,JSON.stringify(S.save))}catch(e){}};
-function clearRun(){for(const a of[...S.party,...S.foes,...S.nodes]){R.scene.remove(a.rig.root);if(a.bar)a.bar.remove()}S.party=[];S.foes=[];S.nodes=[];if(S.gate){R.scene.remove(S.gate.root);S.gate=null}
+function props(L,P){const C=CFG.props,v=CFG.vox,by={},M=new THREE.Matrix4(),q=new THREE.Quaternion(),Y=new THREE.Vector3(0,1,0);R.props.clear(); // scenery (trees, rocks): the same fine-voxel models as the gathering nodes, drawn instanced. One batch per kind per map cell, so off-screen cells are culled
+ for(const p of L){const k=p[0]+':'+Math.floor(p[1]*v/C.cell)+':'+Math.floor(p[2]*v/C.cell);(by[k]=by[k]||[]).push(p)}
+ for(const k in by){const[kind,cx,cz]=k.split(':'),rg=MODEL.node(kind,P,C.res),ox=(+cx+.5)*C.cell,oz=(+cz+.5)*C.cell;rg.root.updateMatrixWorld(true);rg.root.traverse(o=>{if(!o.isMesh||!o.parent.visible)return;const im=new THREE.InstancedMesh(o.geometry,o.material===R.matE?R.matE:R.propMat,by[k].length);
+   o.geometry.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,2,0),C.cell);im.position.set(ox,0,oz);im.castShadow=im.receiveShadow=true;
+   by[k].forEach(([,x,z,y0,a,s0],i)=>{const s=s0||C.size[0]+a*C.size[1];im.setMatrixAt(i,M.compose(new THREE.Vector3(x*v-ox,(y0-2)*v,z*v-oz),q.setFromAxisAngle(Y,a*TAU),new THREE.Vector3(s,s,s)).multiply(o.matrixWorld))});R.props.add(im)})}}
+function clearRun(){R.props.clear();for(const a of[...S.party,...S.foes,...S.nodes]){R.scene.remove(a.rig.root);if(a.bar)a.bar.remove()}S.party=[];S.foes=[];S.nodes=[];if(S.gate){R.scene.remove(S.gate.root);S.gate=null}
  for(const k of['tele','proj','haz','loot','debris','lob'])S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.g||o.o));for(const k in S.fx)if(k!=='nums')S.fx[k]=[];
  S.fx.nums.forEach(n=>n.el.remove());S.fx.nums=[];R.world.children.slice().forEach(m=>{m.geometry.dispose();R.world.remove(m)});if(S.chest){R.scene.remove(S.chest.root);S.chest=null}}
 const zoneDef=i=>{const Z=DB.ZONES[i],D0=DB.DUNGEONS[Z.d];return{...D0,...DB.ZONE,id:Z.id,name:Z.name,zone:1,pal:{...D0.pal,...Z.pal}}}; // a zone borrows its dungeon's palette and foes, with the shared outdoor layout
@@ -1316,6 +1322,7 @@ function startRun(zone,out){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d]
   for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
   D.corr.forEach(m=>D.r.chance(.4)&&Math.hypot(m[0]-st.cx,m[1]-st.cz)*v>CFG.aggroR+4&&addPack(m[0],m[1],['warrior','warrior']));S.run.dreadReq=Math.max(1,Math.round(tot*CFG.dreadReq));
   S.nodes=D.nodes.map(o=>{const N=DB.NODES[o.kind],rg=MODEL.node(o.kind,def.pal);rg.root.position.set(o.x,o.kind==='fish'?-.08:0,o.z);rg.root.rotation.y=o.x*7;R.scene.add(rg.root);return{...o,radius:.8,left:N.hauls,t:0,rig:rg}});
+  props(D.props,def.pal);
   if(zone){const G0=D.gate||{x:D.boss.cx*v,z:D.boss.cz*v,face:0},fx=Math.sin(G0.face),fz=Math.cos(G0.face);S.gate=MODEL.gate(def.pal);S.gate.root.position.set(G0.x-fx*.25,0,G0.z-fz*.25);S.gate.root.rotation.y=G0.face;R.scene.add(S.gate.root);
    S.run.gateAt={x:G0.x+fx*.9,z:G0.z+fz*.9};D.lights.push({x:G0.x+fx*1.6,y:2.2,z:G0.z+fz*1.6,c:def.pal.rune,i:2.2});
     if(out)S.party.forEach((m,i)=>{m.x=G0.x+fx*3.2+fz*(i-1)*1.2;m.z=G0.z+fz*3.2-fx*(i-1)*1.2;m.face=G0.face})} // coming back out of the dungeon: stand outside its gate
@@ -1449,7 +1456,7 @@ function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold l
 
 // §16 LOOP
 function addCut(mat){mat.onBeforeCompile=sh=>{Object.assign(sh.uniforms,{uP:R.cut.p,uC:R.cut.c,uOn:R.cut.on});
- sh.vertexShader='varying vec3 vW;varying vec3 vNo;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvW=(modelMatrix*vec4(transformed,1.0)).xyz;vNo=normal;');
+ sh.vertexShader='varying vec3 vW;varying vec3 vNo;\n'+sh.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvW=(modelMatrix*\n#ifdef USE_INSTANCING\ninstanceMatrix*\n#endif\nvec4(transformed,1.0)).xyz;vNo=normal;');
  sh.fragmentShader='uniform vec3 uP;uniform vec3 uC;uniform float uOn;varying vec3 vW;varying vec3 vNo;\n'+sh.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
  if(uOn>.5&&vW.y>uP.y+.3){vec3 d=normalize(uC-uP),q=vW-uP;float t=dot(q,d);if(t>0.){float dd=length(q-d*t),r=2.8*clamp(t/2.5,.35,1.);
  float n=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453);if(n>smoothstep(r*.55,r,dd))discard;}}`).replace('#include <color_fragment>',`#include <color_fragment>
@@ -1475,7 +1482,7 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
   const m=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,vertexShader:'uniform mat4 uVP;varying vec4 vC;varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;vC=uVP*w;gl_Position=projectionMatrix*viewMatrix*w;}',
    fragmentShader:'uniform sampler2D uTex;uniform float uT;uniform vec2 uK;varying vec4 vC;varying vec3 vW;void main(){vec2 c=floor(vW.xz*10.);vec2 uv=vC.xy/vC.w*.5+.5+vec2(sin(c.y*1.7+uT*2.),cos(c.x*1.3+uT*1.6))*uK.y;gl_FragColor=vec4(texture2D(uTex,uv).rgb,uK.x);}'}));
   m.rotation.x=-Math.PI/2;m.position.y=C.y;m.visible=false;R.scene.add(m);R.mirror={rt,u,mesh:m,cam:new THREE.PerspectiveCamera()}}
- R.cord=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial(),CFG.cord.max);R.cord.setColorAt(0,new THREE.Color());R.cord.count=0;R.cord.frustumCulled=false;R.scene.add(R.cord);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
+ R.props=new THREE.Group();R.scene.add(R.props);R.propMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8});addCut(R.propMat); /* scenery fades out between the camera and the player, like walls */R.cord=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial(),CFG.cord.max);R.cord.setColorAt(0,new THREE.Color());R.cord.count=0;R.cord.frustumCulled=false;R.scene.add(R.cord);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
