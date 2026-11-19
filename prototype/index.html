@@ -206,7 +206,7 @@ const DB={
   {id:'marsh',d:0,name:'Vael Marsh',pal:{tree:'oak',leaf:'#2f4a34',turf:['#2f3a30','#38443a','#414e40','#4a5846','#343c34'],water:'#10202a',moss:'#3a4a34',grass:'#56684a'}},{id:'moor',d:1,name:'Hollow Moor',pal:{tree:'oak',leaf:'#4a6a2e'}},
   {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{tree:'palm',treeN:.2,leaf:'#6a8a3a',turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
   {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',treeN:.7,leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
- ZONE:{floor:'earth',foes:.6,lay:{shapes:['cave','cave','round'],boss:'round',path:'wind',w:13,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
+ ZONE:{floor:'earth',foes:.6,lay:{shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:8,links:4,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
   decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
  NODES:{ // gathering nodes: hold left click on one to work it. time = seconds per haul, hauls before it is spent, respawn seconds
   ore:{name:'Ore vein',at:[.7,.95],tool:'pick',trade:'mining',item:'ore',rare:'gem',time:1.6,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'chop'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',trade:'fishing',item:'fish',rare:'pearl',time:2.4,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'cast'},
@@ -608,10 +608,21 @@ const MODEL={
    wood:[TR[P.tree||'oak'],[pc([0,0,0],[0,.32,0],.19,'w'),pe([0,.33,0],[.17,.02,.17],'w3'),...roots]],
    fish:[[...[[.35,.2],[-.3,.3],[.05,-.4]].map(([x,z])=>pe([x,.03,z],[.16,.015,.16],'l2')),pe([0,.04,0],[.07,.03,.12],'gl'),pc([0,.04,-.1],[0,.05,-.2],.03,'gl',{r2:.05})],[pe([.3,.03,.2],[.14,.015,.14],'l2')]]};
   const r=rig('static','node'+kind+P.stone+(P.tree||''),[{n:'box',at:[0,0,0],prims:K[kind][0]},{n:'stub',at:[0,0,0],hide:1,prims:K[kind][1]}],mt);r.hot='spirit';r.emit=[['box',[0,kind==='wood'?1.6:.55,0],2,.9]];return r},
- gate(P){const mt={st:[P.stone,'stone'],tr:[P.trim,'stone'],ru:[P.rune,'none',1],dk:['#06050a']}; // dungeon gate: a rune-cut stone arch around a dark doorway, glyphs burning
-  const r=rig('static','gate'+P.stone,[{n:'box',at:[0,0,0],prims:[...both([pb([1,1.3,0],[.32,1.3,.4],'st',{r:.03}),pb([1,.12,0],[.42,.12,.5],'tr'),...[.5,1.1,1.7,2.3].map((y,i)=>pb([1,y,.41],[.1,.14,.012],i%2?'ru':'tr'))]),
-    pf([[-1.4,1.4],[2.4,3.5],[-.42,.42]],(x,y)=>{const d=Math.hypot(x,(y-2.4)*1.25);return y>=2.4&&d<1.36&&d>.72},'st'),pf([[-1.4,1.4],[2.4,3.5],[.4,.44]],(x,y)=>{const d=Math.hypot(x,(y-2.4)*1.25);return y>=2.4&&Math.abs(d-1.04)<.07&&Math.sin(Math.atan2(y-2.4,x)*9)>0},'ru'),
-    pb([0,1.3,-.05],[.7,1.3,.05],'dk'),pe([0,3.1,.3],[.16,.2,.1],'ru')]}],mt);r.hot='spirit';r.emit=[['box',[0,1.4,.2],10,1.6],['box',[.9,2.6,.4],4,1],['box',[-.9,2.6,.4],4,1]];return r},
+ gate(P,kind){ // dungeon entrance, one design per zone id, built facing +z with the dark doorway at z=0 so it can be backed into a rock face: marsh = pillared mausoleum, moor = turfed barrow with a trilithon door, dunes = pylon gate with a winged sun, tundra = twin-towered gatehouse with a portcullis
+  const mt={st:[P.stone,'stone'],tr:[P.trim,'stone'],ru:[P.rune,'none',1],dk:['#06050a'],ir:[P.iron,'plate'],go:[P.gold,'plate'],tf:[P.turf?P.turf[2]:P.stone,'fur'],ac:[P.accent,'cloth'],sn:[P.snow||'#eef4fb'],wx:[P.wax],fl:[P.flame,'none',1],bone:[P.bone,'bone'],eye:[P.rune,'none',1]};
+  const door=[pb([0,1.25,-.12],[.72,1.25,.1],'dk'),pb([0,.06,.5],[1.1,.06,.5],'tr')],glyph=(x,y,z)=>pb([x,y,z],[.07,.1,.012],'ru'),G={
+   marsh:[...door,pb([0,1.7,-.45],[2.1,1.7,.3],'st'),pb([0,.12,1],[2.1,.12,.5],'tr'),pb([0,.3,.72],[1.9,.1,.3],'tr'),...both([...[1,1.75].flatMap(x=>[py([x,1.6,.5],.15,1.25,'st'),pb([x,.42,.5],[.21,.07,.21],'tr'),pb([x,2.9,.5],[.21,.07,.21],'tr')]),
+     py([2.2,.5,1.1],.06,.25,'wx'),pe([2.2,.82,1.1],[.04,.06,.04],'fl')]),pb([0,3.1,.35],[2.1,.14,.5],'tr'),pf([[-2.1,2.1],[3.24,4.2],[-.1,.8]],(x,y)=>Math.abs(x)<2.05-(y-3.24)*2.2,'st'),pb([0,4.4,.35],[.06,.3,.06],'ir'),pb([0,4.5,.35],[.2,.05,.06],'ir'),
+    ...[-2,-1,0,1,2].map(i=>pc([i*.27,.1,.02],[i*.27,2.3,.02],.028,'ir')),pb([0,2.35,.02],[.72,.04,.04],'ir'),...[-1,0,1].map(i=>glyph(i*.5,3.6,.81))],
+   moor:[...door,pf([[-3,3],[0,2.9],[-3,.5]],(x,y,z)=>(x/2.9)**2+(y/2.8)**2+((z+1.2)/1.75)**2<1&&!(Math.abs(x)<.74&&y<2.5&&z>-.2),'tf'),...both([pb([.98,1.3,.3],[.3,1.3,.34],'st',{n:.05,nf:5}),pe([1.9,.2,.9],[.3,.22,.28],'st',{n:.04,nf:6}),pe([2.6,.16,.5],[.24,.18,.24],'st',{n:.04,nf:6}),
+     ...[.7,1.3,1.9].map(y=>glyph(.98,y,.65))]),pb([0,2.82,.3],[1.5,.26,.42],'st',{n:.05,nf:5}),...tr(scl(tr(SKULL(),[0,-1.63,0]),2.2),[0,3.25,.55]),...[0,1,2,3,4].map(i=>pf([[-.4,.4],[2.6,3.05],[.72,.74]],(x,y)=>Math.abs(Math.hypot(x,y-2.82)-.06-i*.07)<.016&&i<3,'ru'))],
+   dunes:[...door,...both([pf([[.65,2.6],[0,4.4],[-.6,.6]],(x,y,z)=>Math.abs(x-1.6)<.92-y*.07&&Math.abs(z)<.55-y*.04,'st'),pb([1.6,4.45,0],[.75,.1,.52],'go'),pb([1.6,4.62,0],[.85,.07,.6],'st'),...[1,1.9,2.8].map(y=>pb([1.6,y,.52-y*.04],[.6-y*.05,.05,.02],'ac')),
+     ...[1.45,2.35].map(y=>glyph(1.6,y,.52-y*.04)),pf([[2.7,3.3],[0,3],[.6,1.2]],(x,y,z)=>Math.abs(x-3)+Math.abs(z-.9)<.26-y*.06,'st'),pf([[2.8,3.2],[2.9,3.3],[.7,1.1]],(x,y,z)=>Math.abs(x-3)+Math.abs(z-.9)<(3.25-y)*.3,'go')]),
+    pb([0,2.9,0],[.8,.35,.48],'st'),pe([0,2.95,.5],[.26,.26,.06],'go'),...both([pf([[.2,1],[2.8,3.15],[.48,.54]],(x,y)=>y<3.12-(x-.2)*.25&&y>2.9-(x-.2)*.05,'go')]),pb([0,.14,1.1],[2.6,.14,.5],'tr'),pb([0,.34,.8],[2.3,.1,.25],'tr')],
+   tundra:[...door,...both([py([1.55,2.2,.1],.72,2.2,'st'),pe([1.55,4.75,.1],[.6,.5,.6],'sn'),...[0,1,2,3,4,5].map(i=>pb([1.55+Math.cos(i*1.047)*.68,4.5,.1+Math.sin(i*1.047)*.68],[.14,.16,.14],'st')),pb([1.55,2.6,.83],[.05,.25,.02],'dk'),
+     pb([1.55,1.9,.86],[.28,.6,.02],'ac'),glyph(1.55,2,.88),pe([1.55,.25,.9],[.5,.18,.3],'sn')]),pb([0,3.1,-.05],[.9,.5,.42],'st'),...[-2,-1,0,1,2].map(i=>pb([i*.36,3.74,-.05],[.12,.14,.42],'st')),pe([0,3.95,-.05],[.9,.1,.44],'sn'),
+    ...[-2,-1,0,1,2].map(i=>pc([i*.27,.5,.04],[i*.27,2.5,.04],.03,'ir',{r2:.03})),...[.9,1.5,2.1].map(y=>pb([0,y,.04],[.72,.03,.03],'ir')),...[-3,-2,-1,0,1,2,3].map(i=>pc([i*.2,2.58,.2],[i*.2,2.3-(i&1)*.14,.2],.03,'sn',{r2:.004}))]};
+  const r=rig('static','gate'+kind+P.stone,[{n:'box',at:[0,0,0],prims:G[kind]||G.marsh}],mt,undefined,.04);r.hot='spirit';r.emit=[['box',[0,1.3,.25],10,1.6],['box',[.6,2.2,.3],3,1],['box',[-.6,2.2,.3],3,1]];return r},
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
 function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
@@ -679,6 +690,7 @@ const SKULL=()=>[pe([0,1.64,-.01],[.082,.092,.1],'bone'),pb([0,1.636,.076],[.07,
 const SHAPE={ // room footprint in unit coords (u,v in -1..1 across the room rect q); the room centre is always open
  rect:()=>true,round:(u,v)=>u*u+v*v<=1,oct:(u,v)=>Math.abs(u)+Math.abs(v)<=1.55,diamond:(u,v)=>Math.abs(u)+Math.abs(v)<=1.25,cross:(u,v)=>Math.abs(u)<.46||Math.abs(v)<.46,
  hall:(u,v,q)=>{const k=Math.max(q.w/q.h,q.h/q.w),[l,sh]=q.w>=q.h?[u,v]:[v,u];return Math.hypot(Math.max(0,Math.abs(l)*k-(k-1)),sh)<=1}, // long hall with apse ends
+ glade:(u,v,q)=>{const a=Math.atan2(v,u);return Math.hypot(u,v)<=.84+.3*noise2(Math.cos(a)*1.4+q.x*9,Math.sin(a)*1.4+q.z*9,6)}, // broad open clearing with a wandering edge
  cave:(u,v,q)=>{const a=Math.atan2(v,u);return Math.hypot(u,v)<=.6+.42*noise2(Math.cos(a)*1.7+q.x*9,Math.sin(a)*1.7+q.z*9,5)}};
 const PATH={ // corridor centre-line (polyline of voxel points, middle point = pack spot) between rooms A and B
  straight:(A,B,r)=>[[A.cx,A.cz],r.chance(.5)?[B.cx,A.cz]:[A.cx,B.cz],[B.cx,B.cz]],
@@ -800,11 +812,11 @@ function genDungeon(def,seed){
  const free=(x,z,w,h)=>{for(let j=z-1;j<=z+h;j++)for(let i=x-1;i<=x+w;i++)if(occ[j*N+i]>=0)return false;return true};
  const put=(x,z,w,h,type)=>{for(let j=z;j<z+h;j++)for(let i=x;i<x+w;i++)occ[j*N+i]=rooms.length;rooms.push({x,z,w,h,type,cx:(x+w/2)*CV,cz:(z+h/2)*CV})};
  const bs=def.lay.arena.size;for(let t=0;t<300&&!rooms.length;t++){const x=r.int(1,N-1-bs),z=r.int(1,N-1-bs);if(free(x,z,bs,bs))put(x,z,bs,bs,'boss')}
- for(let t=0;t<500&&rooms.length<8;t++){const w=r.int(2,3),h=r.int(2,3),x=r.int(1,N-1-w),z=r.int(1,N-1-h);if(free(x,z,w,h))put(x,z,w,h,'room')}
+ const RM=def.lay.room||[2,3];for(let t=0;t<500&&rooms.length<(def.lay.rooms||8);t++){const w=r.int(...RM),h=r.int(...RM),x=r.int(1,N-1-w),z=r.int(1,N-1-h);if(free(x,z,w,h))put(x,z,w,h,'room')}
  const rd=(a,b)=>Math.hypot(a.cx-b.cx,a.cz-b.cz),E=[],inT=[0];
  while(inT.length<rooms.length){let b=null;for(const i of inT)for(let j=0;j<rooms.length;j++)if(!inT.includes(j)){const d=rd(rooms[i],rooms[j]);if(!b||d<b[2])b=[i,j,d]}E.push(b);inT.push(b[1])}
  const extra=[];for(let i=1;i<rooms.length;i++)for(let j=i+1;j<rooms.length;j++)if(!E.some(e=>(e[0]===i&&e[1]===j)||(e[0]===j&&e[1]===i)))extra.push([i,j,rd(rooms[i],rooms[j])]);
- extra.sort((a,b)=>a[2]-b[2]);if(extra[0])E.push(extra[0]);
+ extra.sort((a,b)=>a[2]-b[2]);for(let i=0;i<(def.lay.links||1)&&extra[i];i++)E.push(extra[i]); // links = extra connections beyond the spanning tree (loops)
  const adj=rooms.map(()=>[]);E.forEach(([a,b])=>{adj[a].push(b);adj[b].push(a)});const hop=rooms.map(()=>-1),Q=[0];hop[0]=0;
  while(Q.length){const a=Q.shift();for(const b of adj[a])if(hop[b]<0){hop[b]=hop[a]+1;Q.push(b)}}
  const start=rooms.reduce((b,q,i)=>i&&(hop[i]>hop[b]||(hop[i]===hop[b]&&rd(q,rooms[0])>rd(rooms[b],rooms[0])))?i:b,1);rooms[start].type='start';
@@ -827,6 +839,11 @@ function genDungeon(def,seed){
   const l=ln+sg*k,ringV=inArch(dx,y-sp,Ln+4,Rr+2)&&!(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr));W.set(ax?l:a,y,ax?a:l,y===T0-1?M.top:ringV?(Math.floor(Math.atan2(y-sp,dx)*5)%2?M.trim:M.wall[2]):y>=T0-3?M.trim:ashlar(M,ax?l:a,y,ax?a:l))}};
  if(L.gate)for(const q of rooms){const X0=q.x*CV,Z0=q.z*CV,X1=(q.x+q.w)*CV-1,Z1=(q.z+q.h)*CV-1; // arched gateways where a passage crosses the room boundary
   for(const[a0,a1,ln,ax,sg]of[[X0,X1,Z0-1,0,-1],[X0,X1,Z1+1,0,1],[Z0,Z1,X0-1,1,-1],[Z0,Z1,X1+1,1,1]]){let s=-1;for(let a=a0;a<=a1+1;a++){const o=a<=a1&&open[(ax?a:ln)*SX+(ax?ln:a)];if(o&&s<0)s=a;if(!o&&s>=0){if(a-s>6&&a-s<40)frame(s,a-1,ln,ax,sg);s=-1}}}}
+ let gate=null;if(def.zone){const q=rooms[0],v=CFG.vox,a0=Math.atan2(q.cz-rooms[start].cz,q.cx-rooms[start].cx); // find the bank on the side away from where you arrive (fanning out if that way is open)
+  for(let k=0;k<12&&!gate;k++){const a=a0+(k%2?-1:1)*Math.ceil(k/2)*.45,c=Math.cos(a),sn=Math.sin(a);let d=12;while(d<260&&dIn[Math.round(q.cz+sn*d)*SX+Math.round(q.cx+c*d)]>1)d++;const x=q.cx+c*d,z=q.cz+sn*d;if(d<30||d>=260||x<50||z<50||x>SX-50||z>SX-50)continue;
+   gate={x:x*v,z:z*v,face:Math.atan2(-c,-sn)};for(let e=0;e<=d;e+=4)for(let b=-10;b<=10;b++)for(let f=-10;f<=10;f++)lane[Math.round(q.cz+sn*e+b)*SX+Math.round(q.cx+c*e+f)]=1; // keep the approach to the door clear of props
+   for(let t=-40;t<=40;t++)for(let o=1;o<=26;o++){const px=Math.round(x+c*o-sn*t),pz=Math.round(z+sn*o+c*t),H=Math.round(W.sy-10-Math.abs(t)*.42-noise2(px*.2,pz*.2,41)*6); // raise a rock face behind it, so the doorway reads as cut into the hill
+    if(open[pz*SX+px])continue;for(let y=0;y<H;y++)W.set(px,y,pz,y>=H-1&&M.turf?M.turf[1]:noise3(px*.25,y*.4,pz*.25)>.55?M.wall[1]:M.stone)}}}
  const addL=(x,z,h,c=def.pal.light,i=1.5)=>h!==undefined&&lights.push({x:x*CFG.vox,y:h,z:z*CFG.vox,c,i});
  for(const q of rooms){const X0=q.x*CV,Z0=q.z*CV,X1=(q.x+q.w)*CV-1,Z1=(q.z+q.h)*CV-1;
   if(q.w>=3&&q.h>=3){const ps=q.type==='boss'?[[1,1],[bs-1,1],[1,bs-1],[bs-1,bs-1]]:[[1,1],[q.w-1,1],[1,q.h-1],[q.w-1,q.h-1]];
@@ -843,7 +860,7 @@ function genDungeon(def,seed){
   const[nx,nz]=[[0,1],[0,-1],[1,0],[-1,0]][(i&1)+(open[z*SX+x-L.w-3]?0:2)];for(let k=0;k<24&&dIn[z*SX+x]>1;k++){x-=nx;z-=nz}if(dIn[z*SX+x]===1&&!open[(z-nz)*SX+x-nx])addL(x,z,STAMP[L.hall[0]](W,M,x,z,r,nx,nz))});
  for(const[kind,n]of def.nodes||[])for(let i=0,t=0;i<n&&t<60;t++){const q=r.pick(rooms),a=r.r()*TAU,d0=r.range(...DB.NODES[kind].at)*Math.min(q.w,q.h)*CV/2,x=Math.round(q.cx+Math.cos(a)*d0),z=Math.round(q.cz+Math.sin(a)*d0),v=CFG.vox; // gathering nodes scattered through the clearings
   if(q.type==='start'||dIn[z*SX+x]<(kind==='fish'?12:5)||lane[z*SX+x]||W.blk[z*SX+x]||(kind!=='fish'&&W.get(x,0,z)===M.water)||nodes.some(o=>Math.hypot(o.x-x*v,o.z-z*v)<3))continue;i++;nodes.push({kind,x:x*v,z:z*v});if(kind==='fish'){W.disc(x,z,1,4,8,0);W.disc(x,z,0,0,8,M.water);W.disc(x,z,1,1,8,(a,b,c)=>Math.hypot(a-x,c-z)>7?M.stone:-1)}} // a fishing spot is a stone-rimmed pool
- return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,r}}
+ return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,gate,r}}
 
 function genLobby(){ // plaza + procedurally assembled Gothic chapel (grammar: walls → buttresses → windows → roof → tower → portal → rose → spire)
  const P=DB.LOBBY,W=new Vox(200,196,220),M=mats(W,P),lights=[],r=rng(7);
@@ -1247,10 +1264,11 @@ function startRun(zone){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],dep
   const st=D.start,v=CFG.vox,cl=S.sel.cls;S.run.solo=!S.save.party;[cl,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==cl).slice(0,2):[])].forEach((c,i)=>spawnMember(c,!i,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
   let tot=0,pk=0;const addPack=(cx,cz,types)=>{pk++;types.forEach((ty,i)=>{const a=i/types.length*TAU+D.r.r();let x=cx*v+Math.sin(a)*1.4,z=cz*v+Math.cos(a)*1.4;if(!reach(x,z)){x=cx*v;z=cz*v}if(reach(x,z)){const f=spawnFoe(ty,x,z,pk);f.run0=S.run;tot+=f.dread}})};
   const comp=()=>D.r.chance(.25)?['brute','warrior','warrior']:[...Array(D.r.int(2,3)).fill('warrior'),...Array(D.r.int(0,2)).fill('archer'),...(D.r.chance(.45)?['caster']:[])];
-  for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6&&!zone?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
+  for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
   D.corr.forEach(m=>D.r.chance(.4)&&Math.hypot(m[0]-st.cx,m[1]-st.cz)*v>CFG.aggroR+4&&addPack(m[0],m[1],['warrior','warrior']));S.run.dreadReq=Math.max(1,Math.round(tot*CFG.dreadReq));
   S.nodes=D.nodes.map(o=>{const N=DB.NODES[o.kind],rg=MODEL.node(o.kind,def.pal);rg.root.position.set(o.x,o.kind==='fish'?-.08:0,o.z);rg.root.rotation.y=o.x*7;R.scene.add(rg.root);return{...o,radius:.8,left:N.hauls,t:0,rig:rg}});
-  if(zone){S.gate=MODEL.gate(def.pal);S.gate.root.position.set(D.boss.cx*v,0,D.boss.cz*v);R.scene.add(S.gate.root);S.run.gateAt={x:D.boss.cx*v,z:D.boss.cz*v};D.lights.push({x:D.boss.cx*v,y:2,z:D.boss.cz*v+.6,c:def.pal.rune,i:2})}
+  if(zone){const G0=D.gate||{x:D.boss.cx*v,z:D.boss.cz*v,face:0},fx=Math.sin(G0.face),fz=Math.cos(G0.face);S.gate=MODEL.gate(def.pal,def.id);S.gate.root.position.set(G0.x,0,G0.z);S.gate.root.rotation.y=G0.face;R.scene.add(S.gate.root);
+   S.run.gateAt={x:G0.x+fx*.9,z:G0.z+fz*.9};D.lights.push({x:G0.x+fx*1.6,y:2.2,z:G0.z+fz*1.6,c:def.pal.rune,i:2.2})}
   else{const b=spawnBoss(D.boss.cx*v,D.boss.cz*v);b.bossLight=def.boss==='rider';if(b.bossLight){R.bossLight.color.set(def.bp.lantern);R.bossLight.intensity=2.2}}
   const p=S.party[0];S.cam.x=p.x;S.cam.z=p.z;S.mode='run';$('#load').hidden=true;buildHud();toast(zone?`${def.name}: find the dungeon gate`:`${def.name} · Depth ${depth}`)},40)}
 function checkDone(){const r=S.run,pl=S.party.find(m=>m.isPlayer);if(r.gateAt){if(pl&&!pl.dead&&dist(pl,r.gateAt)<1.3&&S.mode==='run'){S.mode='load';save();clearRun();startRun()}return} // walking into the gate descends into this biome's dungeon

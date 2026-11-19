@@ -29,8 +29,11 @@ Built in stages. Each stage is playable on its own.
 - `DB.ZONES`: one generated outdoor zone per biome (`Vael Marsh`, `Hollow Moor`,
   `Ka-Zeth Dunes`, `Frostspire Tundra`), built by the same `genDungeon()` with the
   shared outdoor layout in `DB.ZONE`, fixed by the save's world seed. Roaming
-  packs are weaker than dungeon packs. A rune gate (`MODEL.gate`) in the largest
-  clearing leads down into that biome's dungeon.
+  packs are weaker than dungeon packs. Zones use broad glades, wide ground
+  between them and several connecting ways (`lay.room`, `lay.w`, `lay.links`).
+  Each biome's dungeon entrance (`MODEL.gate(P, zone id)`) has its own design
+  (mausoleum, barrow trilithon, pylon, gatehouse) and is set into a rock face
+  on the far side of the largest glade, with its approach kept clear.
 - `DB.NODES` (`ore`, `fish`, `wood`): hold left click on a node to walk up and
   work it (`work()`) with the right tool in hand (pick, rod, hatchet). Veins
   chip away and shatter, trees topple and leave a stump; trees follow the zone
