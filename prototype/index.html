@@ -128,8 +128,8 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
- town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.3,cd:.8,inv:.35},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
- mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
+ town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.45,cd:.8,inv:.45,mid:1,ball:.62},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
+ mana:7,ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
@@ -634,7 +634,7 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   let gb=0,wr=[0,0],ar=[-s*.5*m,s*.5*m],az=[0,0],fo=[-.25-.45*m-rd*.5+Math.min(0,-s)*.3*m,-.25-.45*m-rd*.5+Math.min(0,s)*.3*m]; // [L,R] arm x, arm z, forearm
   let tw=-s*.2*m,ln=.1*m+br*.015+rd*.08-fl*.3+st*.3,hx=-.05*m+st*.5-fl*.25,hy=s*.12*m+Math.sin(t*.43)*Math.sin(t*.17)*.3*id*(1-a.rdy),by=(Math.abs(c)-.6)*.035*m+br*.006-rd*.03;
   if(r.mounted){th=[-1.05,-1.05];kn=[1.15,1.15];by=a.bob||0}
-  if(a.leap){th=[-1.3,-.4];kn=[1.7,1.2];ar=[-2.7,-2.7];fo=[-.4,-.4];ln=.3}
+  if(a.leap){th=[-1.3,-.4];kn=[1.7,1.2];ar=[-2.7,-2.7];fo=[-.4,-.4];ln=.3;if(a.leap.roll){th=[-2.1,-2.1];kn=[2.4,2.4];ar=[-1.1,-1.1];fo=[-1.9,-1.9];ln=.8;hx=.7}} // roll: knees to chest, arms in, chin down
   if(st){ar=[.1,.1];fo=[-.15,-.15];tw=Math.sin(t*5)*.12}
   if(a.windT>0){ar=[-2.5,-2.5];fo=[-.4,-.4];az=[-.12,.12];ln=-.28}
   if(a.holdT>0&&!(a.atkT>0)){ar[1]=-1;fo[1]=-.55;ln+=.05} // holding a cast rod out over the water
@@ -1036,7 +1036,7 @@ function pickPerk(id){const pl=S.party.find(m=>m.isPlayer);S.save.perks[id]=(S.s
 const ranked=(s,n)=>n?{...s,...Object.fromEntries(['dmg','heal','hps','dps'].filter(k=>s[k]).map(k=>[k,s[k]*(1+DB.RANK.eff*n)])),cd:s.cd*(1-DB.RANK.cd*n)}:s; // a skill at Mastery rank n
 function dodge(a){const D0=CFG.dodge,k=S.in.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),g=S.in.ground;if(!a||a.dead||a.stun>0||a.leap||(a.cd.dodge||0)>0)return; // roll the way you are moving, else toward the cursor
  const d=mx||mz?Math.atan2(mx+mz,mz-mx):g?ang(a,g):a.face;let R0=D0.range;while(R0>.5&&!walk(a.x+Math.sin(d)*R0,a.z+Math.cos(d)*R0))R0-=.4;if(R0<=.5)return;
- a.face=d;a.order=null;a.atkT=0;a.strike=null;a.inv=D0.inv;a.cd.dodge=D0.cd;a.leap={fx:a.x,fz:a.z,tx:a.x+Math.sin(d)*R0,tz:a.z+Math.cos(d)*R0,t:0,d:D0.dur,h:.3,quiet:1,s:{}};chips(a.x,.2,a.z,'#c8c0b0',8,{sp:.8,up:1.5,s:1.5})}
+ a.face=d;a.order=null;a.atkT=0;a.strike=null;a.inv=D0.inv;a.cd.dodge=D0.cd;a.leap={fx:a.x,fz:a.z,tx:a.x+Math.sin(d)*R0,tz:a.z+Math.cos(d)*R0,t:0,d:D0.dur,h:0,roll:1,quiet:1,s:{}};chips(a.x,.2,a.z,'#c8c0b0',8,{sp:.8,up:1.5,s:1.5})}
 function useSkill(a,id){const s=ranked(DB.SKILLS[id],a.isPlayer?S.save.perks[id]||0:0);if(a.dead||a.stun>0||(a.cd[id]||0)>0||a.leap||a.mp<s.cost)return 0;if(SKILL[id](a,s)){a.cd[id]=s.cd/a.haste;a.mp-=s.cost;return 1}return 0}
 const ready=(a,id)=>!((a.cd[id]||0)>0);
 function basic(a,t,dir){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=t?ang(a,t):dir;a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1));a.atkDur=clamp(a.atkCd*.95,.26,.7); // the swing fills the whole cycle, so held attacks flow into each other
@@ -1074,7 +1074,7 @@ function partyAI(a,dt){a.noMove=S.cmd.hold;const e=escape(a);if(e){goTo(a,e.x,e.
   if(tl.kind==='stack'){goTo(a,tl.x,tl.z,dt,.6);return}}
  AI[a.role](a,dt)}
 function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk,g=I.ground;
- const hv=I.hover=g?S.foes.reduce((b,f)=>!f.dead&&dist(f,g)<f.radius+.75&&(!b||dist(f,g)<dist(b,g))?f:b,null):null; // foe under the cursor (highlighted in animate)
+ const hv=I.hover=g?S.foes.reduce((b,f)=>!f.dead&&dist(f,g)<f.radius+.75&&(!b||dist(f,g)<dist(b,g))?f:b,null):null; // foe under the cursor (outlined by outline())
  const nd=I.node=!hv&&g?S.nodes.find(n=>n.left>0&&dist(n,g)<1.2):null;if(I.down&&nd){const R0=DB.NODES[nd.kind].reach;a.order=null;if(dist(a,nd)>R0)goTo(a,nd.x,nd.z,dt,R0-.2);else work(a,nd,dt)} // held on a gathering node: walk up and work it
  else if(I.down&&g){if(hv){const R0=C0.range+hv.radius;a.target=hv;a.order=null;if(dist(a,hv)>R0||(C0.ranged&&!los(a,hv)))goTo(a,hv.x,hv.z,dt,R0-.3);else basic(a,hv)}else a.order={x:g.x,z:g.z}} // held on a foe: close in and keep attacking; held on ground: walk there
  if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);if(!(a.atkT>0))a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
@@ -1435,7 +1435,9 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.lantern=new THREE.PointLight(0xffc98a,0,9,2);R.bossLight=new THREE.PointLight(0x9dffc8,0,12,2);R.flash=new THREE.PointLight(0xffffff,0,9,2);R.time={value:0};R.scene.add(R.lantern,R.bossLight,R.flash);
  R.cut={p:{value:new THREE.Vector3()},c:{value:new THREE.Vector3()},on:{value:0}};R.matW=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});addCut(R.matW);
  R.matWE=new THREE.MeshBasicMaterial({vertexColors:true});addCut(R.matWE);R.matE=new THREE.MeshBasicMaterial({vertexColors:true});R.cube=new THREE.BoxGeometry(1,1,1);
- R.mark=new THREE.Mesh(new THREE.RingGeometry(.84,1,4,1),new THREE.MeshBasicMaterial({color:'#ff4a2a',side:THREE.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));R.mark.rotation.x=-Math.PI/2;R.mark.visible=false;R.scene.add(R.mark);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
+ const lu={uO:{value:new THREE.Vector2()},uCol:{value:new THREE.Color()}},lm=o=>new THREE.ShaderMaterial(Object.assign({uniforms:lu,depthTest:false,stencilWrite:true,stencilRef:1,vertexShader:'uniform vec2 uO;void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position.xy+=uO*gl_Position.w;}',fragmentShader:'uniform vec3 uCol;void main(){gl_FragColor=vec4(uCol,1.);}'},o));
+ R.line={u:lu,on:null,mask:lm({colorWrite:false,stencilFunc:THREE.AlwaysStencilFunc,stencilZPass:THREE.ReplaceStencilOp}),edge:lm({stencilFunc:THREE.NotEqualStencilFunc})}; // hover outline: see outline()
+ R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
@@ -1443,7 +1445,7 @@ function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().le
  for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;a.inv-=dt;a.holdT-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt);a.calm=fight?0:a.calm+dt;if(a.tool&&(a.toolT-=dt)<=0)tool(a,null);if(S.run.solo&&a.calm>CFG.solo.calm)a.hp=Math.min(a.maxHp,a.hp+a.maxHp*CFG.solo.regen*dt);if(a.isPlayer)for(const id in PERK){const n=PERK[id].tick&&perk(id);if(n)PERK[id].tick(a,dt,n)}}
   if(a.strike&&a.atkT<=a.atkDur*(1-CFG.fx.strike)){const f=a.strike;a.strike=null;if(a.stun<=0){a.team==='foe'&&swoosh(a);f!==1&&f()}} // the blow lands here; a stun during the wind-up cancels it
   a.buffs=a.buffs.filter(b=>{b.t-=dt;b.acc+=dt;if(Math.random()<dt*12)chips(a.x+(Math.random()-.5)*.7,.2+Math.random()*1.4,a.z+(Math.random()-.5)*.7,DB.BUFFS[b.id]||'#fff',1,{sp:.1,up:1,g:-1.2,life:.6,s:1.3});if(b.acc>=.5){b.acc=0;if(b.dps)hit(b.src,a,b.dps*.5);if(b.hps)heal(b.src,a,b.hps*.5)}return b.t>0});
-  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*(L.h??1.4);chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
+  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*(L.h??1.4);L.roll?chips(a.x,.1,a.z,'#c8c0b0',1,{sp:.5,up:1,life:.4,s:1.4}):chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
    if(p>=1){a.leap=null;a.rig.root.position.y=0;if(!L.quiet){strikeNow(a);for(const f of near(S.foes,a,L.s.r))hit(a,f,P(a,L.s.dmg));boom(a.x,a.z,'#ff8a3a',L.s.r)}}}}
  for(const a of S.party)if(!a.dead)a.isPlayer?playerCtl(a,dt):partyAI(a,dt);for(const f of S.foes)if(!f.dead)foeAI(f,dt);
  for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],b=all[j];if(a.dead||b.dead||a.charge||b.charge)continue;const d=dist(a,b),m=a.radius+b.radius;
@@ -1453,9 +1455,17 @@ function animate(dt){const all=[...S.party,...S.foes];for(const a of all){const 
  if(a.dead&&a.deathT!==undefined){const d=a.deathT+=dt,k=Math.min(1,d*1.6),J=POSE(r,Math.min(1,dt*8)); // knees give, then the body topples and settles
   r.root.rotation.x=-1.48*k*k*(1+Math.max(0,.25-Math.abs(d-.75))*.5);for(const n of['shinL','shinR'])J(n,1.1*(1-k));for(const n of['armL','armR'])J(n,-.6,0,n==='armL'?.5:-.5);J('head',.4);
   if(a.team==='foe'&&d>6){R.scene.remove(r.root)}continue}
- ANIM[r.kind](r,a,dt);const hv=S.in.hover===a;r.mat.emissive.setRGB(a.flash>0?.22:hv?.4:0,a.flash>0?.12:hv?.1:0,a.flash>0?.1:hv?.06:0)}
- const h=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node);R.mark.visible=!!h;R.mark.material.color.set(h&&h.kind?'#ffd36a':'#ff4a2a');for(const n of S.nodes)ANIM.static(n.rig,ONE,dt);if(S.gate)ANIM.static(S.gate,ONE,dt);if(h){R.mark.position.set(h.x,.14,h.z);R.mark.scale.setScalar(h.radius+.55);R.mark.rotation.z=S.t*1.5} // hovered foe glows and gets a turning target bracket
+ ANIM[r.kind](r,a,dt);r.mat.emissive.setRGB(a.flash>0?.22:0,a.flash>0?.12:0,a.flash>0?.1:0);const L=a.leap,q=r.root;
+ if(L&&L.roll){const D0=CFG.dodge,p=L.t/L.d,th=p*TAU,H=lerp(D0.mid,D0.ball,Math.min(1,Math.sin(p*Math.PI)*2.5)),o=D0.mid*Math.sin(th); // forward roll: one full turn about the body's centre, which drops to ball height while tucked
+  q.rotation.order='YXZ';q.rotation.y=a.face;q.rotation.x=th;q.position.set(a.x-Math.sin(a.face)*o,H-D0.mid*Math.cos(th),a.z-Math.cos(a.face)*o);r.roll=1}
+ else if(r.roll){q.rotation.x=0;r.roll=0}}
+ for(const n of S.nodes)ANIM.static(n.rig,ONE,dt);if(S.gate)ANIM.static(S.gate,ONE,dt);
  if(S.mode==='lobby'||S.mode==='title')(R.lobbyRigs||[]).forEach(r=>ANIM.hum(r,r.a,dt))}
+function outline(){const a=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node),h=a?a.rig.root:null,Q=R.line,W=CFG.ui.outline*2,el=R.ren.domElement; // silhouette outline round whatever is under the cursor: stamp its shape into the stencil, then draw it 8 times nudged outward wherever the stamp is not
+ if(Q.on!==h){for(const[o,on]of[[Q.on,0],[h,1]])if(o)o.traverse(m=>m.isMesh&&(on?m.layers.enable(1):m.layers.disable(1)));Q.on=h}if(!h)return;
+ Q.u.uCol.value.set(a.kind?'#ffd36a':'#ff4a2a');const bg=R.scene.background;R.scene.background=null;R.ren.autoClear=false;R.ren.shadowMap.autoUpdate=false;R.cam.layers.set(1); /* a colour background would clear the frame on every pass */
+ for(let i=-1;i<8;i++){R.scene.overrideMaterial=i<0?Q.mask:Q.edge;Q.u.uO.value.set(i<0?0:Math.cos(i*Math.PI/4)*W/el.clientWidth,i<0?0:Math.sin(i*Math.PI/4)*W/el.clientHeight);R.ren.render(R.scene,R.cam)}
+ R.scene.overrideMaterial=null;R.scene.background=bg;R.cam.layers.set(0);R.ren.autoClear=true;R.ren.shadowMap.autoUpdate=true}
 function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/CFG.titleT%1);R.cam.position.set(K[1],K[2],K[3]);R.cam.lookAt(K[4],K[5],K[6]);tx=K[4];tz=K[6]}
  else if(S.mode==='lobby'){const a=-.55+Math.sin(S.t*.08)*.25;tx=10;tz=15;R.cam.position.set(tx+Math.sin(a)*17,9+Math.sin(S.t*.1),tz+Math.cos(a)*17);R.cam.lookAt(10,5.5,12)}
  else{const p=S.party.find(m=>m.isPlayer)||{x:0,z:0};S.cam.x=lerp(S.cam.x,p.x,Math.min(1,dt*6));S.cam.z=lerp(S.cam.z,p.z,Math.min(1,dt*6));tx=S.cam.x;tz=S.cam.z;
@@ -1467,6 +1477,6 @@ function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/
   g.position.copy(l.position);g.material.color.set(s.c);g.material.opacity=.5*fl;g.scale.setScalar(1.5*s.i*fl);if(S.mode==='run'&&Math.random()<dt*7)chips(s.x+(Math.random()-.5)*.2,s.y,s.z+(Math.random()-.5)*.2,s.c,1,{sp:.1,up:.9,g:-1.3,life:1.1,s:.7})})} // flicker, halo, rising embers
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;S.t+=dt;
  if(S.mode==='run'&&S.picks>0&&!S.pick)offerPerks();if(S.mode==='run'&&!S.pick){updateActors(dt);updateFx(dt);updateRun(dt)}else if(S.mode==='summary')updateFx(dt);
- animate(dt);updateCam(dt);updateHud(dt);R.ren.render(R.scene,R.cam);requestAnimationFrame(loop)}
+ animate(dt);updateCam(dt);updateHud(dt);R.ren.render(R.scene,R.cam);outline();requestAnimationFrame(loop)}
 init();
 </script>
