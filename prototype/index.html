@@ -124,9 +124,9 @@ const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT
 // §1 DB
 const DB={
  CLASSES:{
-  templar:{mp:100,name:'Templar',role:'tank',ally:'Ser Aldric',hp:560,armor:45,speed:4.2,atk:{dmg:16,cd:1,range:1.7,sw:'slash'},skills:['bash','taunt','consecrate','bulwark'],weapon:'Sword & Shield'},
-  sister:{mp:160,name:'Sister',role:'healer',ally:'Sister Maud',hp:380,armor:12,speed:4.4,atk:{dmg:11,cd:1.1,range:9,ranged:1,sw:'cast'},skills:['mend','sanctuary','paleflame','rebuke'],weapon:'Censer & Tome'},
-  reaver:{mp:100,name:'Reaver',role:'dps',ally:'Brannoc',hp:420,armor:22,speed:4.6,atk:{dmg:24,cd:.8,range:1.7,sw:'hack',alt:1},skills:['cleave','leap','kick','frenzy'],weapon:'Twin Axes'}},
+  templar:{mp:100,name:'Templar',role:'tank',ally:'Ser Aldric',hp:560,armor:45,speed:4.2,atk:{dmg:16,cd:.9,range:1.9,sw:'slash',arc:2,col:'#ffe08a',fin:1.7},skills:['bash','taunt','consecrate','bulwark'],weapon:'Sword & Shield'},
+  sister:{mp:160,name:'Sister',role:'healer',ally:'Sister Maud',hp:380,armor:12,speed:4.4,atk:{dmg:11,cd:1,range:9,ranged:1,sw:'cast',col:'#fff2b0',fin:1.8},skills:['mend','sanctuary','paleflame','rebuke'],weapon:'Censer & Tome'},
+  reaver:{mp:100,name:'Reaver',role:'dps',ally:'Brannoc',hp:420,armor:22,speed:4.6,atk:{dmg:24,cd:.75,range:1.9,sw:'hack',alt:1,arc:1.7,col:'#ff5a36',fin:1.6},skills:['cleave','leap','kick','frenzy'],weapon:'Twin Axes'}},
  ROLES:{tank:'Tank',healer:'Healer',dps:'Damage'},
  SKILLS:{
   bash:{cost:15,col:'#d8c48a',ico:['#####','#####','#####','.###.','..#..'],name:'Shield Bash',cd:7,range:2.4,dmg:30,stun:1.5,tip:'Stun + interrupt'},
@@ -166,6 +166,7 @@ const DB={
   {id:'stats',name:'Stats',key:'c',ico:['....#','..#.#','..#.#','#.#.#','#.#.#']},{id:'orders',name:'Orders',key:'o',ico:['####.','####.','####.','#....','#....']}],
  PIX:{heart:['..##...##..','.####.####.','###########','###########','###########','.#########.','..#######..','...#####...','....###....','.....#.....'],gem:['....#....','...###...','..#####..','.#######.','#########','#########','.#######.','..#####..','...###...','....#....'],
   skull:['.###.','#####','#.#.#','#####','.#.#.']},
+ BUFFS:{bulwark:'#9fc8ff',frenzy:'#ff5030',pale:'#fff2c0',sanct:'#8ff0a4',bleed:'#c01818',poison:'#9acd32',slow:'#8fdcff',curse:'#b070e0',vuln:'#ffd060'}, // aura particle colour while a buff is on an actor
  FIRE:{fire:['#fff3c0','#ffd24a','#ff8a1e','#e8421a'],frost:['#ffffff','#d6f4ff','#8fdcff','#4aa8f0']}, // flame particle ramps, hot to cool
  WARN:{avoid:'Move!',soak:'Stand in a circle!',stack:'Stack together!'},
  DUNGEONS:[
@@ -313,20 +314,21 @@ const PAT={ // surface pattern: brightness factor, or a hex override ('!' prefix
  flesh:(x,y,z,i,P)=>{const m=noise3(x*22,y*22,z*22);if(Math.abs(noise3(x*4+9,y*4,z*4)-.5)<.014)return P.stitch;if(m>.84)return'!'+P.pus;return noise3(x*5,y*5,z*5)<.33?P.bruise:.6+m*.3},
  stone:(x,y,z)=>.82+noise3(x*20,y*20,z*20)*.3};
 const BAKE=new Map();
-function bake(key,prims,mt,pv,P={},res=CFG.evox){if(BAKE.has(key))return BAKE.get(key);const fat=res>CFG.evox?res*.3:0,mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+function bake(key,prims,mt,pv,P={},res=CFG.evox,thin=0){if(BAKE.has(key))return BAKE.get(key);const fat=thin?res*.5:res>CFG.evox?res*.3:0,h=res*.5,mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
  for(const o of prims)if(o.m){const b=bbOf(o);for(let i=0;i<3;i++){mn[i]=Math.min(mn[i],b[i][0]);mx[i]=Math.max(mx[i],b[i][1])}}
  const dm=[0,1,2].map(i=>Math.max(1,Math.ceil((mx[i]-mn[i])/res)+1)),g=new VG(...dm),cc=new Map();
  const col=(hex,f,e)=>{const k=hex+f+e;let v=cc.get(k);if(v===undefined){v=C(f===1?hex:mix(hex,f>1?'#ffffff':'#000000',Math.min(.9,Math.abs(1-f))),e);cc.set(k,v)}return v};
  for(const o of prims){const b=bbOf(o),f=PRIM[o.t],m=o.m?mt[o.m]:null,lo=[0,1,2].map(i=>Math.max(0,Math.floor((b[i][0]-mn[i])/res))),hi=[0,1,2].map(i=>Math.min(dm[i]-1,Math.ceil((b[i][1]-mn[i])/res)));
   for(let k=lo[2];k<=hi[2];k++)for(let j=lo[1];j<=hi[1];j++)for(let i=lo[0];i<=hi[0];i++){const x=mn[0]+(i+.5)*res,y=mn[1]+(j+.5)*res,z=mn[2]+(k+.5)*res;
-   let d=f(x,y,z,o)-(o.m&&o.t!=='fn'?fat:0);if(o.n)d-=(noise3(x*o.nf,y*o.nf,z*o.nf)-.5)*2*o.n;if(d>0||(o.sh&&d<-o.sh))continue;if(!m){g.set(i,j,k,0);continue}
+   let d=f(x,y,z,o)-(o.m&&o.t!=='fn'?fat:0);if(thin&&d>0&&o.t==='fn'&&(f(x+h,y,z,o)<0||f(x-h,y,z,o)<0||f(x,y,z+h,o)<0||f(x,y,z-h,o)<0||f(x,y+h,z,o)<0||f(x,y-h,z,o)<0))d=-1e-3; // thin: a sliver between voxel centres still claims the voxel
+   if(o.n)d-=(noise3(x*o.nf,y*o.nf,z*o.nf)-.5)*2*o.n;if(d>0||(o.sh&&d<-o.sh))continue;if(!m){g.set(i,j,k,0);continue}
    let r=PAT[m[1]||'none'](x,y,z,[i,j,k],P),hex=m[0],e=m[2]?1:0;if(typeof r==='string'){if(r[0]==='!'){hex=r.slice(1);e=1}else hex=r;r=1}g.set(i,j,k,col(hex,Math.round(r*25)/25,e))}}
  const out=meshVG(g,[(pv[0]-mn[0])/res,(pv[1]-mn[1])/res,(pv[2]-mn[2])/res],res);BAKE.set(key,out);return out}
 function mesh2(geo,mat){const grp=new THREE.Group();geo.forEach((g,k)=>{if(!g)return;const m=new THREE.Mesh(g,k?R.matE:mat);m.castShadow=!k;grp.add(m)});return grp}
 function rig(kind,key,nodes,mt,P,res){const r={kind,root:new THREE.Group(),body:new THREE.Group(),mat:newMat()},at={body:[0,0,0]};r.root.add(r.body);
  for(const nd of nodes){const par=nd.p||'body',pa=at[par],g=nd.prims?mesh2(bake(key+':'+nd.n,nd.prims,mt,nd.at,P,res),r.mat):new THREE.Object3D();
   g.position.set(nd.at[0]-pa[0],nd.at[1]-pa[1],nd.at[2]-pa[2]);at[nd.n]=nd.at;r[par].add(g);r[nd.n]=g;if(nd.hide)g.visible=false}return r}
-const hold=(r,hand,key,prims,mt,rx=Math.PI/2,pos,ry=0)=>{const o=mesh2(bake(key,prims,mt,[0,0,0]),r.mat);o.rotation.set(rx,ry,0);if(pos)o.position.set(...pos);r[hand].add(o);return o};
+const hold=(r,hand,key,prims,mt,rx=Math.PI/2,pos,ry=0)=>{const o=mesh2(bake(key,prims,mt,[0,0,0],{},CFG.evox,1),r.mat);o.rotation.set(rx,ry,0);if(pos)o.position.set(...pos);r[hand].add(o);return o};
 
 // §5 MODEL
 function newMat(){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0}); // + cool rim light so figures read against dark floors
@@ -364,14 +366,14 @@ const AXE=[pc([0,-.14,0],[0,.62,0],.016,'wood'),...[0,1,2,3,4].map(i=>hoop([0,-.
  pf([[-.01,.01],[.36,.68],[.01,.22]],(x,y,z)=>{const e=y>.56?.17-(y-.56)*1.25:.17-(.56-y)*.2+(y<.46?(.46-y)*.9:0);return Math.abs(x)<.009&&z>e-.022&&z<e&&y>.37&&y<.66},'edge'),pc([0,.6,-.01],[0,.6,-.1],.013,'iron',{r2:.002})];
 const HELD={ // held items, authored in grip space (origin = palm, +y = up the haft/blade). at = socket node, rx = pitch (PI/2 lays +y along the knuckles, pointing forward), ry = yaw, pos = offset, plumb = hangs by gravity whatever the arm does
  sword:{at:'handR',prims:()=>W_SWORD()},axe:{at:'handR',prims:()=>AXE},
- kite:{at:'foreL',rx:0,ry:.6,pos:[.07,-.16,.07],prims:()=>[W_KITE,pf(W_KITE.bb,(x,y,z)=>W_KITE.f(x,y,z)&&(Math.abs(x)<.032||Math.abs(y-.08)<.032)&&z>.0,'white'), // strapped along the forearm, face turned out
+ kite:{at:'foreL',rx:0,ry:.5,pos:[.045,-.2,.075],prims:()=>[W_KITE,pf(W_KITE.bb,(x,y,z)=>W_KITE.f(x,y,z)&&(Math.abs(x)<.032||Math.abs(y-.08)<.032)&&z>.0,'white'), // strapped along the forearm, face turned out
   pf(W_KITE.bb,(x,y,z)=>{if(!W_KITE.f(x,y,z))return false;const w=y>.05?.26*Math.sqrt(Math.max(0,1-((y-.05)/.29)**2*.6)):.26*(1+(y-.05)/.53);return Math.abs(x)>w-.028||y>.305},'plate2'),pe([0,.08,.04],[.045,.045,.028],'gold')]},
  censer:{at:'handR',rx:0,plumb:1,prims:()=>[pc([0,0,0],[0,-.22,0],.006,'iron'),pe([0,-.28,0],[.048,.042,.048],'gold'),pe([0,-.24,0],[.03,.018,.03],'glow'),pe([0,-.235,0],[.036,.02,.036],'gold',{sh:.008}),pc([0,-.32,0],[0,-.35,0],.01,'gold')]},
  tome:{at:'handL',rx:-.3,pos:[0,.05,.08],prims:()=>[pb([0,0,0],[.075,.095,.028],'tome',{r:.006}),pb([0,0,.0],[.07,.09,.03],'robe'),pb([.074,0,0],[.006,.096,.029],'tome'),pb([0,.01,.03],[.012,.05,.004],'gold'),pb([0,.03,.03],[.035,.012,.004],'gold')]},
  orb:{at:'handR',rx:0,pos:[0,-.06,0],prims:()=>[pe([0,0,0],[.06,.06,.06],'glow'),...[0,1,2,3].map(i=>pc([Math.cos(i*1.57)*.07,0,Math.sin(i*1.57)*.07],[Math.cos(i*1.57)*.03,.09,Math.sin(i*1.57)*.03],.008,'iron'))]},
  blade:{at:'handR',prims:o=>[pc([0,-.08,0],[0,.03,0],.014,'wood'),pb([0,.035,0],[.08,.011,.014],'metal'), // rusted, notched; o.L = length, o.w = width factor
   pf([[-.04,.04],[.04,o.L+.06],[-.01,.01]],(x,y,z)=>{const t=y>o.L-.1?(o.L+.04-y)/.14:1;return y<o.L+.04&&Math.abs(x)<=.024*o.w*t&&Math.abs(z)<.007&&!(Math.abs(x)>.012&&hash3(Math.floor(y*40),1,1)<.18)},'metal')]},
- buckler:{at:'foreL',rx:0,ry:.6,pos:[.05,-.14,.06],prims:()=>[pf([[-.24,.24],[-.24,.24],[-.03,.03]],(x,y,z)=>Math.hypot(x,y)<.2&&Math.abs(z)<.014&&!(Math.hypot(x,y)>.13&&hash3(Math.floor(Math.atan2(y,x)*6),2,2)<.15),'wood'),
+ buckler:{at:'foreL',rx:0,ry:.5,pos:[.03,-.16,.06],prims:()=>[pf([[-.24,.24],[-.24,.24],[-.03,.03]],(x,y,z)=>Math.hypot(x,y)<.2&&Math.abs(z)<.014&&!(Math.hypot(x,y)>.13&&hash3(Math.floor(Math.atan2(y,x)*6),2,2)<.15),'wood'),
   pf([[-.23,.23],[-.23,.23],[-.02,.02]],(x,y,z)=>{const d=Math.hypot(x,y);return d>.19&&d<.225&&Math.abs(z)<.017&&hash3(Math.floor(Math.atan2(y,x)*8),3,3)>.12},'metal'),pe([0,0,.02],[.05,.05,.03],'metal')]},
  bow:{at:'handL',rx:0,pos:[0,.02,.05],plumb:1,prims:()=>{const f=t=>[0,-.48+t*.96,.09-.11*Math.sin(Math.PI*t)];return[...[...Array(8)].map((_,i)=>pc(f(i/8),f((i+1)/8),.013,'wood')),pc([0,-.47,.09],[0,.47,.09],.003,'str')]}},
  lantern:{at:'handL',rx:0,plumb:1,prims:()=>scl([pc([0,0,0],[0,-.1,0],.008,'ir'),hoop([0,-.12,0],.03,.055,-.13,-.11,'ir'),pe([0,-.19,0],[.04,.055,.04],'ln'),hoop([0,-.26,0],.03,.055,-.27,-.25,'ir'),...[0,1,2,3].map(i=>pc([Math.cos(i*1.57)*.048,-.12,Math.sin(i*1.57)*.048],[Math.cos(i*1.57)*.048,-.26,Math.sin(i*1.57)*.048],.006,'ir'))],1.6)},
@@ -806,24 +808,29 @@ function tgt(a,range){const ok=f=>f&&!f.dead&&f.team==='foe'&&dist(a,f)<=range+f
 const lowest=(a,range)=>{let b=null,v=2;for(const m of S.party)if(!m.dead&&dist(a,m)<=range&&m.hp/m.maxHp<v){v=m.hp/m.maxHp;b=m}return b};
 const swing=(a,fn)=>{a.atkT=a.atkDur;a.atkN++;a.strike=fn||1},castAnim=a=>a.castT=.35; // fn runs on the strike frame (see updateActors), so blows land with the animation
 const strikeNow=a=>{a.atkT=a.atkDur*(1-CFG.fx.strike);a.atkN++;a.strike=null;swoosh(a)}; // for telegraphed blows: the wind-up was the telegraph
-const SKILL={
- bash(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{stun:s.stun,interrupt:1});ring(t,.9,'#d8c48a');chips(t.x,1.2,t.z,'#ffe9a8',10,{g:3,s:1.3})});return 1},
- taunt(a,s){const fs=near(S.foes,a,s.r);if(!fs.length)return 0;for(const f of fs){if(!f.aggro)aggroPack(f);f.threat.set(a,Math.max(0,...f.threat.values())+200);f.taunt={by:a,t:s.dur}}ring(a,s.r,'#d64a3a');num(a,'Taunt!','#ffb0a0');return 1},
- consecrate(a,s){haz({x:a.x,z:a.z,r:s.r,t:s.dur,dps:P(a,s.dps),team:'party',col:'#e8c860',src:a});return 1},
- bulwark(a,s){buff(a,{id:'bulwark',t:s.dur});ring(a,1.3,'#9fc8ff');return 1},
- mend(a,s){const t=lowest(a,s.range);if(!t||t.hp>=t.maxHp)return 0;heal(a,t,P(a,s.heal));ring(t,1,'#8ff0a4');castAnim(a);return 1},
- sanctuary(a,s){for(const m of near(S.party,a,s.r)){heal(a,m,P(a,s.heal));buff(m,{id:'sanct',t:s.dur,hps:P(a,s.hps),src:a})}ring(a,s.r,'#bff7c8');castAnim(a);return 1},
- paleflame(a,s){for(const m of alive(S.party))buff(m,{id:'pale',t:s.dur,hps:P(a,s.hps),src:a});ring(a,2.5,'#efe4b8');castAnim(a);return 1},
- rebuke(a,s){const t=tgt(a,s.range);if(!t)return 0;bolt(a,t,P(a,s.dmg),{interrupt:1,stun:.4,col:'#fff2b0',sp:22});castAnim(a);return 1},
- cleave(a,s){const t=tgt(a,s.range);if(t)a.face=ang(a,t);swing(a,()=>{for(const f of near(S.foes,a,s.range))if(Math.abs(angDiff(a.face,ang(a,f)))<s.arc/2)hit(a,f,P(a,s.dmg));swoosh(a,s.arc,s.range,'#ffb070')});return 1},
+const SKILL={ // each returns 1 if it fired. Melee effects land on the strike frame via swing(a,fn)
+ bash(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{stun:s.stun,interrupt:1});swoosh(a,1.3,s.range+.8,'#ffe08a');ring(t,1.1,'#ffe9a8');ring(t,.6,'#ffffff',.25);chips(t.x,1.2,t.z,'#ffe08a',18,{g:5,s:1.8,sp:1.3});flash(t.x,t.z,'#ffe08a',3);shake(.18)});return 1}, // shield slam: shock cone, starburst
+ taunt(a,s){const fs=near(S.foes,a,s.r);if(!fs.length)return 0;for(const f of fs){if(!f.aggro)aggroPack(f);f.threat.set(a,Math.max(0,...f.threat.values())+200);f.taunt={by:a,t:s.dur};beam(a,f,'#ff5a3a',8)}
+  ring(a,s.r,'#d64a3a');ring(a,s.r*.5,'#ff8a6a',.3);castAnim(a);num(a,'Taunt!','#ffb0a0');shake(.1);return 1}, // roar: red rings, a lash of sparks to every foe caught
+ consecrate(a,s){haz({x:a.x,z:a.z,r:s.r,t:s.dur,dps:P(a,s.dps),team:'party',col:'#ffd24a',src:a,rise:1});ring(a,s.r,'#ffe9a8');smite(a,'#ffe9a8');castAnim(a);return 1}, // light falls, holy ground keeps burning upward
+ bulwark(a,s){buff(a,{id:'bulwark',t:s.dur});ring(a,1.4,'#9fc8ff');ring(a,.9,'#ffffff',.3);for(let i=0;i<10;i++)chips(a.x+Math.sin(i*.63)*.8,.2,a.z+Math.cos(i*.63)*.8,'#9fc8ff',2,{sp:.1,up:4,g:3,s:1.8});return 1}, // wall of light rises round the templar
+ mend(a,s){const t=lowest(a,s.range);if(!t||t.hp>=t.maxHp)return 0;heal(a,t,P(a,s.heal));beam(a,t,'#8ff0a4');ring(t,1,'#8ff0a4');chips(t.x,.3,t.z,'#c8ffd6',14,{sp:.3,up:3,g:-1,life:.9,s:1.6});castAnim(a);return 1}, // green thread to the wounded, motes rising
+ sanctuary(a,s){for(const m of near(S.party,a,s.r)){heal(a,m,P(a,s.heal));buff(m,{id:'sanct',t:s.dur,hps:P(a,s.hps),src:a});smite(m,'#8ff0a4')}ring(a,s.r,'#bff7c8');ring(a,s.r*.6,'#ffffff',.35);flash(a.x,a.z,'#8ff0a4',3);castAnim(a);return 1},
+ paleflame(a,s){for(const m of alive(S.party)){buff(m,{id:'pale',t:s.dur,hps:P(a,s.hps),src:a});beam(a,m,'#fff2c0')}ring(a,2.5,'#fff2c0');castAnim(a);return 1},
+ rebuke(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);hit(a,t,P(a,s.dmg),{interrupt:1,stun:.4});smite(t,'#fff2b0',1);beam(a,t,'#fff2b0',10);shake(.15);castAnim(a);return 1}, // a bolt from above, instant
+ cleave(a,s){const t=tgt(a,s.range);if(t)a.face=ang(a,t);swing(a,()=>{for(const f of near(S.foes,a,s.range))if(Math.abs(angDiff(a.face,ang(a,f)))<s.arc/2){hit(a,f,P(a,s.dmg));chips(f.x,1.1,f.z,'#ff5a36',8,{g:6,s:1.6})}
+   swoosh(a,s.arc,s.range+.6,'#ff5a36');swoosh(a,s.arc*.8,s.range,'#ffd060');for(let i=-3;i<=3;i++)chips(a.x+Math.sin(a.face+i*.3)*s.range,1,a.z+Math.cos(a.face+i*.3)*s.range,'#ff8a3a',2,{sp:.8,up:2,g:7,s:1.7});shake(.14)});return 1}, // double blazing arc
  leap(a,s){let p=a.isPlayer&&S.in.ground?S.in.ground:tgt(a,s.range);if(!p)return 0;const d=dist(a,p);if(d>s.range)p={x:a.x+(p.x-a.x)/d*s.range,z:a.z+(p.z-a.z)/d*s.range};
-  if(!walk(p.x,p.z))return 0;a.leap={fx:a.x,fz:a.z,tx:p.x,tz:p.z,t:0,d:.45,s};return 1},
- kick(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{interrupt:1,stun:.5});buff(t,{id:'bleed',t:s.dur,dps:P(a,s.dps),src:a})});return 1},
- frenzy(a,s){buff(a,{id:'frenzy',t:s.dur});ring(a,1.1,'#ff7050');return 1}};
+  if(!walk(p.x,p.z))return 0;a.leap={fx:a.x,fz:a.z,tx:p.x,tz:p.z,t:0,d:.45,s};return 1}, // lands with boom() in updateActors
+ kick(a,s){const t=tgt(a,s.range);if(!t)return 0;a.face=ang(a,t);swing(a,()=>{hit(a,t,P(a,s.dmg),{interrupt:1,stun:.5});buff(t,{id:'bleed',t:s.dur,dps:P(a,s.dps),src:a});swoosh(a,.9,s.range+.3,'#ffb070');chips(t.x,1,t.z,'#c01818',16,{sp:1.2,g:8,s:1.6});ring(t,.7,'#ffb070',.25);shake(.1)});return 1},
+ frenzy(a,s){buff(a,{id:'frenzy',t:s.dur});ring(a,1.3,'#ff5030');ring(a,.7,'#ffd060',.3);chips(a.x,.4,a.z,'#ff5030',24,{sp:.8,up:5,g:6,s:1.8});flash(a.x,a.z,'#ff5030',4);return 1}};
 function useSkill(a,id){const s=DB.SKILLS[id];if(a.dead||a.stun>0||(a.cd[id]||0)>0||a.leap||a.mp<s.cost)return 0;if(SKILL[id](a,s)){a.cd[id]=s.cd/a.haste;a.mp-=s.cost;return 1}return 0}
 const ready=(a,id)=>!((a.cd[id]||0)>0);
-function basic(a,t){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=ang(a,t);a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1));
- swing(a,()=>C0.ranged?bolt(a,t,P(a,C0.dmg),{col:'#fff2b0'}):hit(a,t,P(a,C0.dmg)))}
+function basic(a,t,dir){const C0=DB.CLASSES[a.cls].atk;if(a.atkCd>0||a.stun>0)return;a.face=t?ang(a,t):dir;a.atkCd=C0.cd/(a.haste*(hasBuff(a,'frenzy')?1.6:1)); // t may be null for the player: swing or shoot toward dir
+ const fin=a.atkN%3===2,dm=P(a,C0.dmg)*(fin?C0.fin:1); // every third blow is a finisher: harder, wider, louder
+ swing(a,()=>{if(C0.ranged)return bolt(a,t,dm,{col:C0.col,dir:a.face,big:fin});
+  for(const f of near(S.foes,a,C0.range+(fin?.5:.2)))if(Math.abs(angDiff(a.face,ang(a,f)))<C0.arc/2){hit(a,f,dm);chips(f.x,1.1,f.z,C0.col,fin?12:5,{g:6,s:1.5,sp:1.1})} // melee sweeps everything in the arc
+  swoosh(a,C0.arc*(fin?1.25:1),C0.range+(fin?1:.5),C0.col);if(fin){swoosh(a,C0.arc,C0.range+.4,'#ffffff');shake(.1)}})}
 function engage(a,t,dt){const C0=DB.CLASSES[a.cls].atk,R0=C0.range+t.radius;if(dist(a,t)>R0||(C0.ranged&&!los(a,t))){if(!a.noMove)goTo(a,t.x,t.z,dt,R0-.3)}else basic(a,t)}
 
 // §10 AI
@@ -857,7 +864,7 @@ function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.key
  if(I.down&&I.ground)a.order={x:I.ground.x,z:I.ground.z}; // left button held: keep walking to the cursor
  if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
  else if(a.order&&goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null;
- if(I.fire&&I.ground){const t=tgt(a,C0.range+.4);a.target=t||a.target;a.face=t?ang(a,t):ang(a,I.ground);if(t)basic(a,t);else if(a.atkCd<=0&&!C0.ranged){a.atkCd=C0.cd/a.haste;swing(a)}}} // right button: attack the foe nearest the cursor in reach, or swing at the air toward it
+ if(I.fire&&I.ground){const t=C0.ranged?tgt(a,C0.range):null;a.target=t||a.target;basic(a,t,ang(a,I.ground))}} // right button: melee sweeps an arc toward the cursor; ranged shoots at the foe nearest the cursor, or straight at the cursor
 function foeAI(f,dt){f.alert=f.aggro;if(f.stun>0){f.cast=null;return}
  if(!f.aggro){for(const m of S.party)if(!m.dead&&dist(f,m)<CFG.aggroR&&los(f,m)){aggroPack(f);break}if(!f.aggro)return}
  const t=f.tgt=pickTarget(f);if(!t)return;if(f.boss)return BOSS[f.type](f,t,dt);const E=DB.ENEMIES[f.type],fr=omen('frenzy')&&f.hp<f.maxHp*.3?.7:1;f.windT=Math.max(0,(f.windT||0)-dt);
@@ -960,15 +967,17 @@ const inTele=tl=>(tl.team==='foe'?alive(S.party):alive(S.foes)).filter(a=>inside
 function burst(tl){const Z=ZONE[tl.shape],b=Z.bb(tl),fx=Math.sin(tl.face),fz=Math.cos(tl.face); // eruption across the whole zone when a telegraph lands
  for(let i=0,n=0;i<90&&n<10+b[2]*(b[1]-b[0])*2.5;i++){const al=lerp(b[0],b[1],Math.random()),lat=lerp(-b[2],b[2],Math.random());if(!Z.in(tl,al,lat,0))continue;n++;
   chips(tl.x+fx*al+fz*lat,.1,tl.z+fz*al-fx*lat,['#ffffff','#ffd060',tl.col,tl.col][n&3],1,{sp:.6,up:6,g:8,s:2.2})}flash(tl.x+fx*(b[0]+b[1])/2,tl.z+fz*(b[0]+b[1])/2,tl.col)}
-function lob(o,to,d){R.scene.updateMatrixWorld();const par=o.parent,home=o.position.clone();R.scene.attach(o);S.fx.lob.push({o,par,home,from:o.position.clone(),to,t:0,d})} // hurl a live rig part (the rider's head) in an arc; it returns to its socket on landing
+function lob(o,to,d){if(S.fx.lob.some(l=>l.o===o))return;R.scene.updateMatrixWorld();const par=o.parent,home=o.position.clone(),hs=o.scale.clone();R.scene.attach(o);S.fx.lob.push({o,par,home,hs,from:o.position.clone(),to,t:0,d})} // hurl a live rig part (the rider's head) in an arc; it returns to its socket on landing
 function boom(x,z,col,r=2.6){for(const c of[col,'#ffd060','#ffffff'])chips(x,.3,z,c,26,{up:7,sp:1.5,g:9,s:2.4});ring({x,z},r,col,.5);ring({x,z},r*.6,'#ffffff',.3);flash(x,z,col,6);shake(.45)} // voxel-cube explosion
+function beam(a,b,col,n=14){for(let i=0;i<=n;i++)chips(lerp(a.x,b.x,i/n),1.2+Math.sin(i/n*Math.PI)*.5,lerp(a.z,b.z,i/n),col,1,{sp:.08,up:.3,g:0,life:.25+i*.012,s:1.7})} // arc of motes from a to b
+function smite(p,col,hard){for(let i=0;i<18;i++)chips(p.x,.2+i*.33,p.z,i%3?col:'#ffffff',1,{sp:.12,up:0,g:hard?9:0,life:.3+i*.012,s:hard?2.4:1.8});ring(p,hard?1.2:.8,col,.3);flash(p.x,p.z,col,hard?5:2.5)} // column of light dropping on p
 function flash(x,z,col,i=3){R.flash.position.set(x,1.4,z);R.flash.color.set(col);R.flash.intensity=i}
 function bolt(src,t,dmg,o={}){const m=new THREE.Mesh(R.cube,new THREE.MeshBasicMaterial({color:o.col||'#fff'})),arrow=o.sp>15;m.scale.set(arrow?.05:.2,arrow?.05:.2,arrow?.55:.2);R.scene.add(m);
- S.fx.proj.push({x:src.x,y:1.25*(src.rig.root.scale.y||1),z:src.z,t,dmg,src,o,sp:o.sp||13,dir:ang(src,t),turn:o.turn??20,life:o.life||3,m,arrow})}
+ if(o.big)m.scale.multiplyScalar(1.8);S.fx.proj.push({x:src.x,y:1.25*(src.rig.root.scale.y||1),z:src.z,t,dmg,src,o,sp:o.sp||13,dir:o.dir??ang(src,t),turn:o.turn??20,life:o.life||3,m,arrow})}
 function haz(o){const h=Object.assign({acc:0,shape:'circle',col:'#ff3a2a'},o);h.m=decal(h,2,CFG.fx.y-.03);S.fx.haz.push(h)}
 function ring(p,r,col,d=.45){const m=flat(new THREE.RingGeometry(r*.8,r,40),col,.8);m.position.set(p.x,CFG.fx.y+.02,p.z);R.scene.add(m);S.fx.rings.push({m,t:d,d})}
-function swoosh(a,arc=DB.SWINGS[a.sw||'slash'].arc,r=(a.range||DB.CLASSES[a.cls]?.atk.range||1.6)+.4,col=a.team==='party'?'#fff2d0':'#ffb09a'){if(!arc||a.dead)return; // blade trail in front of the attacker
- const sc=a.rig.root.scale.y||1,m=flat(new THREE.RingGeometry(r*.5,r,20,1,-arc/2,arc),col,.7);m.rotation.z=a.face-Math.PI/2;m.position.set(a.x,(a.boss?1.5:1.05)*sc,a.z);R.scene.add(m);S.fx.rings.push({m,t:.2,d:.2})}
+function swoosh(a,arc=DB.SWINGS[a.sw||'slash'].arc,r=(a.range||DB.CLASSES[a.cls]?.atk.range||1.6)+.4,col=a.team==='party'?'#fff2d0':'#ffb09a'){if(!arc||a.dead)return; // blade trail: wide coloured crescent with a white-hot edge, additive so it glows
+ const sc=a.rig.root.scale.y||1,y=(a.boss?1.5:1.05)*sc;for(const[r0,r1,c,op]of[[r*.5,r,col,.4],[r*.88,r*1.02,'#ffffff',.75]]){const m=flat(new THREE.RingGeometry(r0,r1,24,1,-arc/2,arc),c,op);m.material.blending=THREE.AdditiveBlending;m.rotation.z=a.face-Math.PI/2;m.position.set(a.x,y,a.z);R.scene.add(m);S.fx.rings.push({m,t:.22,d:.22})}}
 function chips(x,y,z,col,n,o={}){const c=new THREE.Color(col),{sp=1,up=3,g=12,s=1,life=1.2}=o; // debris + sparks: sp = spread, up = launch speed, g = gravity (0 floats), s = size
  for(let i=0;i<n;i++){if(S.fx.chips.length>=R.chipMax)S.fx.chips.shift();const a=Math.random()*TAU,v=(1+Math.random()*2.5)*sp,t=life*(.6+Math.random()*.8);
   S.fx.chips.push({x,y,z,vx:Math.sin(a)*v,vy:up*(.6+Math.random()*.8),vz:Math.cos(a)*v,t,t0:t,c,g,s})}}
@@ -989,13 +998,13 @@ function updateFx(dt){const F=S.fx;
   const L=p.src.team==='party'?S.foes:S.party,h=L.find(a=>!a.dead&&dist(a,p)<a.radius+.25);
   if(h){hit(p.src,h,p.dmg,p.o);if(p.o.special==='slow')buff(h,{id:'slow',t:3});if(p.o.special==='curse')buff(h,{id:'curse',t:6,dps:p.dmg*.12,src:p.src})}
   if(h||p.life<=0||!walk(p.x,p.z)){R.scene.remove(p.m);chips(p.x,p.y,p.z,p.o.col||'#fff',p.arrow?4:10,{sp:.7,up:1.5,g:5});return false}return true});
- F.haz=F.haz.filter(h=>{h.t-=dt;h.acc+=dt;if(h.acc>=.5){h.acc=0;chips(h.x+(Math.random()-.5)*h.r,.1,h.z+(Math.random()-.5)*h.r,h.col,2,{sp:.1,up:1.2,g:-1,life:.8});
+ F.haz=F.haz.filter(h=>{h.t-=dt;h.acc+=dt;if(h.rise&&Math.random()<dt*26){const an=Math.random()*TAU,rd=Math.sqrt(Math.random())*h.r;chips(h.x+Math.cos(an)*rd,.1,h.z+Math.sin(an)*rd,Math.random()<.3?'#ffffff':h.col,1,{sp:.05,up:3.5,g:-2,life:.7,s:1.5})}if(h.acc>=.5){h.acc=0;chips(h.x+(Math.random()-.5)*h.r,.1,h.z+(Math.random()-.5)*h.r,h.col,2,{sp:.1,up:1.2,g:-1,life:.8});
    if(h.team==='tithe')S.foes.forEach(f=>!f.dead&&Math.hypot(f.x-h.x,f.z-h.z)<h.r&&(f.hp=Math.min(f.maxHp,f.hp+f.maxHp*.02)));
   else(h.team==='foe'?alive(S.party):alive(S.foes)).forEach(a=>{if(Math.hypot(a.x-h.x,a.z-h.z)<h.r+a.radius*.5){hit(h.src||null,a,h.dps*.5);h.slow&&buff(a,{id:'slow',t:1})}})}
   h.m.material.uniforms.uP.value=Math.min(1,h.t);if(h.t>0)return true;R.scene.remove(h.m);h.m.geometry.dispose();h.m.material.dispose();return false});
  F.rings=F.rings.filter(r=>{r.t-=dt;const k=Math.max(0,r.t/r.d);r.m.scale.setScalar(1.45-k*.45);r.m.material.opacity=k*.8;if(r.t>0)return true;R.scene.remove(r.m);r.m.geometry.dispose();return false});
  F.lob=F.lob.filter(l=>{l.t+=dt;const p=Math.min(1,l.t/l.d),o=l.o;o.position.set(lerp(l.from.x,l.to.x,p),lerp(l.from.y,.7,p)+Math.sin(p*Math.PI)*4.5,lerp(l.from.z,l.to.z,p));o.rotation.x+=dt*10;chips(o.position.x,o.position.y,o.position.z,'#ffb030',1,{sp:.2,up:.5,g:0,life:.4,s:1.8});
-  if(p<1)return true;l.par.add(o);o.position.copy(l.home);o.rotation.set(0,0,0);return false});
+  if(p<1)return true;l.par.add(o);o.position.copy(l.home);o.scale.copy(l.hs);o.rotation.set(0,0,0);return false}); // attach() baked the world scale in; put the socket scale back or it grows every throw
  F.loot=F.loot.filter(l=>{l.gem.rotation.y+=dt*2;l.gem.position.y=.35+Math.sin(S.t*3)*.08;const p=S.party.find(m=>m.isPlayer);
   if(p&&!p.dead&&dist(p,l)<1.4){if(S.save.bag.length<CFG.bagMax){S.save.bag.push(l.it);S.run.loot.push(l.it);toast(`Looted ${l.it.name}`)}R.scene.remove(l.g);return false}return true});
  F.debris=F.debris.filter(d=>{d.t-=dt;d.vy-=9.8*dt;d.o.position.x+=d.vx*dt;d.o.position.y=Math.max(.05,d.o.position.y+d.vy*dt);d.o.position.z+=d.vz*dt;
@@ -1176,10 +1185,10 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby();meshVox(L.W,R.lobby);R.lobbyLights=L.lights;toLobby();requestAnimationFrame(loop)}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
  for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt)}
-  if(a.strike&&a.atkT<=a.atkDur*(1-CFG.fx.strike)){const f=a.strike;a.strike=null;if(a.stun<=0){swoosh(a);f!==1&&f()}} // the blow lands here; a stun during the wind-up cancels it
-  a.buffs=a.buffs.filter(b=>{b.t-=dt;b.acc+=dt;if(b.acc>=.5){b.acc=0;if(b.dps)hit(b.src,a,b.dps*.5);if(b.hps)heal(b.src,a,b.hps*.5)}return b.t>0});
-  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*1.4;
-   if(p>=1){a.leap=null;a.rig.root.position.y=0;strikeNow(a);for(const f of near(S.foes,a,L.s.r))hit(a,f,P(a,L.s.dmg));ring(a,L.s.r,'#ffb070');chips(a.x,.1,a.z,'#8a8478',16,{up:3});shake(.2)}}}
+  if(a.strike&&a.atkT<=a.atkDur*(1-CFG.fx.strike)){const f=a.strike;a.strike=null;if(a.stun<=0){a.team==='foe'&&swoosh(a);f!==1&&f()}} // the blow lands here; a stun during the wind-up cancels it
+  a.buffs=a.buffs.filter(b=>{b.t-=dt;b.acc+=dt;if(Math.random()<dt*12)chips(a.x+(Math.random()-.5)*.7,.2+Math.random()*1.4,a.z+(Math.random()-.5)*.7,DB.BUFFS[b.id]||'#fff',1,{sp:.1,up:1,g:-1.2,life:.6,s:1.3});if(b.acc>=.5){b.acc=0;if(b.dps)hit(b.src,a,b.dps*.5);if(b.hps)heal(b.src,a,b.hps*.5)}return b.t>0});
+  if(a.leap){const L=a.leap;L.t+=dt;const p=Math.min(1,L.t/L.d);a.x=lerp(L.fx,L.tx,p);a.z=lerp(L.fz,L.tz,p);a.face=Math.atan2(L.tx-L.fx,L.tz-L.fz);a.rig.root.position.y=Math.sin(p*Math.PI)*1.4;chips(a.x,a.rig.root.position.y+1,a.z,'#ff8a3a',1,{sp:.2,up:0,g:2,life:.4,s:1.7});
+   if(p>=1){a.leap=null;a.rig.root.position.y=0;strikeNow(a);for(const f of near(S.foes,a,L.s.r))hit(a,f,P(a,L.s.dmg));boom(a.x,a.z,'#ff8a3a',L.s.r)}}}
  for(const a of S.party)if(!a.dead)a.isPlayer?playerCtl(a,dt):partyAI(a,dt);for(const f of S.foes)if(!f.dead)foeAI(f,dt);
  for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],b=all[j];if(a.dead||b.dead||a.charge||b.charge)continue;const d=dist(a,b),m=a.radius+b.radius;
   if(d<m&&d>1e-4){const k=(m-d)/d*.5;move(a,(a.x-b.x)*k*(b.boss?2:1),(a.z-b.z)*k*(b.boss?2:1));if(!b.boss)move(b,(b.x-a.x)*k,(b.z-a.z)*k)}}}
