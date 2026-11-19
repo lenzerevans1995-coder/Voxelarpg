@@ -122,14 +122,14 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §13 RUN    zones (overworld) and dungeons: startRun(zone), gathering work(), trades, craft(), finish run, loot, save
  §14 UI     lobby; run HUD: icon(), pix() pixel heart/gem gauges, minimap() with fog of war and zoom, PANEL[id] menu windows, buildHud/updateHud; summary
  §15 INPUT  WASD / hold-left move, hold-left on a foe attacks or works a node, Space dodge, 1-4 skills + boon picks, menu keys
- §16 LOOP   init, title fly-through (CFG.title) → enterLobby(), update + render, cord() fishing line, outline() hover silhouette
+ §16 LOOP   init, title fly-through (CFG.title) → enterLobby(), update + render, reflect() water mirror, cord() fishing line, outline() hover silhouette
 */
 'use strict';
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
  town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.45,cd:.8,inv:.45,mid:1,ball:.62},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
- mana:7,cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
+ mana:7,water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{robe:[.36,.22],k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
@@ -209,8 +209,8 @@ const DB={
   {id:'marsh',d:0,name:'Vael Marsh',pal:{tree:'oak',leaf:'#2f4a34',turf:['#2f3a30','#38443a','#414e40','#4a5846','#343c34'],water:'#10202a',moss:'#3a4a34',grass:'#56684a'}},{id:'moor',d:1,name:'Hollow Moor',pal:{tree:'oak',leaf:'#4a6a2e'}},
   {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{tree:'palm',treeN:.2,leaf:'#6a8a3a',turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
   {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',treeN:.7,leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
- ZONE:{floor:'earth',foes:.6,lay:{shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:8,links:4,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
-  decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
+ ZONE:{floor:'earth',foes:.6,lay:{cells:20,open:[26,22,.6,.56,.003,.00015],shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:12,links:6,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs; open = open country: [edge margin, how far the edge wanders, hill threshold, forest threshold, tree chance per column in forest, and outside it]
+  decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',9],['fish',5],['wood',9]]},
  NODES:{ // gathering nodes: hold left click on one to work it. reach = how close you must stand, time = seconds per haul, dur = seconds per stroke, hold = one cast then wait (fishing), hauls before it is spent, respawn seconds
   ore:{name:'Ore vein',at:[.7,.95],tool:'pick',reach:1.9,trade:'mining',item:'ore',rare:'gem',time:3.6,dur:1.2,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'mine'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',reach:4.5,hold:1,trade:'fishing',item:'fish',rare:'pearl',time:7,dur:1.2,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'fish'},
   wood:{name:'Tree',at:[.6,.9],tool:'hatchet',reach:1.9,trade:'woodcutting',item:'wood',rare:'amber',time:3.3,dur:1.1,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'fell'}},
@@ -819,7 +819,7 @@ function cheb(N,seed){const d=new Int16Array(N*N);for(let i=0;i<N*N;i++)d[i]=see
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){const i=z*N+x;let v=d[i];if(x>0)v=Math.min(v,d[i-1]+1);if(z>0){v=Math.min(v,d[i-N]+1);if(x>0)v=Math.min(v,d[i-N-1]+1);if(x<N-1)v=Math.min(v,d[i-N+1]+1)}d[i]=v}
  for(let z=N-1;z>=0;z--)for(let x=N-1;x>=0;x--){const i=z*N+x;let v=d[i];if(x<N-1)v=Math.min(v,d[i+1]+1);if(z<N-1){v=Math.min(v,d[i+N]+1);if(x<N-1)v=Math.min(v,d[i+N+1]+1);if(x>0)v=Math.min(v,d[i+N-1]+1)}d[i]=v}return d}
 function genDungeon(def,seed){
- const r=rng(seed),{cell:CV,cells:N,wallH,wallT,sy}=CFG,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];W.tree=def.pal.tree; // which tree shape this place grows (zones only)
+ const r=rng(seed),{cell:CV,wallH,wallT,sy}=CFG,N=def.lay.cells||CFG.cells,SX=N*CV,W=new Vox(SX,sy,SX),M=mats(W,def.pal),occ=new Int16Array(N*N).fill(-1),rooms=[],lights=[];W.tree=def.pal.tree; // which tree shape this place grows (zones only)
  const free=(x,z,w,h)=>{for(let j=z-1;j<=z+h;j++)for(let i=x-1;i<=x+w;i++)if(occ[j*N+i]>=0)return false;return true};
  const put=(x,z,w,h,type)=>{for(let j=z;j<z+h;j++)for(let i=x;i<x+w;i++)occ[j*N+i]=rooms.length;rooms.push({x,z,w,h,type,cx:(x+w/2)*CV,cz:(z+h/2)*CV})};
  const bs=def.lay.arena.size;for(let t=0;t<300&&!rooms.length;t++){const x=r.int(1,N-1-bs),z=r.int(1,N-1-bs);if(free(x,z,bs,bs))put(x,z,bs,bs,'boss')}
@@ -840,11 +840,13 @@ function genDungeon(def,seed){
    
    dig(x,z,L.path==='straight'?L.w:L.w*(.85+.4*noise2(x*.04,z*.04,9)),L.path==='straight')}}
   if(occ[Math.floor(m[1]/CV)*N+Math.floor(m[0]/CV)]<0)corr.push(m)});
+ if(L.open)for(let z=4;z<SX-4;z++)for(let x=4;x<SX-4;x++){const e=Math.min(x,z,SX-1-x,SX-1-z); // open country: everything is walkable except a wandering rim and scattered hills; the clearings and trails above are just places within it
+   if(e>L.open[0]+noise2(x*.03,z*.03,52)*L.open[1]&&noise2(x*.016,z*.016,51)<L.open[2])open[z*SX+x]=1}
  if(L.warp){const o0=open.slice(),l0=lane.slice(),wp=(x,z,k)=>(noise2(x*.035,z*.035,k)-.5)*2*L.warp; // domain-warp the footprint so edges wander; smooth warp keeps everything connected
   for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const wx=Math.round(x+wp(x,z,31)),wz=Math.round(z+wp(x,z,32));const ok=wx>3&&wz>3&&wx<SX-4&&wz<SX-4;open[z*SX+x]=ok?o0[wz*SX+wx]:0;lane[z*SX+x]=ok?l0[wz*SX+wx]:0}}
  const dW=cheb(SX,i=>open[i]),dIn=cheb(SX,i=>!open[i]),T0=2+wallH,topH=(x,z)=>{const n=noise2(x*.045,z*.045,12);return n>.62?T0-Math.min(12,Math.floor((n-.62)*45)):T0};S.gen={dIn};
  const G={W,M,def,L,T0,r},wall=WALL[L.wall],flr=FLOOR[def.floor],thick=L.wall==='bank'?SX:wallT;
- for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const i=z*SX+x;if(open[i])flr(W,M,x,z,dIn[i],rooms[rm[i]]);else if(dW[i]<=thick)wall(G,x,z,dW[i],topH(x,z))}
+ for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const i=z*SX+x;if(open[i]){flr(W,M,x,z,dIn[i],L.open?(lane[i]&&rm[i]<0?undefined:rooms[rm[i]]||rooms[start]):rooms[rm[i]]); /* open country: turf everywhere, worn earth only along the trails between places */if(L.open&&rm[i]<0&&!lane[i]&&dIn[i]>6&&W.get(x,0,z)!==M.water&&hash3(x,z,62)<L.open[noise2(x*.02,z*.02,61)>L.open[3]?4:5]*(def.pal.treeN??1))STAMP.tree(W,M,x,z,r)} /* woods you can walk through, and lone trees */else if(dW[i]<=thick)wall(G,x,z,dW[i],topH(x,z))}
  for(let z=1;z<SX-1;z++)for(let x=1;x<SX-1;x++){const i=z*SX+x;if(open[i]&&dIn[i]===1)HANG[def.floor](W,M,x,z,topH(x,z),hash3(x,z,21))}
  const frame=(s,e,ln,ax,sg)=>{const Ln=e-s+1,c=(s+e)/2,sp=11,Rr=Ln*.72;for(let k=0;k<4;k++)for(let a=s-3;a<=e+3;a++)for(let y=2;y<T0;y++){const dx=a-c;if(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr))continue;
   const l=ln+sg*k,ringV=inArch(dx,y-sp,Ln+4,Rr+2)&&!(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr));W.set(ax?l:a,y,ax?a:l,y===T0-1?M.top:ringV?(Math.floor(Math.atan2(y-sp,dx)*5)%2?M.trim:M.wall[2]):y>=T0-3?M.trim:ashlar(M,ax?l:a,y,ax?a:l))}};
@@ -1437,6 +1439,10 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.matWE=new THREE.MeshBasicMaterial({vertexColors:true});addCut(R.matWE);R.matE=new THREE.MeshBasicMaterial({vertexColors:true});R.cube=new THREE.BoxGeometry(1,1,1);
  const lu={uO:{value:new THREE.Vector2()},uCol:{value:new THREE.Color()}},lm=o=>new THREE.ShaderMaterial(Object.assign({uniforms:lu,depthTest:false,stencilWrite:true,stencilRef:1,vertexShader:'uniform vec2 uO;void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position.xy+=uO*gl_Position.w;}',fragmentShader:'uniform vec3 uCol;void main(){gl_FragColor=vec4(uCol,1.);}'},o));
  R.line={u:lu,on:null,mask:lm({colorWrite:false,stencilFunc:THREE.AlwaysStencilFunc,stencilZPass:THREE.ReplaceStencilOp}),edge:lm({stencilFunc:THREE.NotEqualStencilFunc})}; // hover outline: see outline()
+ {const C=CFG.water,rt=new THREE.WebGLRenderTarget(C.res,C.res,{magFilter:THREE.NearestFilter,minFilter:THREE.NearestFilter}),u={uTex:{value:rt.texture},uVP:{value:new THREE.Matrix4()},uT:{value:0},uK:{value:new THREE.Vector2(C.mix,C.rip)}}; // water mirror: see reflect()
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,vertexShader:'uniform mat4 uVP;varying vec4 vC;varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;vC=uVP*w;gl_Position=projectionMatrix*viewMatrix*w;}',
+   fragmentShader:'uniform sampler2D uTex;uniform float uT;uniform vec2 uK;varying vec4 vC;varying vec3 vW;void main(){vec2 c=floor(vW.xz*10.);vec2 uv=vC.xy/vC.w*.5+.5+vec2(sin(c.y*1.7+uT*2.),cos(c.x*1.3+uT*1.6))*uK.y;gl_FragColor=vec4(texture2D(uTex,uv).rgb,uK.x);}'}));
+  m.rotation.x=-Math.PI/2;m.position.y=C.y;m.visible=false;R.scene.add(m);R.mirror={rt,u,mesh:m,cam:new THREE.PerspectiveCamera()}}
  R.cord=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial(),CFG.cord.max);R.cord.setColorAt(0,new THREE.Color());R.cord.count=0;R.cord.frustumCulled=false;R.scene.add(R.cord);R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
  resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
@@ -1466,6 +1472,10 @@ function cord(dt){const a=S.party.find(m=>m.isPlayer),C=CFG.cord,on=S.mode==='ru
  a.rig.toolM.updateWorldMatrix(true,false);const tip=a.rig.toolM.localToWorld(new THREE.Vector3(0,C.tip,0)),nd=a.job,k=Math.min(1,a.cordT/C.out),ex=lerp(tip.x,nd.x,k),ez=lerp(tip.z,nd.z,k),ey=lerp(tip.y,CFG.fx.y+Math.sin(S.t*3)*.02,k),n=Math.min(C.max-1,Math.ceil(Math.hypot(ex-tip.x,ey-tip.y,ez-tip.z)/C.s)),M=new THREE.Matrix4(),col=new THREE.Color(),g=v=>Math.round(v/C.s)*C.s;
  for(let i=0;i<=n;i++){const t=i/(n||1),f=i===n?3:1;M.makeScale(C.s*f,C.s*f,C.s*f);M.setPosition(g(lerp(tip.x,ex,t)),Math.max(i===n?0:CFG.fx.y,g(lerp(tip.y,ey,t)-C.sag*4*t*(1-t)*k)),g(lerp(tip.z,ez,t)));R.cord.setMatrixAt(i,M);R.cord.setColorAt(i,col.set(i===n?'#e2452f':'#e8e2d2'))}
  R.cord.count=n+1;R.cord.instanceMatrix.needsUpdate=true;R.cord.instanceColor.needsUpdate=true}
+function reflect(){const Q=R.mirror,c=R.cam,v=Q.cam,h=Q.mesh.position.y;Q.mesh.visible=false;if(S.mode!=='run')return; // water reflections: draw the scene from the camera's mirror image below the water plane into a small texture, which the water plane shows through that same camera's projection, rippled per voxel
+ v.fov=c.fov;v.aspect=c.aspect;v.near=c.near;v.far=c.far;v.updateProjectionMatrix();const t=new THREE.Vector3(0,0,-1).applyQuaternion(c.quaternion).add(c.position);
+ v.position.set(c.position.x,2*h-c.position.y,c.position.z);v.lookAt(t.x,2*h-t.y,t.z);v.updateMatrixWorld();Q.u.uVP.value.multiplyMatrices(v.projectionMatrix,v.matrixWorldInverse);Q.u.uT.value=S.t;
+ R.ren.shadowMap.autoUpdate=false;R.ren.setRenderTarget(Q.rt);R.ren.render(R.scene,v);R.ren.setRenderTarget(null);R.ren.shadowMap.autoUpdate=true;Q.mesh.visible=true}
 function outline(){const a=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node),h=a?a.rig.root:null,Q=R.line,W=CFG.ui.outline*2,el=R.ren.domElement; // silhouette outline round whatever is under the cursor: stamp its shape into the stencil, then draw it 8 times nudged outward wherever the stamp is not
  if(Q.on!==h){for(const[o,on]of[[Q.on,0],[h,1]])if(o)o.traverse(m=>m.isMesh&&(on?m.layers.enable(1):m.layers.disable(1)));Q.on=h}if(!h)return;
  Q.u.uCol.value.set(a.kind?'#ffd36a':'#ff4a2a');const bg=R.scene.background;R.scene.background=null;R.ren.autoClear=false;R.ren.shadowMap.autoUpdate=false;R.cam.layers.set(1); /* a colour background would clear the frame on every pass */
@@ -1482,6 +1492,6 @@ function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/
   g.position.copy(l.position);g.material.color.set(s.c);g.material.opacity=.5*fl;g.scale.setScalar(1.5*s.i*fl);if(S.mode==='run'&&Math.random()<dt*7)chips(s.x+(Math.random()-.5)*.2,s.y,s.z+(Math.random()-.5)*.2,s.c,1,{sp:.1,up:.9,g:-1.3,life:1.1,s:.7})})} // flicker, halo, rising embers
 let last=performance.now();function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;S.t+=dt;
  if(S.mode==='run'&&S.picks>0&&!S.pick)offerPerks();if(S.mode==='run'&&!S.pick){updateActors(dt);updateFx(dt);updateRun(dt)}else if(S.mode==='summary')updateFx(dt);
- animate(dt);cord(dt);updateCam(dt);updateHud(dt);R.ren.render(R.scene,R.cam);outline();requestAnimationFrame(loop)}
+ animate(dt);cord(dt);updateCam(dt);updateHud(dt);reflect();R.ren.render(R.scene,R.cam);outline();requestAnimationFrame(loop)}
 init();
 </script>
