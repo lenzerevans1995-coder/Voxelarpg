@@ -111,7 +111,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §3 UTIL    rng, hash, noise, math, colors
  §4 VOXEL   Vox world grid + greedy AO mesher; PRIM/PAT/bake(): meter-authored shapes → voxels at CFG.evox; rig()
  §5 MODEL   BODY template, joint() splits limbs, HELD[id] + equip() held items, dress() gear slots over a base body, MODEL[kind] builds rigs, key()/POSE + ANIM[kind] animate them, SKULL
- §6 GEN     SHAPE[id] room footprints, PATH[id] corridors, PLACE[role] prop layout, FLOOR/WALL/WALLPAINT/HANG/NICHE[style], STAMP[id], genDungeon(), genLobby()
+ §6 GEN     genTown() lobby surroundings, SHAPE[id] room footprints, PATH[id] corridors, PLACE[role] prop layout, FLOOR/WALL/WALLPAINT/HANG/NICHE[style], STAMP[id], genDungeon(), genLobby()
  §7 NAV     nav grid, walk, los, A*, goTo
  §8 ACTOR   spawn, hit, heal, buffs, kill
  §9 SKILL   SKILL[id], basic attack, targeting
@@ -127,7 +127,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
- depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
+ town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
  mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
@@ -224,7 +224,7 @@ const DB={
  BASES:{head:['Helm','Hood','Coif'],chest:['Hauberk','Cuirass','Vestments'],legs:['Greaves','Leggings','Tassets'],trinket:['Rosary','Bone Charm','Sigil Ring','Reliquary']},
  STATS:{power:{w:1,name:'Power'},vit:{w:1.2,name:'Vitality'},armor:{w:2,name:'Armor'},haste:{w:.5,name:'Haste'}},
  OMENS:[{id:'restless',depth:3,name:'Restless Dead',tip:'Slain skeletons may rise again'},{id:'frenzy',depth:5,name:'Frenzied',tip:'Foes below 30% hit harder and faster'},{id:'tithe',depth:7,name:'Bloodtithe',tip:'Fallen foes leave pools that heal their kin'}],
- LOBBY:{floor:['#4a4650','#444049','#504b56','#3e3a44'],groove:'#1c1a20',wall:['#5a5662','#544f5c','#615c69'],mortar:'#2c2931',trim:'#6d6876',top:'#1d1b22',slate:['#2d3038','#353942'],iron:'#1e1e22',wood:'#3d2a1d',stone:'#6a6570',water:'#2a4a66',glass:['#3a5fd0','#b03040','#d9a441','#3f9a6a'],lamp:'#ffc070',light:'#ffaa55',moss:'#3f5a2c',fog:'#141019',sky:'#6a5a8a',gnd:'#1a1418',moon:'#b8b0e8'}};
+ LOBBY:{floor:['#4a4650','#444049','#504b56','#3e3a44'],groove:'#1c1a20',wall:['#5a5662','#544f5c','#615c69'],mortar:'#2c2931',trim:'#6d6876',top:'#1d1b22',slate:['#2d3038','#353942'],iron:'#1e1e22',wood:'#3d2a1d',stone:'#6a6570',water:'#2a4a66',glass:['#3a5fd0','#b03040','#d9a441','#3f9a6a'],lamp:'#ffc070',light:'#ffaa55',moss:'#3f5a2c',plaster:['#8a7f72','#7d7468','#968a7c'],fog:'#232640',sky:'#9a96d0',gnd:'#3a3440',moon:'#dcdcff'}};
 
 // §2 STATE
 const S={mode:'boot',t:0,ui:{tab:null,t:0},save:null,sel:{d:0,cls:'templar',member:'templar',mode:'charted',item:null},run:null,D:null,nav:null,party:[],foes:[],
@@ -797,6 +797,25 @@ function genLobby(){ // plaza + procedurally assembled Gothic chapel (grammar: w
  for(let k=0;k<9;k++){const x=r.int(12,48),z=r.int(40,150);for(let y=2;y<11;y++)W.box(x-2,y,z,x+2,y,z+1,y>8&&(x-2<0)?-1:hash3(x,y,z)<.15?M.moss:M.stone)}
  lights.push({x:10,y:3,z:15.6,c:'#ffb060',i:1.8},{x:10,y:7,z:15.4,c:'#8090ff',i:1.4});return{W,lights}}
 
+function genTown(){ // Morrowgate around the chapel square: cobbles to the horizon, timbered houses with gabled slate roofs and lit windows, lamp posts, a graveyard, wooded hills closing the skyline.
+ // Its own grid, drawn offset so the chapel grid sits in the middle; purely scenery
+ const P=DB.LOBBY,C=CFG.town,N=C.size,W=new Vox(N,C.sy,N),M=mats(W,P),r=rng(11),lights=[],v=CFG.vox,sq=(x0,z0,x1,z1,p)=>x0<C.ox+200+p&&x1>C.ox-p&&z0<C.oz+220+p&&z1>C.oz-p; // sq = overlaps the chapel plaza grown by p
+ for(let z=0;z<N;z++)for(let x=0;x<N;x++){if(sq(x,z,x,z,0))continue;const e=Math.min(x,z,N-1-x,N-1-z),hill=e<C.rim?Math.round((C.rim-e)*.6*(.5+noise2(x*.03,z*.03,5))):0;W.set(x,0,z,M.groove);
+  if(hill){for(let y=Math.max(1,hill-4);y<=hill+1;y++)W.set(x,y,z,y>hill&&noise2(x*.09,z*.09,7)>.4?M.moss:M.stone);if(hill>5&&hash3(x,z,9)<.003)STAMP.tree(W,M,x,z,r,hill+2)}
+  else if(x%4&&z%4)W.set(x,1,z,noise2(x*.02,z*.02,3)>.72?M.moss:M.floor[Math.floor(hash3(x>>2,z>>2,3)*4)])}
+ const done=[],house=(x0,z0,w,d,h)=>{const lx=w>=d,L=lx?w:d,S=lx?d:w,at=(l,s2)=>lx?[x0+l,z0+s2]:[x0+s2,z0+l]; // lx: ridge runs along x
+  W.box(x0,2,z0,x0+w,2+h,z0+d,(x,y,z)=>{const ex=x===x0||x===x0+w,ez=z===z0||z===z0+d;if(!ex&&!ez)return y===2+h?M.wood:-1;const u=ex?z-z0:x-x0,row=(y-6)%13,win=y>5&&row>2&&row<8&&u%10>3&&u%10<8&&y<h-1;
+   return win?(row===5||u%10===5?M.iron:hash3(x0+(u/10|0)*7,(y/13|0),z0+(ex?1:0))<.62?M.lamp:M.slate[0]):u%10===0||row===0||(ex&&ez)?M.wood:M.plaster[Math.floor(hash3(x>>2,y>>2,z>>2)*3)]}); // timber frame, plaster, mullioned windows (most lit)
+  for(let k=0;k<=S/2+1;k++)for(let l=-2;l<=L+2;l++)for(const s2 of[k-2,S-k+2]){const[x,z]=at(l,s2);W.set(x,3+h+k,z,(l+k)%5?M.slate[(k>>1)&1]:M.slate[1]);W.set(x,2+h+k,z,M.slate[0])} // gabled slate roof with overhang
+  for(let k=0;k<=S/2;k++)for(let s2=k;s2<=S-k;s2++)for(const l of[0,L]){const[x,z]=at(l,s2);W.set(x,3+h+k,z,s2===S>>1?M.wood:M.plaster[1])} // gable ends
+  const[cx,cz]=at(L*.7|0,S*.3|0);W.box(cx,3+h,cz,cx+3,h+S/2+9,cz+3,M.wall[1]);W.box(x0+(w>>1)-2,2,z0+d,x0+(w>>1)+2,12,z0+d,M.wood)}; // chimney, door
+ for(let i=0;i<C.houses*4&&done.length<C.houses;i++){const w=r.int(34,58),d=r.int(30,52),h=r.int(24,50),x0=r.int(C.rim+4,N-C.rim-4-w),z0=r.int(C.rim+4,N-C.rim-4-d);
+  if(sq(x0,z0,x0+w,z0+d,26)||done.some(q=>x0<q[2]+12&&x0+w>q[0]-12&&z0<q[3]+12&&z0+d>q[1]-12))continue;done.push([x0,z0,x0+w,z0+d]);house(x0,z0,w,d,h)}
+ for(let i=0;i<14;i++){const a=i/14*TAU,x=Math.round(C.ox+100+Math.cos(a)*150),z=Math.round(C.oz+120+Math.sin(a)*160);if(done.some(q=>x>q[0]-4&&x<q[2]+4&&z>q[1]-4&&z<q[3]+4))continue; // lamp posts ring the square
+  W.box(x,2,z,x,28,z,M.iron);W.box(x-1,29,z-1,x+1,31,z+1,M.lamp);W.box(x-1,32,z-1,x+1,32,z+1,M.iron);lights.push({x:(x-C.ox)*v,y:3,z:(z-C.oz)*v,c:P.light,i:1.7})}
+ for(let i=0;i<18;i++){const x=C.ox-70+(i%6)*13,z=C.oz+30+(i/6|0)*16;if(!done.some(q=>x>q[0]-8&&x<q[2]+8&&z>q[1]-8&&z<q[3]+8))STAMP.grave(W,M,x,z,r)} // graveyard beside the chapel
+ return{W,lights,pos:[-C.ox*v,0,-C.oz*v]}}
+
 // §7 NAV
 function navBuild(D){const n=CFG.navRes,sx=D.W.sx,NX=Math.floor(sx/n),w=new Uint8Array(NX*NX),ok=new Uint8Array(NX*NX),Q=[];
  for(let j=0;j<NX;j++)for(let i=0;i<NX;i++){let ok1=1;for(const a of[1,2,3])for(const b of[1,2,3]){const k=(j*n+b)*sx+i*n+a;if(!D.open[k]||D.W.blk[k])ok1=0}w[j*NX+i]=ok1}
@@ -1119,7 +1138,7 @@ function finishRun(){const r=S.run;r.done=true;const inTime=r.t<=r.limit,up=inTi
  <div class="num">Time ${fmt(r.t)} / ${fmt(r.limit)} · Deaths ${r.deaths}</div><div>Sigil Depth ${r.depth} → <b style="color:var(--gold)">${S.save.sigil[id]}</b></div>
  <div class="lbl">Loot</div>${r.loot.map(it=>`<div class="item"><span style="color:${DB.RARITY[it.rar].col}">${it.name}</span><span class="muted num">ilvl ${it.ilvl}</span></div>`).join('')||'<div class="muted">Nothing this time.</div>'}
  <button class="enter" id="back">Return to Morrowgate</button></div>`;$('#back').onclick=toLobby}
-function toLobby(){clearRun();S.run=null;S.nav=null;$('#sum').hidden=true;$('#hud').hidden=true;R.lobby.visible=true;R.cut.on.value=0;R.bossLight.intensity=0;R.lantern.intensity=0;setEnv(DB.LOBBY,[.7,.75,34,95]);S.mode='lobby';S.D={lights:R.lobbyLights};lobbyParty();renderLobby()}
+function toLobby(){clearRun();S.run=null;S.nav=null;$('#sum').hidden=true;$('#hud').hidden=true;R.lobby.visible=true;R.cut.on.value=0;R.bossLight.intensity=0;R.lantern.intensity=0;setEnv(DB.LOBBY,CFG.town.amb);S.mode='lobby';S.D={lights:R.lobbyLights};lobbyParty();renderLobby()}
 function revive(m,x,z){m.dead=false;m.hp=m.maxHp;m.mp=m.maxMp;m.buffs=[];m.x=x;m.z=z;m.rig.root.rotation.set(0,0,0);m.rig.root.position.y=0;m.deathT=undefined}
 function wipeReset(){const v=CFG.vox,st=S.D.start,bossHit=S.foes.some(f=>f.boss&&!f.dead&&f.aggro);toast('The party rises again at the sigil');
  S.party.forEach((m,i)=>revive(m,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
@@ -1254,7 +1273,7 @@ function init(){R.ren=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});R
  R.matWE=new THREE.MeshBasicMaterial({vertexColors:true});addCut(R.matWE);R.matE=new THREE.MeshBasicMaterial({vertexColors:true});R.cube=new THREE.BoxGeometry(1,1,1);
  R.chipMax=1600;R.chips=new THREE.InstancedMesh(new THREE.BoxGeometry(.05,.05,.05),new THREE.MeshBasicMaterial(),R.chipMax);R.chips.setColorAt(0,new THREE.Color());R.chips.count=0; /* colour buffer must exist before the first compile or particles render white */R.chips.frustumCulled=false;R.scene.add(R.chips);
  R.ray=new THREE.Raycaster();R.plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);R.world=new THREE.Group();R.lobby=new THREE.Group();R.scene.add(R.world,R.lobby);
- resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby();meshVox(L.W,R.lobby);R.lobbyLights=L.lights;toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
+ resize();initInput();S.save=loadSave();S.sel.cls=S.save.cls||'templar';S.sel.member=S.sel.cls;const L=genLobby(),T=genTown(),tg=new THREE.Group();meshVox(L.W,R.lobby);tg.position.set(...T.pos);meshVox(T.W,tg);R.lobby.add(tg);R.lobbyLights=[...L.lights,...T.lights];toLobby();S.mode='title';$('#lobby').hidden=true;requestAnimationFrame(loop)}
 function enterLobby(){S.mode='lobby';$('#title').classList.add('out');renderLobby()}
 function updateActors(dt){const all=[...S.party,...S.foes],fight=combatFoes().length>0;
  for(const a of all){a.moving=0;for(const k in a.cd)a.cd[k]-=dt;a.atkCd-=dt;a.stun-=dt;a.atkT-=dt;a.castT-=dt;a.flash-=dt;if(a.taunt)a.taunt.t-=dt;if(a.dead)continue;if(a.team==='party'){a.alert=fight;a.mp=Math.min(a.maxMp,a.mp+CFG.mana*dt)}
