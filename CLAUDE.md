@@ -17,7 +17,7 @@ Gothic voxel party dungeon crawler. Design docs: `/docs`. Playable prototype:
 4. **One state object.** All mutable game state lives in `S`. Three.js handles
    live in `R`.
 5. **Registries keyed by id.** Behavior is looked up by id:
-   `SKILL[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `MODEL[kind]`,
+   `SKILL[id]`, `AI[role]`, `BOSS[id]`, `ARENA[id]`, `ACT[id]`, `MODEL[kind]`,
    `ANIM[kind]`, `HELD[id]`, `STAMP[id]`, `PLACE[mode]`, `SHAPE[id]`,
    `PATH[id]`, `FLOOR[style]`, `WALL[style]`, `ZONE[shape]`, `PANEL[id]`. To add content, add a `DB` entry and, if
    needed, one registry function. Do not add `if/else` chains.
