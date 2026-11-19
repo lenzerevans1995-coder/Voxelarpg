@@ -19,13 +19,19 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 .bar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0000 0 6px,#0008 6px 8px);box-shadow:inset 0 2px #fff3,inset 0 -2px #0007;pointer-events:none} /* voxel bars: fill cut into lit blocks */
 #lobby *,#hud *,#sum *{border-radius:0!important}.toast,.alert,.boss,.n{text-shadow:2px 2px 0 #000!important}
 /* title: letterboxed fly-through of the chapel, logo rises out of the dark */
-#title{position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:10px;text-align:center;cursor:pointer;background:radial-gradient(ellipse at center,#0000 35%,#000c 100%);transition:opacity .9s;z-index:5}
-#title::before,#title::after{content:'';position:absolute;left:0;right:0;height:11vh;background:#000}#title::before{top:0}#title::after{bottom:0}#title.out{opacity:0;pointer-events:none}
-#title h1{font:700 clamp(54px,11vw,150px)/.9 var(--display);color:#f5c45a;letter-spacing:.04em;text-shadow:0 0 30px #d6741a,0 0 80px #b03a12,0 6px 0 #3a1608,0 10px 30px #000;animation:rise 2.6s cubic-bezier(.2,.7,.2,1) both}
-#title .sub{font:700 clamp(11px,1.5vw,16px) 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.3em;color:#d8cdb8;text-shadow:2px 2px 0 #000;margin:0;animation:rise 2.6s .7s both}
-#title .go{font:700 13px 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.2em;color:#fff;text-shadow:2px 2px 0 #000;margin-top:5vh;animation:rise 1.5s 2.2s both,blink 1.4s 3.7s infinite alternate}
+#title{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:14px;padding:0 0 0 clamp(20px,7vw,110px);background:linear-gradient(90deg,#000e 0%,#000a 30%,#0000 62%),radial-gradient(ellipse at 70% 50%,#0000 40%,#000a 100%);transition:opacity .9s;z-index:5}
+#title::before,#title::after{content:'';position:absolute;left:0;right:0;height:9vh;background:#000}#title::before{top:0}#title::after{bottom:0}#title.out{opacity:0;pointer-events:none}
+#title .lamp{width:84px;height:84px;background:center/contain no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 18px #ff9a2a);animation:rise 1.6s both,flick 2.2s 1.6s infinite alternate}
+#title h1{margin:0;font:700 clamp(40px,8.5vw,112px)/.92 'Silkscreen',monospace;text-transform:uppercase;color:#f5c45a;letter-spacing:.02em;text-shadow:0 3px 0 #c8902e,0 6px 0 #96661c,0 9px 0 #5e3d0e,0 12px 0 #2a1904,0 0 46px #d6741a;animation:rise 1.8s .2s both}
+#title h1 span{display:block}#title h1 span+span{color:#e8e0d0;text-shadow:0 3px 0 #a8a092,0 6px 0 #6e675c,0 9px 0 #3a352e,0 12px 0 #14110e,0 0 40px #5a7a9a}
+#title .sub{font:700 clamp(10px,1.3vw,14px) 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.28em;color:#d8cdb8;text-shadow:2px 2px 0 #000;margin:6px 0 10px;animation:rise 1.8s .6s both}
+#title nav{display:flex;flex-direction:column;gap:8px;width:min(300px,80vw);animation:rise 1.4s 1s both}
+#title nav button{font:700 15px 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.12em;text-align:left;padding:12px 14px;color:#e8e0d0;background:#0b0a0dd9 padding-box;border:10px solid transparent;border-image:var(--vx) 6 / 10px}
+#title nav button:first-child{color:#f5c45a}#title nav button:hover,#title nav button:focus-visible{background-color:#3a1512;color:#fff;transform:translateX(6px)}#title nav button{transition:transform .12s,background-color .12s}
+#title .keys{font:700 10px/1.9 'Silkscreen',monospace;text-transform:uppercase;letter-spacing:.1em;color:#a89f8c;text-shadow:1px 1px 0 #000;margin:10px 0 0;animation:rise 1.4s 1.4s both}#title .keys b{color:#fff;background:#000c;border:1px solid #6b6258;padding:0 4px;font-weight:700}
+@keyframes flick{to{filter:drop-shadow(0 0 30px #ffb84a) brightness(1.15)}}
 @keyframes rise{from{opacity:0;transform:translateY(28px);filter:blur(6px)}to{opacity:1}}@keyframes blink{to{opacity:.25}}
-@media (prefers-reduced-motion:reduce){#title h1,#title .sub,#title .go{animation:none}#title{transition:none}}
+@media (prefers-reduced-motion:reduce){#title h1,#title .sub,#title nav,#title .keys,#title .lamp{animation:none}#title,#title nav button{transition:none}}
 /* lobby */
 #lobby{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,360px) 1fr minmax(0,380px);gap:16px;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 16px max(16px,env(safe-area-inset-left));pointer-events:none}
 #lobby>section{pointer-events:auto;background:var(--panel) padding-box;border:12px solid transparent;border-image:var(--vx) 6 / 12px;padding:6px;overflow:auto;min-width:0;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 32px)}
@@ -97,7 +103,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 </style>
 
 <canvas id="c"></canvas>
-<div id="title"><h1>Grave Lantern</h1><p class="sub">Three against the dark · a voxel dungeon crawl</p><p class="go">Click or press any key</p></div>
+<div id="title"><div class="lamp"></div><h1><span>Grave</span><span>Lantern</span></h1><p class="sub">A voxel dungeon crawl beneath an open world</p><nav><button id="tnew">New game</button><button id="tgo">Load game</button></nav><p class="keys"><b>WASD</b> or hold <b>Left click</b> move · hold on a foe to fight · <b>Space</b> roll · <b>1–4</b> skills</p></div>
 <div id="lobby"></div>
 <div id="hud" hidden></div>
 <div id="sum" hidden></div>
@@ -130,7 +136,7 @@ const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
  town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,dodge:{range:3.4,dur:.45,cd:.8,inv:.45,mid:1,ball:.62},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
  mana:7,water:{y:-.096,res:512,mix:.5,rip:.004},cord:{s:.035,max:220,sag:.35,out:.3,tip:1.5},ui:{outline:2.5,mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
- anim:{robe:[.36,.22],k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
+ anim:{robe:[.36,.22],cloth:[.2,.32,5,.014,.03],k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
 // §1 DB
 const DB={
@@ -209,12 +215,13 @@ const DB={
   {id:'marsh',d:0,name:'Vael Marsh',pal:{tree:'oak',leaf:'#2f4a34',turf:['#2f3a30','#38443a','#414e40','#4a5846','#343c34'],water:'#10202a',moss:'#3a4a34',grass:'#56684a'}},{id:'moor',d:1,name:'Hollow Moor',pal:{tree:'oak',leaf:'#4a6a2e'}},
   {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{tree:'palm',treeN:.2,leaf:'#6a8a3a',turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
   {id:'tundra',d:3,name:'Frostspire Tundra',pal:{tree:'pine',treeN:.7,leaf:'#2f5a48',turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
- ZONE:{floor:'earth',foes:.6,lay:{cells:20,open:[26,22,.6,.56,.003,.00015],shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:12,links:6,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs; open = open country: [edge margin, how far the edge wanders, hill threshold, forest threshold, tree chance per column in forest, and outside it]
+ ZONE:{floor:'earth',foes:.6,lay:{cells:20,open:[26,22,.57,.56,.003,.00015,.00025],shapes:['glade','glade','round'],boss:'glade',room:[3,4],rooms:12,links:6,path:'wind',w:22,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs; open = open country: [edge margin, how far the edge wanders, hill threshold, forest threshold, tree chance per column in forest, and outside it, boulder chance per column]
   decor:[['stone','ring',6],['tree','corner',2],['rubble','corner',1],['wisp','quad']],nodes:[['ore',9],['fish',5],['wood',9]]},
  NODES:{ // gathering nodes: hold left click on one to work it. reach = how close you must stand, time = seconds per haul, dur = seconds per stroke, hold = one cast then wait (fishing), hauls before it is spent, respawn seconds
   ore:{name:'Ore vein',at:[.7,.95],tool:'pick',reach:1.9,trade:'mining',item:'ore',rare:'gem',time:3.6,dur:1.2,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'mine'},fish:{name:'Fishing spot',at:[.15,.55],tool:'rod',reach:4.5,hold:1,trade:'fishing',item:'fish',rare:'pearl',time:7,dur:1.2,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'fish'},
   wood:{name:'Tree',at:[.6,.9],tool:'hatchet',reach:1.9,trade:'woodcutting',item:'wood',rare:'amber',time:3.3,dur:1.1,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'fell'}},
  TRADES:{mining:'Mining',fishing:'Fishing',woodcutting:'Woodcutting',smithing:'Smithing',cooking:'Cooking'},TRADE:{base:40,grow:1.18,max:50,speed:.03,rare:.06,rareLv:.004}, // trade skills: xp to next = base*grow^(lvl-1); each level works faster and finds rares more often
+ CLOTH:{skirt:[0,.9],hem:[.45,.9],cape:[0,.95],cloak:[0,.95]}, // rig nodes that are cloth, by node name: [how far below the node's pivot the cloth already hangs at its top, total hanging length in metres]. The further down, the more it ripples and trails (newMat)
  MATS:{ore:'Ore',gem:'Gem',fish:'Fish',pearl:'Pearl',wood:'Wood',amber:'Amber',ration:'Ration'},
  RECIPES:[{id:'ration',name:'Cook a ration',trade:'cooking',need:{fish:2},xp:15,make:'ration',tip:'Q in the field: restores 40% health'},{id:'weapon',name:'Forge a weapon',trade:'smithing',need:{ore:6,wood:2},xp:40,slot:'weapon'},
   {id:'armour',name:'Forge armour',trade:'smithing',need:{ore:5},xp:30,slot:'armour'},{id:'charm',name:'Carve a charm',trade:'smithing',need:{wood:3,gem:1},xp:35,slot:'trinket'}],
@@ -384,13 +391,16 @@ function bake(key,prims,mt,pv,P={},res=CFG.evox,thin=0){if(BAKE.has(key))return 
  const out=meshVG(g,[(pv[0]-mn[0])/res,(pv[1]-mn[1])/res,(pv[2]-mn[2])/res],res);BAKE.set(key,out);return out}
 function mesh2(geo,mat){const grp=new THREE.Group();geo.forEach((g,k)=>{if(!g)return;const m=new THREE.Mesh(g,k?R.matE:mat);m.castShadow=!k;grp.add(m)});return grp}
 function rig(kind,key,nodes,mt,P,res){const r={kind,root:new THREE.Group(),body:new THREE.Group(),mat:newMat()},at={body:[0,0,0]};r.root.add(r.body);
- for(const nd of nodes){const par=nd.p||'body',pa=at[par],g=nd.prims?mesh2(bake(key+':'+nd.n,nd.prims,mt,nd.at,P,res),r.mat):new THREE.Object3D();
+ for(const nd of nodes){const par=nd.p||'body',pa=at[par],cl=nd.prims&&DB.CLOTH[nd.n],cm=cl&&newMat({v:r.cl=r.cl||new THREE.Vector4(),o:cl}),g=nd.prims?mesh2(bake(key+':'+nd.n,nd.prims,mt,nd.at,P,res),cm||r.mat):new THREE.Object3D();if(cm)(r.cloths=r.cloths||[]).push(cm);
   g.position.set(nd.at[0]-pa[0],nd.at[1]-pa[1],nd.at[2]-pa[2]);at[nd.n]=nd.at;r[par].add(g);r[nd.n]=g;if(nd.hide)g.visible=false}return r}
 const hold=(r,hand,key,prims,mt,rx=Math.PI/2,pos,ry=0)=>{const o=mesh2(bake(key,prims,mt,[0,0,0],{},CFG.evox,1),r.mat);o.rotation.set(rx,ry,0);if(pos)o.position.set(...pos);r[hand].add(o);return o};
 
 // §5 MODEL
-function newMat(){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0}); // + cool rim light so figures read against dark floors
- m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>',`#include <dithering_fragment>
+function newMat(cl){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0}); // + cool rim light so figures read against dark floors. cl = cloth: every vertex is pushed by ripples, sway and a trailing lag that grow toward the free edge, so cloth voxels move like cloth instead of as one stiff block
+ m.customProgramCacheKey=()=>cl?'cloth':'body';m.onBeforeCompile=sh=>{if(cl){sh.uniforms.uCl={value:cl.v};sh.uniforms.uCo={value:new THREE.Vector2(cl.o[0],cl.o[1])};sh.vertexShader='uniform vec4 uCl;uniform vec2 uCo;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+  float cw=clamp((uCo.x-position.y)/uCo.y,0.,1.);cw*=cw;transformed.z+=cw*(-uCl.y+sin(uCl.z*2.6+position.x*8.+position.y*5.)*(.02+uCl.x*.05));
+  transformed.x+=cw*(uCl.w+sin(uCl.z*1.9+position.y*6.+position.z*5.)*(.015+uCl.x*.03));transformed.y+=cw*abs(uCl.y)*.3;`)}
+  sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>',`#include <dithering_fragment>
  gl_FragColor.rgb+=pow(1.-clamp(dot(normalize(vViewPosition),normal),0.,1.),3.)*${CFG.anim.rim.toFixed(2)}*(diffuseColor.rgb*.6+vec3(.1,.12,.16));`)};return m}
 const pb=(c,s,m,o)=>({t:'box',c,s,m,...o}),pe=(c,s,m,o)=>({t:'ell',c,s,m,...o}),pc=(a,b,r,m,o)=>({t:'cap',a,b,r,m,...o}),py=(c,r,h,m,o)=>({t:'cyl',c,r,h,m,...o}),pf=(bb,f,m)=>({t:'fn',bb,f,m});
 const tr=(L,d)=>L.map(o=>{const q={...o};for(const k of['c','a','b'])if(q[k])q[k]=q[k].map((v,i)=>v+d[i]);if(q.bb){q.bb=o.bb.map((a,i)=>a.map(v=>v+d[i]));q.f=(x,y,z)=>o.f(x-d[0],y-d[1],z-d[2])}return q});
@@ -447,6 +457,18 @@ const HELD={ // held items, authored in grip space (origin = palm, +y = up the h
  scythe:{at:'handR',rx:.3,pos:[0,.1,.07],prims:()=>[pc([0,-.9,0],[0,1.82,0],.024,'wd'),...[0,1,2].map(i=>hoop([0,.0+i*.5,0],.02,.034,i*.5,i*.5+.03,'ir')),
   pf([[-.012,.012],[1.2,1.86],[-.02,.62]],(x,y,z)=>{const dy=y-1.25,r0=Math.hypot(dy,z),th=Math.atan2(dy,z);if(th<.15||th>1.58)return false;const w=.006+.085*(th-.15)/1.43;return Math.abs(x)<.01&&r0<.57&&r0>.57-w},'bl')]}};
 function equip(r,id,mt,key='',o={}){const H=HELD[id],at=o.at||H.at,m=hold(r,at,id+key,H.prims(o),mt,H.rx,H.pos,H.ry);m.userData={rx:H.rx??Math.PI/2,ry:H.ry||0,plumb:H.plumb};if(H.shield)r.shield=1;if(at!=='handR')(r.offs=r.offs||[]).push(m);if(H.plumb)(r.plumb=r.plumb||[]).push({m,sd:at.slice(-1),rx:H.rx||0});return m}
+const OCTA=(m,k=1)=>pf([[-.15,.15],[-.2,.2],[-.15,.15]],(x,y,z)=>Math.abs(x)+Math.abs(z)+Math.abs(y)*.72<.135*k,m),HEART=(x,y)=>{const u=x/.15,v=y/.15+.15;return(u*u+v*v-1)**3-u*u*v*v*v<0};
+const ITEMV={ // item shapes by id (item slot, material id, or 'heart'/'gem'), about 0.3 m and centred on the origin. Materials: c = the item's own colour, m = metal, d = dark, w = wood, wh = highlight. glow = drawn unlit. Used for ground drops (MODEL.drop)
+ heart:{glow:1,p:()=>[pf([[-.2,.2],[-.2,.2],[-.07,.07]],(x,y,z)=>HEART(x,y)&&Math.abs(z)<.06-Math.abs(x)*.12,'c'),pb([-.075,.07,.05],[.03,.03,.012],'wh'),pb([-.075,.07,-.05],[.03,.03,.012],'wh')]},
+ gem:{glow:1,p:()=>[OCTA('c'),pb([-.03,.06,.04],[.02,.03,.02],'wh')]},amber:{glow:1,p:()=>[OCTA('c',.8),pb([-.02,.04,.03],[.015,.02,.015],'wh')]},pearl:{p:()=>[pe([0,0,0],[.09,.09,.09],'c'),pb([-.03,.04,.06],[.02,.02,.012],'wh')]},
+ head:{p:()=>[pe([0,.02,0],[.13,.14,.14],'m'),pb([0,0,.12],[.085,.015,.03],'d'),pb([0,-.06,.125],[.01,.05,.02],'d'),pb([0,.15,0],[.016,.035,.11],'c'),pb([0,-.1,0],[.125,.02,.135],'c')]},
+ chest:{p:()=>[pe([0,0,0],[.17,.19,.11],'m'),...both([pe([.17,.13,0],[.075,.06,.085],'m'),pe([.17,.09,0],[.07,.012,.08],'c')]),pb([0,.01,.11],[.012,.12,.008],'c'),pb([0,.05,.11],[.07,.012,.008],'c'),pb([0,-.16,0],[.15,.022,.115],'d')]},
+ legs:{p:()=>both([pc([.08,.16,0],[.08,-.1,0],.06,'m'),pb([.08,-.15,.04],[.055,.035,.1],'d'),pe([.08,.04,.05],[.04,.04,.03],'c'),pb([.08,.17,0],[.062,.012,.062],'c')])},
+ trinket:{p:()=>[pf([[-.14,.14],[-.14,.14],[-.03,.03]],(x,y,z)=>{const d=Math.hypot(x,y);return d>.085&&d<.125&&Math.abs(z)<.025},'m'),pe([0,.12,0],[.05,.05,.045],'c'),pb([-.012,.135,.035],[.012,.012,.008],'wh')]},
+ ore:{p:()=>[pe([0,0,0],[.15,.11,.13],'d',{n:.03,nf:20}),pe([.06,.07,.04],[.045,.035,.04],'c'),pe([-.07,.04,-.04],[.04,.035,.035],'c'),pe([-.02,.02,.1],[.035,.03,.03],'c')]},
+ fish:{p:()=>[pe([0,0,0],[.16,.07,.04],'c'),pf([[-.26,-.12],[-.09,.09],[-.02,.02]],(x,y,z)=>Math.abs(y)<(-.12-x)*.75&&Math.abs(z)<.012,'c'),pb([.1,.02,.035],[.012,.012,.008],'d'),pb([.1,.02,-.035],[.012,.012,.008],'d'),pb([0,.07,0],[.05,.02,.008],'m')]},
+ wood:{p:()=>[pc([-.15,0,0],[.15,0,0],.07,'w'),pe([.15,0,0],[.012,.055,.055],'c'),pe([-.15,0,0],[.012,.055,.055],'c'),pc([.02,.05,0],[.07,.13,.02],.02,'w')]},
+ ration:{p:()=>[pb([0,0,0],[.12,.07,.09],'w',{r:.02}),pb([0,.075,0],[.125,.012,.095],'c'),pb([0,0,.09],[.012,.08,.008],'c')]}};
 const SLOTS3=['head','chest','legs'],wornId=g=>SLOTS3.map(sl=>g[sl]?1:0).join('');
 const dress=(B,K,g)=>Object.fromEntries(['leg','torso','head','arm'].map(p=>[p,()=>[...B[p],...SLOTS3.flatMap(sl=>((g[sl]?K[sl]:K.bare&&K.bare[sl])||{})[p]||[])]])); // modular gear: base body part + the pieces of every filled slot (K.bare = what shows when a slot is empty)
 const MODEL={
@@ -476,8 +498,8 @@ const MODEL={
    head:{head:[ellShell([0,1.64,-.01],[.132,.155,.145],.2,'mantle',(x,y,z)=>!(z>.03&&Math.abs(x)<.08&&y<1.72&&y>1.5)),pc([0,1.72,-.12],[0,1.6,-.2],.05,'mantle',{r2:.015}),
     ...(cs?[]:[pf([[-.15,.15],[1.82,1.92],[-.18,.12]],(x,y,z)=>Math.abs(y-1.86-(z+.03)*.25)<.012&&Math.abs(Math.hypot(x,z+.03)-.115)<.014,'glow')])]}};
   const r=rig('hum',(cs?'caster'+c.robe:'sister')+k.id+wornId(gear)+(L.id||''),humNodes(1,{...dress(B,K,gear),
-   extra:s=>{const sk=(m,q0,q1,y1)=>pf([[-.34,.34],[.03,.98],[-.34,.34]],(x,y,z)=>{const t=(.97-y)/.92,q=(x/(.165+t*.15))**2+(z/(.125+t*.19))**2;return y>.035&&y<y1&&q<=q1&&q>q0},m); // one-piece robe skirt, a bell wide enough at the hem that the short robed stride (CFG.anim.robe) stays inside it
-    return[{n:'skirt',at:s([0,.97,0]),prims:[sk('robe',.6,1,.98),sk('gold',.82,1.02,.12),pf([[-.04,.04],[.1,.97],[.1,.34]],(x,y,z)=>{const t=(.97-y)/.92;return Math.abs(x)<.03&&Math.abs(z-(.125+t*.19))<.02},'robe2')]}]}}),mt);r.robe=1;
+   extra:s=>{const sk=(m,q0,q1,y0,y1)=>pf([[-.34,.34],[y0,y1],[-.34,.34]],(x,y,z)=>{const t=(.97-y)/.92,q=(x/(.165+t*.15))**2+(z/(.125+t*.19))**2;return y>.035&&q<=q1&&q>q0},m),fr=(y0,y1)=>pf([[-.04,.04],[y0,y1],[.1,.34]],(x,y,z)=>{const t=(.97-y)/.92;return Math.abs(x)<.03&&Math.abs(z-(.125+t*.19))<.02},'robe2'); // one-piece robe skirt, a bell wide enough at the hem that the short robed stride (CFG.anim.robe) stays inside it; hung in two lengths (skirt, hem) so it can bend, and both are cloth (DB.CLOTH)
+    return[{n:'skirt',at:s([0,.97,0]),prims:[sk('robe',.6,1,.52,.98),fr(.52,.97)]},{n:'hem',p:'skirt',at:s([0,.52,0]),prims:[sk('robe',.6,1,.03,.52),sk('gold',.82,1.02,.03,.12),fr(.1,.52)]}]}}),mt);r.robe=1;
   if(cs)r.orb=equip(r,'orb',mt,c.glow);else{const H=L.held||['censer','tome'];r.weapon=equip(r,H[0],mt,L.id);H[1]&&equip(r,H[1],mt,L.id)}return r},
  reaver(gear,_,L={}){const k=gearTint(gear),mt={skin:['#c89070','skin'],leather:['#5b3f2a','leather'],leather2:['#3a281b','leather'],mail:['#6d7076','mail'],red:['#7f2022','cloth'],fur:['#4a4038','fur'],
   iron:['#3d3f44','plate'],horn:['#d8cdb4','bone'],hair:['#4a2c1a','fur'],dark:['#1a1410'],gold:[k.trim],wood:['#4a3020','wood'],blade:[k.blade,'plate'],edge:[mix(k.blade,'#ffffff',.35)],...L.pal};
@@ -614,6 +636,8 @@ const MODEL={
  gate(P){const mt={dk:['#050408'],ru:[P.rune,'none',1]}; // the way down: a dark veil in the doorway with a ring of burning glyphs (the stonework round it is stamped by GATE[zone])
   const r=rig('static','gate'+P.rune,[{n:'box',at:[0,0,0],prims:[pb([0,1.2,0],[.68,1.15,.03],'dk'),...[0,1,2,3,4,5,6,7,8].map(i=>{const a=i/9*TAU;return pe([Math.cos(a)*.42,1.3+Math.sin(a)*.42,.05],[.05,.07,.02],'ru')}),pe([0,1.3,.05],[.1,.1,.02],'ru')]}],mt);
   r.hot='spirit';r.emit=[['box',[0,1.3,.1],12,1.5],['box',[.4,.3,.1],3,1],['box',[-.4,.3,.1],3,1]];return r},
+ drop(id,col){const mt={c:[col,ITEMV[id]&&ITEMV[id].glow?'none':'plate',ITEMV[id]&&ITEMV[id].glow?1:0],m:['#aeb4bc','plate'],d:['#2a2622','leather'],w:['#6a4a2a','wood'],wh:['#ffffff','none',1]}; // an item lying in the world, shaped like what it is: ITEMV[id], else the held model HELD[id] shrunk and recoloured
+  return rig('static','drop'+id+col,[{n:'box',at:[0,0,0],prims:ITEMV[id]?ITEMV[id].p():scl(tr(HELD[id].prims({L:.8,w:1}).map(q=>({...q,m:/gold|^go$|glow|core|fuller|ln/.test(q.m)?'c':/wood|grip|tw|wd|bead|str|tome/.test(q.m)?'w':'m'})),[0,-.42,0]),.55)}],mt)},
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
 function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
@@ -648,7 +672,8 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
   [1,-1].forEach((sd,i)=>{const n='LR'[i],Q=A.arm,x=clamp(ar[i],Q[0],Q[1]); // shoulder limits: hang clear of the hips, cross the chest only when raised in front, swing wide when drawn back; elbows only fold forward
    J('arm'+n,x,0,sd*Math.max(az[i]*sd,Q[2]-clamp((-x-.3)*.8,0,.75)+Math.max(0,x)*.35));J('fore'+n,clamp(fo[i],Q[3],0))});
   J('torso',ln,tw,Math.sin(t*.6)*.02*id+st*Math.sin(t*4)*.08);J('head',hx,hy,r.skel?Math.sin(t*2.3)*.07:0);r.body.position.y+=(by-r.body.position.y)*Math.min(1,dt*A.k);
-  Js('skirt',r.robe?m*.03:s*.08+m*.1);Js('cape',.1+m*.45-ln*.6+Math.sin(t*2)*.04,-tw*.5);Js('cloak',.08+m*.4+Math.sin(t*1.7)*.05,-tw*.5);Js('tail',.15+m*.5,0,Math.sin(t*2.4)*.35);
+  if(r.robe){const R0=a.leap&&a.leap.roll,w=Math.sin(t*2.1)*.035+Math.sin(t*3.3)*.02;r.skirt.scale.y+=((R0?.55:1)-r.skirt.scale.y)*Math.min(1,dt*20);if(R0){J('skirt',-.5);J('hem',1)}else{Js('skirt',m*.05+w*.5-ln*.3);Js('hem',m*.26+s*.07+w,0,Math.sin(t*1.6)*.03*id+c*.04*m)}} // robe: the hem trails behind a walk and sways at rest; in a roll the skirt gathers short, folds up over the thighs and the hem curls back round the shins
+  else Js('skirt',s*.08+m*.1);Js('cape',.1+m*.45-ln*.6+Math.sin(t*2)*.04,-tw*.5);Js('cloak',.08+m*.4+Math.sin(t*1.7)*.05,-tw*.5);Js('tail',.15+m*.5,0,Math.sin(t*2.4)*.35);
   for(const w of r.plumb||[])w.m.rotation.x=w.rx-(r['arm'+w.sd].rotation.x+r['fore'+w.sd].rotation.x+r.torso.rotation.x);flames(r,dt,a);if(r.orb)r.orb.scale.setScalar(a.cast?1+(1-a.cast.t/a.cast.max)*1.3+Math.sin(S.t*30)*.08:1)},
  golem(r,a,dt){const m=a.moveAmt,J=POSE(r,Math.min(1,dt*9)),t=S.t+a.seed,s=Math.sin(a.ph),c=Math.cos(a.ph),br=Math.sin(t*1.3),st=a.stun>0?1:0,fl=Math.max(0,a.flash)/.12;a.ph+=dt*m*(a.charge?10:1.7*a.speed);
   const q={aL:-s*.3*m,fL:-.25,aR:s*.4*m+.05,fR:-.3-m*.2,zz:.06,ln:br*.02+fl*-.08+st*.45,tw:-s*.12*m,hx:st*.4+Math.sin(t*.9)*.05,jaw:.06+Math.max(0,Math.sin(t*1.1))*.08+fl*.3};
@@ -708,7 +733,10 @@ const FLOOR={ // floor column (voxels y=0..), d = distance to nearest wall colum
   if(bog>.76&&d>3&&M.water&&!(q&&q.type==='boss')){W.set(x,0,z,M.water);if(bog<.78)W.set(x,1,z,M.turf[0]);return} // sunken pool with a dark rim
   W.set(x,0,z,M.groove);if(path){W.set(x,1,z,Math.abs(noise2(x*.5,z*.12,9)-.5)<.05?M.groove:hash3(x>>2,z>>2,9)<.08?M.stone:M.floor[g<.5?3:1]);return} // rutted mud track with flat stepping stones
   const bare=n<.3,fl=g<.0015?M.wax:g<.0025?M.flame:-1;W.set(x,1,z,fl>=0&&!bare?fl:bare?M.floor[g<.5?0:2]:M.turf[Math.min(4,Math.floor((n-.3)*5.5+g*1.6))]); // turf in five greens dithered by height noise, bare earth patches, tiny flowers
-  if(d<2&&g<.25)for(let y=2;y<3+g*14;y++)W.set(x,y,z,M.turf[y&1])}, // only the bank foot grows tall
+  if(d<2&&g<.25){for(let y=2;y<3+g*14;y++)W.set(x,y,z,M.turf[y&1]);return} // the bank foot grows tall
+  if(d<4||bare||(q&&q.type==='boss'))return;const lv=Math.min(4,Math.floor((n-.3)*5.5+g*1.6));if(n>.64)W.set(x,2,z,M.turf[lv]); // relief: the lushest turf stands one voxel proud, so the ground steps instead of lying flat
+  const top=n>.64?3:2,k=hash3(x,z,71);if(k<.012&&noise2(x*.13,z*.13,72)>.55)for(let y=top;y<top+1+k*160;y++)W.set(x,y,z,M.grass??M.turf[4]); // tufts of long grass in drifts
+  else if(k>.9988)W.box(x,top,z,x+1,top+(k>.998?1:0),z+1,M.stone)}, // loose stones
  sand(W,M,x,z,d,q){let g,k,gold=0;W.set(x,0,z,M.groove);
   if(q){const dx=x-q.cx,dz=z-q.cz,rr=Math.hypot(dx,dz),R1=Math.min(q.w,q.h)*CFG.cell*.4,a=((Math.atan2(dz,dx)/TAU*16)%1+1)%1,u=x+z,v=x-z+4096; // sunburst inlay over diagonal tiles
    gold=Math.abs(rr-9)<1||Math.abs(rr-R1)<1||(rr>9&&rr<R1&&Math.abs(a-.5)*rr*TAU/16<.75);g=u%14===0||v%14===0;k=hash3(Math.floor(u/14),Math.floor(v/14),7)}
@@ -773,6 +801,7 @@ const STAMP={ // floor stamps block nav; wall stamps get (nx,nz) pointing into t
  statue(W,M,x,z,r){const mo=M.moss??M.stone;W.box(x-4,2,z-4,x+4,5,z+4,M.trim);for(let y=6;y<20;y++){const rad=3.2-(y-6)*.08;W.disc(x,z,y,y,rad,(px,yy,pz)=>hash3(px,y,pz)<.08?mo:M.stone)}
   W.box(x-3,19,z-2,x+3,21,z+2,M.stone);W.disc(x,z,22,25,2.1,M.stone);W.box(x-1,23,z+2,x+1,24,z+2,M.groove);W.box(x-1,15,z+3,x+1,18,z+4,M.stone);
   if(r.chance(.5))for(const s of[-1,1])W.box(x+s*3,13,z-3,x+s*6,24,z-3,(px,y)=>y>22-Math.abs(px-x)?-1:M.stone);W.block(x-4,z-4,x+4,z+4)},
+ boulder(W,M,x,z,r){const a=r.int(3,6),b=r.int(3,6),h=r.int(4,11);W.box(x-a,2,z-b,x+a,2+h,z+b,(px,y,pz)=>((px-x)/a)**2+((pz-z)/b)**2+((y-2)/h)**2<1+noise3(px*.4,y*.4,pz*.4)*.5-.25?(y>h&&hash3(px,pz,4)<.4&&M.moss?M.moss:noise3(px*.3,y*.5,pz*.3)>.6?M.wall[1]:M.stone):-1);W.block(x-a+1,z-b+1,x+a-1,z+b-1);return 0}, // a weathered boulder, taller than a man at its largest
  rubble(W,M,x,z,r){for(let k=0;k<6;k++){const a=r.r()*TAU,d=r.r()*4,s=r.int(1,2);W.box(Math.round(x+Math.cos(a)*d),2,Math.round(z+Math.sin(a)*d),Math.round(x+Math.cos(a)*d)+s,2+s,Math.round(z+Math.sin(a)*d)+s,M.wall[k%3])}
   const al=r.chance(.5);for(let k=-7;k<=7;k++)W.disc(al?x+k:x,al?z:z+k,2,2,0,M.trim),W.box(al?x+k:x-1,2,al?z-1:z+k,al?x+k:x+1,4,al?z+1:z+k,(px,y,pz)=>Math.abs(k)===7?M.trim:M.wall[0]);W.block(x-7,z-7,x+7,z+7)},
 };
@@ -846,7 +875,7 @@ function genDungeon(def,seed){
   for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const wx=Math.round(x+wp(x,z,31)),wz=Math.round(z+wp(x,z,32));const ok=wx>3&&wz>3&&wx<SX-4&&wz<SX-4;open[z*SX+x]=ok?o0[wz*SX+wx]:0;lane[z*SX+x]=ok?l0[wz*SX+wx]:0}}
  const dW=cheb(SX,i=>open[i]),dIn=cheb(SX,i=>!open[i]),T0=2+wallH,topH=(x,z)=>{const n=noise2(x*.045,z*.045,12);return n>.62?T0-Math.min(12,Math.floor((n-.62)*45)):T0};S.gen={dIn};
  const G={W,M,def,L,T0,r},wall=WALL[L.wall],flr=FLOOR[def.floor],thick=L.wall==='bank'?SX:wallT;
- for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const i=z*SX+x;if(open[i]){flr(W,M,x,z,dIn[i],L.open?(lane[i]&&rm[i]<0?undefined:rooms[rm[i]]||rooms[start]):rooms[rm[i]]); /* open country: turf everywhere, worn earth only along the trails between places */if(L.open&&rm[i]<0&&!lane[i]&&dIn[i]>6&&W.get(x,0,z)!==M.water&&hash3(x,z,62)<L.open[noise2(x*.02,z*.02,61)>L.open[3]?4:5]*(def.pal.treeN??1))STAMP.tree(W,M,x,z,r)} /* woods you can walk through, and lone trees */else if(dW[i]<=thick)wall(G,x,z,dW[i],topH(x,z))}
+ for(let z=0;z<SX;z++)for(let x=0;x<SX;x++){const i=z*SX+x;if(open[i]){flr(W,M,x,z,dIn[i],L.open?(lane[i]&&rm[i]<0?undefined:rooms[rm[i]]||rooms[start]):rooms[rm[i]]); /* open country: turf everywhere, worn earth only along the trails between places */if(L.open&&rm[i]<0&&!lane[i]&&dIn[i]>6&&W.get(x,0,z)!==M.water&&hash3(x,z,62)<L.open[noise2(x*.02,z*.02,61)>L.open[3]?4:5]*(def.pal.treeN??1))STAMP.tree(W,M,x,z,r);else if(L.open&&rm[i]<0&&!lane[i]&&dIn[i]>9&&hash3(x,z,63)<L.open[6])STAMP.boulder(W,M,x,z,r)} /* woods you can walk through, lone trees, boulders */else if(dW[i]<=thick)wall(G,x,z,dW[i],topH(x,z))}
  for(let z=1;z<SX-1;z++)for(let x=1;x<SX-1;x++){const i=z*SX+x;if(open[i]&&dIn[i]===1)HANG[def.floor](W,M,x,z,topH(x,z),hash3(x,z,21))}
  const frame=(s,e,ln,ax,sg)=>{const Ln=e-s+1,c=(s+e)/2,sp=11,Rr=Ln*.72;for(let k=0;k<4;k++)for(let a=s-3;a<=e+3;a++)for(let y=2;y<T0;y++){const dx=a-c;if(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr))continue;
   const l=ln+sg*k,ringV=inArch(dx,y-sp,Ln+4,Rr+2)&&!(a>=s&&a<=e&&inArch(dx,y-sp,Ln,Rr));W.set(ax?l:a,y,ax?a:l,y===T0-1?M.top:ringV?(Math.floor(Math.atan2(y-sp,dx)*5)%2?M.trim:M.wall[2]):y>=T0-3?M.trim:ashlar(M,ax?l:a,y,ax?a:l))}};
@@ -1219,9 +1248,10 @@ function num(a,v,col){if(S.fx.nums.length>40)S.fx.nums.shift().el.remove();const
 let toastT=0;function toast(s){const el=$('.toast');if(!el)return;el.textContent=s;el.style.opacity=1;toastT=2.6}
 function shake(v){S.cam.shake=Math.max(S.cam.shake||0,v)}
 function foeBar(f){const el=document.createElement('div');el.className='fb';el.innerHTML=`<div class="nm"></div><div class="bar"><i></i></div><div class="bar cast" hidden><i></i></div>`;$('#hud').appendChild(el);f.bar=el;el.hidden=true}
-function orbDrop(x,z){const g=new THREE.Group(),gem=new THREE.Mesh(R.cube,new THREE.MeshBasicMaterial({color:'#ff3a3a'}));gem.scale.setScalar(.26);gem.position.y=.4;g.add(gem);g.position.set(x,0,z);R.scene.add(g);return{heal:1,g,gem,x,z}} // health orb: solo sustain
-function dropLoot(x,z,src){const it=makeItem(src),g=new THREE.Group(),col=DB.RARITY[it.rar].col,gem=new THREE.Mesh(R.cube,new THREE.MeshBasicMaterial({color:col}));gem.scale.setScalar(.22);gem.position.y=.35;
- const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.35,depthWrite:false}));beam.position.y=1.2;g.add(gem,beam);g.position.set(x,0,z);R.scene.add(g);S.fx.loot.push({it,g,gem,x,z})}
+function orbDrop(x,z){const rg=MODEL.drop('heart','#ff3a3a'),g=rg.root,gem=rg.box;gem.position.y=.4;g.position.set(x,0,z);R.scene.add(g);return{heal:1,g,gem,x,z}} // health orb: solo sustain
+const itemV=it=>it.slot==='weapon'?((DB.CLASSES[it.cls]||{}).look||{held:{templar:['sword'],sister:['censer'],reaver:['axe']}[it.cls]||['sword']}).held[0]:ITEMV[it.slot]?it.slot:'gem'; // which shape an item takes: its class's weapon, or its slot
+function dropLoot(x,z,src){const it=makeItem(src),col=DB.RARITY[it.rar].col,g=new THREE.Group(),rg=MODEL.drop(itemV(it),col),gem=rg.box;gem.position.y=.35;
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.35,depthWrite:false}));beam.position.y=1.2;g.add(rg.root,beam);g.position.set(x,0,z);R.scene.add(g);S.fx.loot.push({it,g,gem,x,z})}
 const sweep=(k,fn)=>{const L=S.fx[k];S.fx[k]=[];for(const o of L)fn(o)&&S.fx[k].push(o)}; // like filter, but anything spawned from inside fn (an aftershock, a pool) lands in the new list instead of being lost and left drawn forever
 function updateFx(dt){const F=S.fx;
  R.time.value=S.t;R.flash.intensity*=Math.exp(-dt/CFG.fx.flash*3);
@@ -1276,7 +1306,7 @@ function clearRun(){for(const a of[...S.party,...S.foes,...S.nodes]){R.scene.rem
  for(const k of['tele','proj','haz','loot','debris','lob'])S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.g||o.o));for(const k in S.fx)if(k!=='nums')S.fx[k]=[];
  S.fx.nums.forEach(n=>n.el.remove());S.fx.nums=[];R.world.children.slice().forEach(m=>{m.geometry.dispose();R.world.remove(m)});if(S.chest){R.scene.remove(S.chest.root);S.chest=null}}
 const zoneDef=i=>{const Z=DB.ZONES[i],D0=DB.DUNGEONS[Z.d];return{...D0,...DB.ZONE,id:Z.id,name:Z.name,zone:1,pal:{...D0.pal,...Z.pal}}}; // a zone borrows its dungeon's palette and foes, with the shared outdoor layout
-function startRun(zone){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],depth=S.save.sigil[DB.DUNGEONS[S.sel.d].id]||1,seed=zone?(hashStr(def.id)^S.save.world)>>>0:S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0; // a zone is fixed by the save's world seed
+function startRun(zone,out){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],depth=S.save.sigil[DB.DUNGEONS[S.sel.d].id]||1,seed=zone?(hashStr(def.id)^S.save.world)>>>0:S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0; // a zone is fixed by the save's world seed
  $('#load').hidden=false;$('#lobby').hidden=true;$('#title').classList.add('out');setTimeout(()=>{
   const D=genDungeon(def,seed);S.D=D;S.nav=navBuild(D);R.lobby.visible=false;(R.lobbyRigs||[]).forEach(q=>R.scene.remove(q.root));meshVox(D.W,R.world);setEnv(def.pal,def.lay.amb);R.cut.on.value=1;
   S.run={def,depth,seed,t:0,limit:def.timer,dread:0,dreadReq:1,deaths:0,bossLeft:zone?0:1,done:false,loot:[],scale:CFG.depthScale**(depth-1)*(zone?def.foes:1),omens:zone?[]:DB.OMENS.filter(o=>depth>=o.depth)};
@@ -1287,7 +1317,8 @@ function startRun(zone){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],dep
   D.corr.forEach(m=>D.r.chance(.4)&&Math.hypot(m[0]-st.cx,m[1]-st.cz)*v>CFG.aggroR+4&&addPack(m[0],m[1],['warrior','warrior']));S.run.dreadReq=Math.max(1,Math.round(tot*CFG.dreadReq));
   S.nodes=D.nodes.map(o=>{const N=DB.NODES[o.kind],rg=MODEL.node(o.kind,def.pal);rg.root.position.set(o.x,o.kind==='fish'?-.08:0,o.z);rg.root.rotation.y=o.x*7;R.scene.add(rg.root);return{...o,radius:.8,left:N.hauls,t:0,rig:rg}});
   if(zone){const G0=D.gate||{x:D.boss.cx*v,z:D.boss.cz*v,face:0},fx=Math.sin(G0.face),fz=Math.cos(G0.face);S.gate=MODEL.gate(def.pal);S.gate.root.position.set(G0.x-fx*.25,0,G0.z-fz*.25);S.gate.root.rotation.y=G0.face;R.scene.add(S.gate.root);
-   S.run.gateAt={x:G0.x+fx*.9,z:G0.z+fz*.9};D.lights.push({x:G0.x+fx*1.6,y:2.2,z:G0.z+fz*1.6,c:def.pal.rune,i:2.2})}
+   S.run.gateAt={x:G0.x+fx*.9,z:G0.z+fz*.9};D.lights.push({x:G0.x+fx*1.6,y:2.2,z:G0.z+fz*1.6,c:def.pal.rune,i:2.2});
+    if(out)S.party.forEach((m,i)=>{m.x=G0.x+fx*3.2+fz*(i-1)*1.2;m.z=G0.z+fz*3.2-fx*(i-1)*1.2;m.face=G0.face})} // coming back out of the dungeon: stand outside its gate
   else{const b=spawnBoss(D.boss.cx*v,D.boss.cz*v);b.bossLight=def.boss==='rider';if(b.bossLight){R.bossLight.color.set(def.bp.lantern);R.bossLight.intensity=2.2}}
   const p=S.party[0];S.cam.x=p.x;S.cam.z=p.z;S.mode='run';$('#load').hidden=true;buildHud();toast(zone?`${def.name}: find the dungeon gate`:`${def.name} · Depth ${depth}`)},40)}
 function checkDone(){const r=S.run,pl=S.party.find(m=>m.isPlayer);if(r.gateAt){if(pl&&!pl.dead&&dist(pl,r.gateAt)<1.3&&S.mode==='run'){S.mode='load';save();clearRun();startRun()}return} // walking into the gate descends into this biome's dungeon
@@ -1300,7 +1331,7 @@ function finishRun(){const r=S.run;r.done=true;const inTime=r.t<=r.limit,up=inTi
  $('#sum').hidden=false;$('#sum').innerHTML=`<div><span class="lbl">${r.def.name}</span><h2>${inTime?'Timed!':'Completed, over time'}</h2>
  <div class="num">Time ${fmt(r.t)} / ${fmt(r.limit)} · Deaths ${r.deaths}</div><div>Sigil Depth ${r.depth} → <b style="color:var(--gold)">${S.save.sigil[id]}</b></div>
  <div class="lbl">Loot</div>${r.loot.map(it=>`<div class="item"><span style="color:${DB.RARITY[it.rar].col}">${it.name}</span><span class="muted num">ilvl ${it.ilvl}</span></div>`).join('')||'<div class="muted">Nothing this time.</div>'}
- <button class="enter" id="back">Return to Morrowgate</button></div>`;$('#back').onclick=toLobby}
+ <button class="enter" id="out">Back out to ${zoneDef(S.sel.d).name}</button><button id="back">Return to Morrowgate</button></div>`;$('#back').onclick=toLobby;$('#out').onclick=()=>{clearRun();$('#sum').hidden=true;startRun(1,1)}} // the run ends where it began: outside the gate, in the overworld
 function toLobby(){clearRun();S.run=null;S.nav=null;$('#sum').hidden=true;$('#hud').hidden=true;R.lobby.visible=true;R.cut.on.value=0;R.bossLight.intensity=0;R.lantern.intensity=0;setEnv(DB.LOBBY,CFG.town.amb);S.mode='lobby';S.D={lights:R.lobbyLights};lobbyParty();renderLobby()}
 function revive(m,x,z){m.dead=false;m.hp=m.maxHp;m.mp=m.maxMp;m.buffs=[];m.x=x;m.z=z;m.rig.root.rotation.set(0,0,0);m.rig.root.position.y=0;m.deathT=undefined}
 function wipeReset(){const v=CFG.vox,st=S.D.start,bossHit=!S.run.solo&&S.foes.some(f=>f.boss&&!f.dead&&f.aggro);toast('The party rises again at the sigil');
@@ -1345,7 +1376,7 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  L.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const k=b.dataset.e,cur=S.save.gear[k][it.slot];S.save.bag=S.save.bag.filter(x=>x.id!==it.id);if(cur)S.save.bag.push(cur);S.save.gear[k][it.slot]=it;sel.item=null;sel.member=k;save();lobbyParty();renderLobby()});
  L.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{S.save.bag=S.save.bag.filter(x=>x.id!==it.id);sel.item=null;save();renderLobby()});$('#go').onclick=()=>startRun(1);$('#dive').onclick=()=>startRun();L.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{craft(b.dataset.r);save();renderLobby()})}
 function lobbyParty(){(R.lobbyRigs||[]).forEach(r=>R.scene.remove(r.root));R.lobbyRigs=[S.sel.cls,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==S.sel.cls).slice(0,2):[])].map((k,i)=>{const C0=DB.CLASSES[k],r=MODEL[C0.model||k](S.save.gear[k],undefined,C0.look);r.a={moveAmt:0,ph:0,atkT:0,castT:0,flash:0,stun:0,seed:i*2.3};r.root.position.set(8.6+i*1.4,0,16.4+(i===1?.4:0));r.root.rotation.y=.15*(1-i);R.scene.add(r.root);return r})}
-const ICON=new Map(),icon=(rows,col)=>{const k=rows+col;if(!ICON.has(k)){const c=document.createElement('canvas'),g=c.getContext('2d');c.width=c.height=5;g.fillStyle=col;rows.forEach((r,y)=>[...r].forEach((ch,x)=>ch==='#'&&g.fillRect(x,y,1,1)));ICON.set(k,`url(${c.toDataURL()})`)}return ICON.get(k)};
+const ICON=new Map(),icon=(rows,col)=>{const k=rows+col;if(!ICON.has(k)){const c=document.createElement('canvas'),g=c.getContext('2d');c.width=c.height=48;for(const[dx,dy,cl,w,h]of[[2,3,mix(col,'#000000',.7),8,8],[0,0,col,8,8],[0,0,mix(col,'#ffffff',.45),8,2],[0,0,mix(col,'#ffffff',.25),2,8],[6,0,mix(col,'#000000',.3),2,8],[0,6,mix(col,'#000000',.4),8,2]]){g.fillStyle=cl;rows.forEach((r,y)=>[...r].forEach((ch,x)=>ch==='#'&&g.fillRect(4+x*8+dx,3+y*8+dy,w,h)))} /* each pixel is a small cube: dark extrusion below-right, lit top and left edges, shaded right and bottom */ICON.set(k,`url(${c.toDataURL()})`)}return ICON.get(k)};
 function pix(cv,rows,fr,col){const g=cv.g||(cv.g=cv.getContext('2d')),h=rows.length,w=rows[0].length,on=(x,y)=>rows[y]&&rows[y][x]==='#',lv=h*(1-clamp(fr,0,1)); // pixel gauge: glyph drains from the top, lit top-left, black outline
  g.clearRect(0,0,w+2,h+2);for(let y=-1;y<=h;y++)for(let x=-1;x<=w;x++){if(on(x,y)){const k=y+.5>=lv?(on(x-1,y)&&on(x,y-1)?1:1.3)*(on(x+1,y)&&on(x,y+1)?1:.68):.2;g.fillStyle=`rgb(${col.map(c=>Math.min(255,c*k|0))})`}
   else if(on(x-1,y)||on(x+1,y)||on(x,y-1)||on(x,y+1))g.fillStyle='#000';else continue;g.fillRect(x+1,y+1,1,1)}}
@@ -1407,7 +1438,8 @@ function updateHud(dt){if(S.mode!=='run')return;const r=S.run,H=$('#hud'),U=S.ui
 // §15 INPUT
 function ground(cx,cy){const m=new THREE.Vector2(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);R.ray.setFromCamera(m,R.cam);const p=new THREE.Vector3();return R.ray.ray.intersectPlane(R.plane,p)?{x:p.x,z:p.z}:null}
 function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold left on a foe = attack it; Space = attack toward the cursor; 1-4 = skills (1-3 also pick a boon); Tab/B/G/C/O = menu, N = minimap, wheel = zoom
- addEventListener('pointerdown',()=>S.mode==='title'&&enterLobby());c.addEventListener('pointerdown',e=>{if(S.mode!=='run'||e.button)return;I.ground=ground(e.clientX,e.clientY);I.down=true});
+ {const has=!!localStorage.getItem(CFG.saveKey),n=$('#tnew');$('#title .lamp').style.backgroundImage=icon(['.###.','..#..','.###.','#.#.#','.###.'],'#f5c45a');$('#tgo').hidden=!has;$('#tgo').onclick=enterLobby; // start screen: New game (asks twice before erasing an existing save) and Load game
+  n.onclick=()=>{if(has&&!n.dataset.sure){n.dataset.sure=1;n.textContent='Erase save? Click again';return}localStorage.removeItem(CFG.saveKey);S.save=loadSave();enterLobby()}}c.addEventListener('pointerdown',e=>{if(S.mode!=='run'||e.button)return;I.ground=ground(e.clientX,e.clientY);I.down=true});
  c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=false});
  c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
  addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title')return enterLobby();if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
@@ -1461,7 +1493,8 @@ function animate(dt){const all=[...S.party,...S.foes];for(const a of all){const 
  if(a.dead&&a.deathT!==undefined){const d=a.deathT+=dt,k=Math.min(1,d*1.6),J=POSE(r,Math.min(1,dt*8)); // knees give, then the body topples and settles
   r.root.rotation.x=-1.48*k*k*(1+Math.max(0,.25-Math.abs(d-.75))*.5);for(const n of['shinL','shinR'])J(n,1.1*(1-k));for(const n of['armL','armR'])J(n,-.6,0,n==='armL'?.5:-.5);J('head',.4);
   if(a.team==='foe'&&d>6){R.scene.remove(r.root)}continue}
- ANIM[r.kind](r,a,dt);r.mat.emissive.setRGB(a.flash>0?.22:0,a.flash>0?.12:0,a.flash>0?.1:0);const L=a.leap,q=r.root;
+ ANIM[r.kind](r,a,dt);if(r.cl){const C=CFG.anim.cloth,m=a.moveAmt,t=S.t+(a.seed||0),ro=a.leap&&a.leap.roll;r.cl.set(ro?1:m,lerp(r.cl.y,ro?C[1]:m*C[0],Math.min(1,dt*C[2])),t,Math.sin(t*1.3)*C[3]*(1-m)+Math.sin(a.ph)*C[4]*m);for(const c of r.cloths)c.emissive.copy(r.mat.emissive)} // cloth: how hard it flutters, how far it trails (eased, so it lags and settles), time, sideways sway
+ r.mat.emissive.setRGB(a.flash>0?.22:0,a.flash>0?.12:0,a.flash>0?.1:0);const L=a.leap,q=r.root;
  if(L&&L.roll){const D0=CFG.dodge,p=L.t/L.d,th=p*TAU,H=lerp(D0.mid,D0.ball,Math.min(1,Math.sin(p*Math.PI)*2.5)),o=D0.mid*Math.sin(th); // forward roll: one full turn about the body's centre, which drops to ball height while tucked
   q.rotation.order='YXZ';q.rotation.y=a.face;q.rotation.x=th;q.position.set(a.x-Math.sin(a.face)*o,H-D0.mid*Math.cos(th),a.z-Math.cos(a.face)*o);r.roll=1}
  else if(r.roll){q.rotation.x=0;r.roll=0}}
