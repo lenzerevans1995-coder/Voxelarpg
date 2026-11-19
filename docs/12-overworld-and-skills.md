@@ -1,9 +1,9 @@
 # 12 — Solo play, overworld, gathering and skills
 
-Direction change (replaces the party-first loop in doc 10 as the default):
-**Grave Lantern is a solo action RPG.** You make a character, roam a seeded
-overworld of four biomes, gather and craft, and descend into dungeons found on
-the map. Companions are an option, not the default.
+**Not a change of direction.** Grave Lantern is still a dungeon crawler; this
+doc extends it outward: the country around the dungeons is generated too, you
+can play it alone, and you gather and craft between descents. Companions are
+optional rather than assumed.
 
 Built in stages. Each stage is playable on its own.
 
@@ -22,7 +22,24 @@ Built in stages. Each stage is playable on its own.
   Looted weapons carry a boon affix (`DB.WPERKS`), so weapons change how you
   fight (piercing shards, chain sparks, orbiting blades, death bursts…).
 
-## Stage 2 — the overworld (next)
+## Stage 2a — overworld zones, gathering, crafting (first version done)
+
+- `DB.ZONES`: one generated outdoor zone per biome (`Vael Marsh`, `Hollow Moor`,
+  `Ka-Zeth Dunes`, `Frostspire Tundra`), built by the same `genDungeon()` with the
+  shared outdoor layout in `DB.ZONE`, fixed by the save's world seed. Roaming
+  packs are weaker than dungeon packs. A rune gate (`MODEL.gate`) in the largest
+  clearing leads down into that biome's dungeon.
+- `DB.NODES` (`ore`, `fish`, `wood`): hold left click on a node to walk up and
+  work it (`work()`); it yields on a timer, sometimes a rare (gem, pearl, amber),
+  empties, and respawns. `DB.TRADES` levels (mining, fishing, woodcutting,
+  smithing, cooking) speed work up and improve rare odds.
+- `DB.RECIPES`, crafted in town: rations from fish (Q in the field heals), and
+  forged weapons, armour and charms whose rarity follows Smithing level.
+- Still to do from the list below: one continuous map instead of four separate
+  zones, generated towns inside the world, overworld-only enemy families, rune
+  stones and shrines, the world-map panel, the fishing bite window.
+
+## Stage 2b — one continuous overworld (next)
 
 One seeded world per save (`S.save.world = {seed}`), generated once, streamed
 in chunks around the player with the existing `Vox` + `meshVox`.

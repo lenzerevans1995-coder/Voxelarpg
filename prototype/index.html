@@ -10,7 +10,7 @@ html,body{height:100%;margin:0;background:var(--ink);color:var(--text);font:15px
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 button{font:inherit;color:inherit;background:var(--panel2);border:2px solid #000;box-shadow:inset 0 0 0 1px #5a431c;border-radius:0;padding:6px 10px;cursor:pointer}
 button:hover{border-color:var(--gold)}button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
-button.on{border-color:var(--gold);background:#3a2c1a}
+button.on{border-color:var(--gold);background:#3a2c1a}button:disabled{opacity:.45;cursor:default}
 h1,h2{font-family:var(--display);font-weight:500;margin:0;letter-spacing:.02em;text-wrap:balance}
 h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-bottom:8px}
 .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -119,7 +119,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
  §10 AI     AI[role] companions, foeAI, mechanic handling
  §11 BOSS   BOSS[id] scripted bosses, ARENA[id] boss-room mechanics
  §12 FX     ZONE[shape] telegraph shapes + GLSL decal, projectiles, hazards, swooshes, bursts, chips, debris, numbers, toasts
- §13 RUN    start/finish run, loot, save
+ §13 RUN    zones (overworld) and dungeons: startRun(zone), gathering work(), trades, craft(), finish run, loot, save
  §14 UI     lobby; run HUD: icon(), pix() pixel heart/gem gauges, minimap() with fog of war and zoom, PANEL[id] menu windows, buildHud/updateHud; summary
  §15 INPUT  WASD / hold-left move, hold-left on a foe attacks, Space attack, 1-4 skills + boon picks, menu keys
  §16 LOOP   init, title fly-through (CFG.title) → enterLobby(), update + render
@@ -128,7 +128,7 @@ h1{font-size:44px;line-height:1;color:var(--gold)}h2{font-size:24px;margin-botto
 // §0 CFG
 const CFG={vox:.1,evox:.025,bvox:.03,riderK:1.35,cell:40,cells:13,wallH:28,wallT:6,sy:52,chunk:32,navRes:5,
  cam:{fov:38,dist:17,min:8,max:32},lights:8,aggroR:8.5,respawn:8,deathPenalty:5,wipeDelay:4,
- town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
+ town:{size:600,sy:80,ox:200,oz:190,rim:72,houses:60,amb:[1.05,1,55,170]},ration:.4,solo:{hp:.5,dmg:.5,boss:.36,regen:.03,calm:4,orb:.22,heal:.12,bossOrb:.1},depthScale:1.09,dreadReq:.72,titleT:38,title:[[0,10,27,35,10,12,13],[.3,2,7,25,10,8,14],[.6,15.5,2.4,21,10,1.6,16.4],[.82,6,3.2,22.5,10,3,15],[1,10,27,35,10,12,13]], // title camera path: [t, eye xyz, look xyz]
  mana:7,ui:{mapR:[14,22,34],see:12,hp:[232,56,46],mp:[63,140,240]},bagMax:40,saveKey:'gravelantern.v1',shade:[.85,.85,1,.55,.75,.75],
  anim:{k:14,soft:5,stride:2.7,thigh:.7,knee:1.25,rim:.5,arm:[-3,.7,.16,-2.4]},fx:{y:.12,strike:.45,miss:.9,flash:.3},amb:[.55,.32,20,46]}; // amb = hemi, moon, fog near, fog far
 
@@ -192,10 +192,23 @@ const DB={
   reap:{arc:2.8,k:[[0,-.2,0,-.4,0,0,-.2,-.4],[.38,-1.3,-1.1,-.5,-.9,-.05,-1.1,-.9],[.52,-1.3,.5,-.2,.9,.15,-1.2,-.6],[.75,-1.1,.6,-.3,.6,.1,-1,-.6],[1,-.2,0,-.4,0,0,-.2,-.4]]}, // two-handed level sweep (scythes, staves)
   hook:{arc:2,k:[[0,0,0,-.2,0,0,0,-.25],[.4,-1.2,0,-1.4,-.8,-.1,.3,-.3],[.52,-1.3,0,-.2,.8,.2,.2,-.3],[.75,-.6,0,-.2,.4,.15,.1,-.3],[1,0,0,-.2,0,0,0,-.25]]},
   slam:{arc:1.6,k:[[0,0,0,-.2,0,0,0,-.25],[.42,-2.7,0,-.5,-.25,-.15,.4,-.3],[.5,-.9,0,-.05,.2,.3,.2,-.3],[.75,-.4,0,-.1,.1,.25,.1,-.3],[1,0,0,-.2,0,0,0,-.25]]}},
- MENU:[{id:'bag',name:'Backpack',key:'b',ico:['.###.','#...#','#####','#####','#####']},{id:'gear',name:'Worn gear',key:'g',ico:['.###.','#####','#.#.#','#####','.#.#.']},
+ MENU:[{id:'skills',name:'Trades and materials',key:'k',ico:['#...#','.#.#.','..#..','.###.','#####']},{id:'bag',name:'Backpack',key:'b',ico:['.###.','#...#','#####','#####','#####']},{id:'gear',name:'Worn gear',key:'g',ico:['.###.','#####','#.#.#','#####','.#.#.']},
   {id:'stats',name:'Stats',key:'c',ico:['....#','..#.#','..#.#','#.#.#','#.#.#']},{id:'orders',name:'Orders',key:'o',ico:['####.','####.','####.','#....','#....']}],
  PIX:{heart:['..##...##..','.####.####.','###########','###########','###########','.#########.','..#######..','...#####...','....###....','.....#.....'],gem:['....#....','...###...','..#####..','.#######.','#########','#########','.#######.','..#####..','...###...','....#....'],
   skull:['.###.','#####','#.#.#','#####','.#.#.']},
+ ZONES:[ // the overworld: one generated stretch of open country per biome, with that biome's dungeon gate somewhere in it. d = index into DUNGEONS (palette, foes); pal adds outdoor ground tones
+  {id:'marsh',d:0,name:'Vael Marsh',pal:{turf:['#2f3a30','#38443a','#414e40','#4a5846','#343c34'],water:'#10202a',moss:'#3a4a34',grass:'#56684a'}},{id:'moor',d:1,name:'Hollow Moor',pal:{}},
+  {id:'dunes',d:2,name:'Ka-Zeth Dunes',pal:{turf:['#c29a63','#cfa874','#d8b684','#e0c090','#b88c58'],water:'#2f8f8a',moss:'#8a7a4a',grass:'#a8a05a'}},
+  {id:'tundra',d:3,name:'Frostspire Tundra',pal:{turf:['#cfdbe6','#dfe8ef','#eef4fb','#f6fafe','#b8c8d6'],water:'#7cc4e6',moss:'#9fb8c8',grass:'#dfe8ef'}}],
+ ZONE:{floor:'earth',foes:.6,lay:{shapes:['cave','cave','round'],boss:'round',path:'wind',w:13,warp:10,wall:'bank',pillar:'stone',amb:[.85,.8,34,95],arena:{size:4},hall:['wisp',0]}, // shared outdoor layout; foes = strength of roaming packs
+  decor:[['stone','ring',6],['tree','corner',4],['rubble','corner',1],['wisp','quad']],nodes:[['ore',5],['fish',3],['wood',5]]},
+ NODES:{ // gathering nodes: hold left click on one to work it. time = seconds per haul, hauls before it is spent, respawn seconds
+  ore:{name:'Ore vein',trade:'mining',item:'ore',rare:'gem',time:1.6,hauls:4,respawn:40,xp:12,col:'#e09a4a',sw:'chop'},fish:{name:'Fishing spot',trade:'fishing',item:'fish',rare:'pearl',time:2.4,hauls:5,respawn:30,xp:14,col:'#8fdcff',sw:'cast'},
+  wood:{name:'Deadwood',trade:'woodcutting',item:'wood',rare:'amber',time:1.4,hauls:4,respawn:35,xp:10,col:'#a8804a',sw:'hack'}},
+ TRADES:{mining:'Mining',fishing:'Fishing',woodcutting:'Woodcutting',smithing:'Smithing',cooking:'Cooking'},TRADE:{base:40,grow:1.18,max:50,speed:.03,rare:.06,rareLv:.004}, // trade skills: xp to next = base*grow^(lvl-1); each level works faster and finds rares more often
+ MATS:{ore:'Ore',gem:'Gem',fish:'Fish',pearl:'Pearl',wood:'Wood',amber:'Amber',ration:'Ration'},
+ RECIPES:[{id:'ration',name:'Cook a ration',trade:'cooking',need:{fish:2},xp:15,make:'ration',tip:'Q in the field: restores 40% health'},{id:'weapon',name:'Forge a weapon',trade:'smithing',need:{ore:6,wood:2},xp:40,slot:'weapon'},
+  {id:'armour',name:'Forge armour',trade:'smithing',need:{ore:5},xp:30,slot:'armour'},{id:'charm',name:'Carve a charm',trade:'smithing',need:{wood:3,gem:1},xp:35,slot:'trinket'}],
  PERKS:{ // level-up choices (one of three each level) and weapon affixes; v = amount per rank. Behaviour lives in PERK[id]
   might:{name:'Might',tip:'+10% damage',max:5,v:.1},vigor:{name:'Vigor',tip:'+12% health',max:5,v:.12},swift:{name:'Swiftness',tip:'+6% move speed',max:3,v:.06},haste:{name:'Alacrity',tip:'+8% attack speed',max:5,v:.08},
   leech:{name:'Leech',tip:'Heal 3% of damage dealt',max:3,v:.03},shard:{name:'Splinter Shot',tip:'Every third attack looses a piercing shard',max:3,v:.6},chain:{name:'Chain Spark',tip:'Hits arc to a second foe',max:3,v:.4},
@@ -249,8 +262,8 @@ const DB={
  LOBBY:{floor:['#4a4650','#444049','#504b56','#3e3a44'],groove:'#1c1a20',wall:['#5a5662','#544f5c','#615c69'],mortar:'#2c2931',trim:'#6d6876',top:'#1d1b22',slate:['#2d3038','#353942'],iron:'#1e1e22',wood:'#3d2a1d',stone:'#6a6570',water:'#2a4a66',glass:['#3a5fd0','#b03040','#d9a441','#3f9a6a'],lamp:'#ffc070',light:'#ffaa55',moss:'#3f5a2c',plaster:['#8a7f72','#7d7468','#968a7c'],fog:'#232640',sky:'#9a96d0',gnd:'#3a3440',moon:'#dcdcff'}};
 
 // §2 STATE
-const S={mode:'boot',t:0,ui:{tab:null,t:0},save:null,sel:{d:0,cls:'templar',member:'templar',mode:'charted',item:null},run:null,D:null,nav:null,party:[],foes:[],
- fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,hover:null},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
+const S={mode:'boot',t:0,nodes:[],gate:null,ui:{tab:null,t:0},save:null,sel:{d:0,cls:'templar',member:'templar',mode:'charted',item:null},run:null,D:null,nav:null,party:[],foes:[],
+ fx:{tele:[],proj:[],haz:[],loot:[],debris:[],chips:[],nums:[],lob:[]},cmd:{hold:false,assist:false},in:{keys:{},ground:null,down:false,hover:null,node:null},cam:{x:0,z:0,dist:CFG.cam.dist},lightT:0};
 const R={};
 
 // §3 UTIL
@@ -570,6 +583,15 @@ const MODEL={
   const r=rig('bug','scarab',[{n:'shell',at:[0,.2,0],prims:[pe([0,.22,-.04],[.2,.14,.27],'sh'),pb([0,.3,-.04],[.008,.07,.25],'go'),pe([0,.2,.24],[.13,.09,.1],'dk'),pc([0,.24,.3],[0,.36,.46],.03,'go',{r2:.008}),pe([0,.26,.04],[.21,.02,.09],'go'),...both([pe([.07,.24,.3],[.02,.02,.02],'core')])]},
    {n:'legsL',p:'shell',at:[.14,.14,0],prims:[leg(1,.16),leg(1,0),leg(1,-.18)]},{n:'legsR',p:'shell',at:[-.14,.14,0],prims:[leg(-1,.16),leg(-1,0),leg(-1,-.18)]},{n:'sun',p:'shell',at:[0,.56,.02],prims:[pe([0,.58,.02],[.085,.085,.085],'core'),hoop([0,.58,.02],.095,.12,.57,.59,'go')]}],mt);
   r.root.scale.setScalar(1.7);r.hot='spirit';r.emit=[['sun',[0,.08,0],12,1.3]];return r},
+ node(kind,P){const mt={st:[P.stone,'stone'],o:['#d08a4a','plate'],o2:['#ffd08a','none',1],w:[P.wood,'wood'],w2:['#2a1c12','wood'],lf:['#3f6a3a','cloth'],gl:['#bfe9ff','none',1]},K={ // what a gathering node looks like
+   ore:[pe([0,.35,0],[.5,.38,.42],'st',{n:.08,nf:6}),pe([.25,.5,.2],[.3,.3,.26],'st',{n:.06,nf:7}),...[[.1,.62,.3],[-.3,.45,.25],[.42,.4,-.05],[-.1,.7,-.1],[.3,.72,.12]].flatMap(c=>[pe(c,[.09,.07,.08],'o'),pe([c[0],c[1]+.03,c[2]+.02],[.04,.035,.04],'o2')])],
+   wood:[pc([0,0,0],[.06,1.5,.04],.16,'w',{r2:.09}),pc([.04,.9,.02],[.5,1.5,.2],.06,'w',{r2:.02}),pc([.04,1.1,0],[-.45,1.7,-.15],.055,'w',{r2:.02}),pc([.06,1.4,.04],[.1,2,.1],.05,'w',{r2:.015}),pe([0,.06,0],[.3,.08,.3],'w2'),pc([.2,.05,.1],[.5,.02,.25],.05,'w2')],
+   fish:[...[[.35,.2],[-.3,.3],[.05,-.4]].flatMap(([x,z])=>[pe([x,.03,z],[.16,.015,.16],'lf')]),pe([0,.04,0],[.07,.03,.12],'gl'),pc([0,.04,-.1],[0,.05,-.2],.03,'gl',{r2:.05})]};
+  const r=rig('static','node'+kind+P.stone,[{n:'box',at:[0,0,0],prims:K[kind]}],mt);r.hot='spirit';r.emit=[['box',[0,kind==='wood'?1.2:.5,0],2,.9]];return r},
+ gate(P){const mt={st:[P.stone,'stone'],tr:[P.trim,'stone'],ru:[P.rune,'none',1],dk:['#06050a']}; // dungeon gate: a rune-cut stone arch around a dark doorway, glyphs burning
+  const r=rig('static','gate'+P.stone,[{n:'box',at:[0,0,0],prims:[...both([pb([1,1.3,0],[.32,1.3,.4],'st',{r:.03}),pb([1,.12,0],[.42,.12,.5],'tr'),...[.5,1.1,1.7,2.3].map((y,i)=>pb([1,y,.41],[.1,.14,.012],i%2?'ru':'tr'))]),
+    pf([[-1.4,1.4],[2.4,3.5],[-.42,.42]],(x,y)=>{const d=Math.hypot(x,(y-2.4)*1.25);return y>=2.4&&d<1.36&&d>.72},'st'),pf([[-1.4,1.4],[2.4,3.5],[.4,.44]],(x,y)=>{const d=Math.hypot(x,(y-2.4)*1.25);return y>=2.4&&Math.abs(d-1.04)<.07&&Math.sin(Math.atan2(y-2.4,x)*9)>0},'ru'),
+    pb([0,1.3,-.05],[.7,1.3,.05],'dk'),pe([0,3.1,.3],[.16,.2,.1],'ru')]}],mt);r.hot='spirit';r.emit=[['box',[0,1.4,.2],10,1.6],['box',[.9,2.6,.4],4,1],['box',[-.9,2.6,.4],4,1]];return r},
  chest(){const mt={w:['#4a3426','wood'],g:['#b48a3a','plate'],l:['#ffd36a','none',1]};return rig('static','chest',[{n:'box',at:[0,0,0],prims:[pb([0,.22,0],[.42,.2,.26],'w',{r:.01}),
   pf([[-.43,.43],[.4,.66],[-.27,.27]],(x,y,z)=>y>.42&&Math.hypot(y-.42,z*.95)<.25,'w'),...[-.3,0,.3].map(x=>pf([[x-.03,x+.03],[0,.68],[-.28,.28]],(xx,y,z)=>Math.abs(xx-x)<.025&&(y<.43?Math.abs(z)>.25||y<.03:Math.abs(Math.hypot(y-.42,z*.95)-.25)<.02),'g')),pb([0,.4,.27],[.05,.06,.01],'l')]}],mt)}};
 function flames(r,dt,a){if(!r.emit||S.mode!=='run')return;const C=DB.FIRE[r.hot]; // r.emit = [[node, local offset, particles/s, size, 'move'?]]: live fire licking off moving parts
@@ -627,7 +649,7 @@ const ANIM={ // every frame: build a target pose from actor state (gait + idle +
  rider(r,a,dt){ANIM.horse(r,a,dt);ANIM.hum(r.rd,a,dt)},
  bug(r,a,dt){const m=a.moveAmt,t=S.t*20+a.seed*9,k=Math.min(1,dt*14),at=a.atkT>0?1:0;r.legsL.rotation.x=Math.sin(t)*.5*m;r.legsR.rotation.x=-Math.sin(t)*.5*m;r.shell.rotation.x+=((at?-.5:0)-r.shell.rotation.x)*k; // scuttle; rears to bite
   r.body.position.y=Math.abs(Math.sin(t*.5))*.03*m;r.sun.rotation.y+=dt*3;r.sun.position.y=.36+Math.sin(S.t*3+a.seed)*.04;flames(r,dt,a)},
- static(){}};
+ static(r,a,dt){flames(r,dt,a||ONE)}};
 const SKULL=()=>[pe([0,1.64,-.01],[.082,.092,.1],'bone'),pb([0,1.636,.076],[.07,.012,.02],'bone',{r:.008}),pe([0,1.565,.06],[.046,.026,.042],'bone'),
  ...both([pe([.055,1.59,.05],[.022,.014,.03],'bone'),pe([.032,1.612,.09],[.023,.021,.032],0),pe([.032,1.612,.07],[.009,.009,.009],'eye'),pc([.045,1.535,.035],[.004,1.525,.085],.012,'bone'),pc([.055,1.54,.02],[.062,1.585,-.005],.01,'bone')]),
  pb([0,1.58,.1],[.008,.014,.02],0),...[-3,-2,-1,0,1,2,3].map(i=>pb([i*.0115,1.545,.09-Math.abs(i)*.006],[.004,.008,.004],'bone')),...[-2,-1,0,1,2].map(i=>pb([i*.012,1.532,.082-Math.abs(i)*.006],[.004,.007,.004],'bone'))];
@@ -758,7 +780,7 @@ function genDungeon(def,seed){
  const adj=rooms.map(()=>[]);E.forEach(([a,b])=>{adj[a].push(b);adj[b].push(a)});const hop=rooms.map(()=>-1),Q=[0];hop[0]=0;
  while(Q.length){const a=Q.shift();for(const b of adj[a])if(hop[b]<0){hop[b]=hop[a]+1;Q.push(b)}}
  const start=rooms.reduce((b,q,i)=>i&&(hop[i]>hop[b]||(hop[i]===hop[b]&&rd(q,rooms[0])>rd(rooms[b],rooms[0])))?i:b,1);rooms[start].type='start';
- const L=def.lay,open=new Uint8Array(SX*SX),rm=new Int8Array(SX*SX).fill(-1),lane=new Uint8Array(SX*SX),corr=[],hall=[],seals=[];let hc=0;
+ const L=def.lay,open=new Uint8Array(SX*SX),rm=new Int8Array(SX*SX).fill(-1),lane=new Uint8Array(SX*SX),corr=[],hall=[],seals=[],nodes=[];let hc=0;
  const dig=(cx,cz,w,sq)=>{for(let z=Math.max(4,Math.floor(cz-w));z<=Math.min(SX-5,cz+w);z++)for(let x=Math.max(4,Math.floor(cx-w));x<=Math.min(SX-5,cx+w);x++)if(sq||Math.hypot(x-cx,z-cz)<=w)open[z*SX+x]=1};
  rooms.forEach((q,qi)=>{q.shape=q.type==='boss'?L.boss:r.pick(L.shapes);const hw=q.w*CV/2,hh=q.h*CV/2,f=SHAPE[q.shape];
   for(let z=q.z*CV;z<(q.z+q.h)*CV;z++)for(let x=q.x*CV;x<(q.x+q.w)*CV;x++){rm[z*SX+x]=qi;if(f((x+.5-q.cx)/hw,(z+.5-q.cz)/hh,q))open[z*SX+x]=1}dig(q.cx,q.cz,14)});
@@ -791,7 +813,9 @@ function genDungeon(def,seed){
    if(ok)addL(x,z,STAMP[id](W,M,x,z,r))}}
  if(L.hall)hall.forEach(([x,z],i)=>{x=Math.round(x);z=Math.round(z);if(rm[z*SX+x]>=0||!open[z*SX+x])return;if(!L.hall[1])return addL(x,z,STAMP[L.hall[0]](W,M,x,z,r)); // passages: a light every few metres, alternating sides
   const[nx,nz]=[[0,1],[0,-1],[1,0],[-1,0]][(i&1)+(open[z*SX+x-L.w-3]?0:2)];for(let k=0;k<24&&dIn[z*SX+x]>1;k++){x-=nx;z-=nz}if(dIn[z*SX+x]===1&&!open[(z-nz)*SX+x-nx])addL(x,z,STAMP[L.hall[0]](W,M,x,z,r,nx,nz))});
- return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,r}}
+ for(const[kind,n]of def.nodes||[])for(let i=0,t=0;i<n&&t<60;t++){const q=r.pick(rooms),a=r.r()*TAU,d0=r.range(.25,.8)*Math.min(q.w,q.h)*CV/2,x=Math.round(q.cx+Math.cos(a)*d0),z=Math.round(q.cz+Math.sin(a)*d0),v=CFG.vox; // gathering nodes scattered through the clearings
+  if(q.type==='start'||dIn[z*SX+x]<8||lane[z*SX+x]||W.blk[z*SX+x]||nodes.some(o=>Math.hypot(o.x-x*v,o.z-z*v)<3))continue;i++;nodes.push({kind,x:x*v,z:z*v});if(kind==='fish'){W.disc(x,z,1,4,8,0);W.disc(x,z,0,0,8,M.water);W.disc(x,z,1,1,8,(a,b,c)=>Math.hypot(a-x,c-z)>7?M.stone:-1)}} // a fishing spot is a stone-rimmed pool
+ return{W,rooms,start:rooms[start],boss:rooms[0],lights,open,dIn,corr,seals,nodes,r}}
 
 function genLobby(){ // plaza + procedurally assembled Gothic chapel (grammar: walls → buttresses → windows → roof → tower → portal → rose → spire)
  const P=DB.LOBBY,W=new Vox(200,196,220),M=mats(W,P),lights=[],r=rng(7);
@@ -873,7 +897,7 @@ function gearStats(g){const s={power:0,vit:0,armor:0,haste:0};for(const k in g)i
 function spawnMember(cls,isPlayer,x,z){const C0=DB.CLASSES[cls],st=gearStats(S.save.gear[cls]);
  const L=DB.LEVEL,lv=S.save.lvl-1,a=actor({team:'party',cls,role:C0.role,name:isPlayer?'You':C0.ally||C0.name,isPlayer,maxHp:Math.round(C0.hp*(1+st.vit/100)*(1+L.hp)**lv),armor:C0.armor+st.armor,dmgMul:1+st.power/100+L.dmg*lv,
   haste:1+st.haste/100,speed:C0.speed,x,z,maxMp:C0.mp,mp:C0.mp,calm:0,alt:C0.atk.alt,rig:MODEL[C0.model||cls](S.save.gear[cls],undefined,C0.look),swL:C0.atk.sw});if(isPlayer)for(const id in PERK)for(let n=perk(id);PERK[id].on&&n>0;n--)PERK[id].on(a);a.hp=a.maxHp;S.party.push(a);return a}
-const ONE={hp:1,dmg:1,boss:1};
+const ONE={hp:1,dmg:1,boss:1,moveAmt:0};
 function spawnFoe(type,x,z,pack,o={}){const d=S.run.def,E=DB.ENEMIES[type],k=S.run.scale,so=S.run.solo?CFG.solo:ONE;
  const a=actor({team:'foe',type,name:E.name||(E.caster?d.caster.name:d.trash[E.n]),maxHp:E.hp*k*so.hp,dmg:E.dmg*k*so.dmg,range:E.range,speed:E.speed,radius:E.radius,x,z,home:{x,z},pack,dread:E.dread,
   spawn:{type,x,z,pack},rig:E.model?MODEL[E.model](d.bp):E.caster?MODEL.caster(d.caster):MODEL.skel(d.en,E.weapon,E.scale||1),sw:E.sw,atkDur:E.dur,abT:3,mendT:4,...o});a.hp=a.maxHp;S.foes.push(a);foeBar(a);return a}
@@ -986,7 +1010,8 @@ function partyAI(a,dt){a.noMove=S.cmd.hold;const e=escape(a);if(e){goTo(a,e.x,e.
  AI[a.role](a,dt)}
 function playerCtl(a,dt){if(a.dead||a.stun>0||a.leap)return;const I=S.in,k=I.keys,mx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),mz=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0),C0=DB.CLASSES[a.cls].atk,g=I.ground;
  const hv=I.hover=g?S.foes.reduce((b,f)=>!f.dead&&dist(f,g)<f.radius+.75&&(!b||dist(f,g)<dist(b,g))?f:b,null):null; // foe under the cursor (highlighted in animate)
- if(I.down&&g){if(hv){const R0=C0.range+hv.radius;a.target=hv;a.order=null;if(dist(a,hv)>R0||(C0.ranged&&!los(a,hv)))goTo(a,hv.x,hv.z,dt,R0-.3);else basic(a,hv)}else a.order={x:g.x,z:g.z}} // held on a foe: close in and keep attacking; held on ground: walk there
+ const nd=I.node=!hv&&g?S.nodes.find(n=>n.left>0&&dist(n,g)<1.2):null;if(I.down&&nd){a.order=null;if(dist(a,nd)>1.9)goTo(a,nd.x,nd.z,dt,1.7);else work(a,nd,dt)} // held on a gathering node: walk up and work it
+ else if(I.down&&g){if(hv){const R0=C0.range+hv.radius;a.target=hv;a.order=null;if(dist(a,hv)>R0||(C0.ranged&&!los(a,hv)))goTo(a,hv.x,hv.z,dt,R0-.3);else basic(a,hv)}else a.order={x:g.x,z:g.z}} // held on a foe: close in and keep attacking; held on ground: walk there
  if(mx||mz){const l=Math.hypot(mx,mz),wx=(mx+mz)/Math.SQRT2/l,wz=(mz-mx)/Math.SQRT2/l;move(a,wx*speedOf(a)*dt,wz*speedOf(a)*dt);if(!(a.atkT>0))a.face=Math.atan2(wx,wz);a.moving=1;a.order=null} // WASD, relative to the camera
  else if(a.order&&goTo(a,a.order.x,a.order.z,dt,.25)<=.25)a.order=null;
  if(!(I.down&&hv)){const t=k[' ']&&g?null:nearest(combatFoes().filter(f=>dist(a,f)<=C0.range+f.radius&&(!C0.ranged||los(a,f))),a);if(t)basic(a,t);else if(k[' ']&&g)basic(a,null,ang(a,g))}} // otherwise strike whatever comes into reach on your own; Space attacks toward the cursor
@@ -1154,33 +1179,48 @@ function updateFx(dt){const F=S.fx;
   const k=c.s*Math.min(1,c.t/c.t0*2.5);M.makeScale(k,k,k).setPosition(c.x,c.y,c.z);R.chips.setMatrixAt(i,M);R.chips.setColorAt(i,c.c)});R.chips.count=F.chips.length;R.chips.instanceMatrix.needsUpdate=true;if(R.chips.instanceColor)R.chips.instanceColor.needsUpdate=true}
 
 // §13 RUN
-function makeItem(src,ilvl){const d=S.run?S.run.def:DB.DUNGEONS[0],rar=src==='starter'?0:weighted(DB.DROP[src]),Rr=DB.RARITY[rar],r=rng(Math.random()*4e9);
- ilvl=ilvl||5+(S.run?S.run.depth:1)*3+(src==='boss'?2:src==='chest'?3:0);const slot=src==='starter'?'chest':r.pick(DB.SLOTS);
+function makeItem(src,ilvl,o={}){const d=S.run?S.run.def:DB.DUNGEONS[0],rar=o.rar??(src==='starter'?0:weighted(DB.DROP[src])),Rr=DB.RARITY[rar],r=rng(Math.random()*4e9);
+ ilvl=ilvl||5+(S.run?S.run.depth:1)*3+(src==='boss'?2:src==='chest'?3:0);const slot=o.slot||(src==='starter'?'chest':r.pick(DB.SLOTS));
  const cls=slot==='weapon'?(r.chance(.6)?S.sel.cls:r.pick(Object.keys(DB.CLASSES))):null,keys=Object.keys(DB.STATS).sort(()=>r.r()-.5).slice(0,Rr.stats);
  if(slot==='weapon'&&!keys.includes('power'))keys[0]='power';const bud=ilvl*Rr.mult*(slot==='weapon'?1.4:1),stats={};
  keys.forEach(k=>stats[k]=Math.max(1,Math.round(bud/keys.length*DB.STATS[k].w*(.8+r.r()*.4))));const base=slot==='weapon'?DB.CLASSES[cls].weapon:r.pick(DB.BASES[slot]);
  return{perk:slot==='weapon'&&rar>0?r.pick(DB.WPERKS):undefined,id:Math.random().toString(36).slice(2,9),name:`${r.pick(d.prefix)} ${base}${rar===4?' of the Last Vigil':''}`,slot,cls,rar,ilvl,stats,from:d.id}}
+const tradeNeed=l=>Math.round(DB.TRADE.base*DB.TRADE.grow**(l-1));
+function tradeXp(id,v){const T=S.save.trades[id];T.xp+=Math.round(v);while(T.lvl<DB.TRADE.max&&T.xp>=tradeNeed(T.lvl)){T.xp-=tradeNeed(T.lvl);T.lvl++;toast(`${DB.TRADES[id]} level ${T.lvl}!`)}save()}
+function work(a,nd,dt){const N=DB.NODES[nd.kind],T=S.save.trades[N.trade],C=DB.TRADE;a.face=ang(a,nd);a.workT=(a.workT||0)+dt*(1+T.lvl*C.speed); // hold on a node: swing at it; every N.time seconds (faster with trade level) it yields
+ if(a.atkT<=0){a.sw=N.sw;a.atkDur=.55;a.atkT=.55;a.atkN++;chips(nd.x,.7,nd.z,N.col,5,{sp:.8,up:3,s:1.4})}if(a.workT<N.time)return;
+ const rare=Math.random()<C.rare+T.lvl*C.rareLv,it=rare?N.rare:N.item;a.workT=0;nd.left--;S.save.mats[it]=(S.save.mats[it]||0)+1;num(nd,'+1 '+DB.MATS[it],rare?'#ffd36a':'#ffffff');if(rare)smite(nd,'#ffd36a');
+ tradeXp(N.trade,N.xp*(rare?3:1));if(nd.left<=0){nd.rig.root.visible=false;nd.t=N.respawn;ring(nd,1,N.col)}}
+const canCraft=R0=>Object.entries(R0.need).every(([k,n])=>(S.save.mats[k]||0)>=n);
+function craft(id){const R0=DB.RECIPES.find(q=>q.id===id),sv=S.save,lv=sv.trades[R0.trade].lvl;if(!canCraft(R0)||(R0.slot&&sv.bag.length>=CFG.bagMax))return;for(const k in R0.need)sv.mats[k]-=R0.need[k];
+ if(R0.make)sv.mats[R0.make]=(sv.mats[R0.make]||0)+1;else sv.bag.push(makeItem('craft',5+lv*2,{slot:R0.slot==='armour'?['head','chest','legs'][Math.random()*3|0]:R0.slot,rar:Math.min(4,(lv/8|0)+(Math.random()<.3?1:0))})); // better smiths make rarer gear
+ tradeXp(R0.trade,R0.xp)}
+function eat(a){const sv=S.save;if(!a||a.dead||!(sv.mats.ration>0)||a.hp>=a.maxHp)return;sv.mats.ration--;heal(a,a,a.maxHp*CFG.ration);smite(a,'#8ff0a4');save()}
 const xpNeed=l=>Math.round(DB.LEVEL.base*DB.LEVEL.grow**(l-1));
 function gainXp(v){const sv=S.save,L=DB.LEVEL;if(sv.lvl>=L.max||!v)return;sv.xp+=Math.round(v);while(sv.lvl<L.max&&sv.xp>=xpNeed(sv.lvl)){sv.xp-=xpNeed(sv.lvl);sv.lvl++;toast(`Level ${sv.lvl}!`);if(S.mode==='run')S.picks=(S.picks||0)+1; // party-wide level: everyone grows and is restored
   for(const m of S.party){m.maxHp=Math.round(m.maxHp*(1+L.hp));m.dmgMul+=L.dmg;if(!m.dead){m.hp=m.maxHp;m.mp=m.maxMp;smite(m,'#ffd24a')}}}}
 function loadSave(){let s=null;try{s=JSON.parse(localStorage.getItem(CFG.saveKey))}catch(e){}
- if(!s){s={gear:{},bag:[],sigil:{},best:{},cls:'templar'};for(const c in DB.CLASSES){s.gear[c]={};const it=makeItem('starter',5);it.name='Worn '+(DB.BASES.chest[0]);s.gear[c].chest=it}}s.lvl=s.lvl||1;s.xp=s.xp||0;s.perks=s.perks||{};for(const c in DB.CLASSES)s.gear[c]=s.gear[c]||{};return s}
+ if(!s){s={gear:{},bag:[],sigil:{},best:{},cls:'templar'};for(const c in DB.CLASSES){s.gear[c]={};const it=makeItem('starter',5);it.name='Worn '+(DB.BASES.chest[0]);s.gear[c].chest=it}}s.lvl=s.lvl||1;s.xp=s.xp||0;s.perks=s.perks||{};s.mats=s.mats||{};s.trades=s.trades||{};for(const t in DB.TRADES)s.trades[t]=s.trades[t]||{lvl:1,xp:0};s.world=s.world||(Math.random()*4e9>>>0);for(const c in DB.CLASSES)s.gear[c]=s.gear[c]||{};return s}
 const save=()=>{try{localStorage.setItem(CFG.saveKey,JSON.stringify(S.save))}catch(e){}};
-function clearRun(){for(const a of[...S.party,...S.foes]){R.scene.remove(a.rig.root);if(a.bar)a.bar.remove()}S.party=[];S.foes=[];
+function clearRun(){for(const a of[...S.party,...S.foes,...S.nodes]){R.scene.remove(a.rig.root);if(a.bar)a.bar.remove()}S.party=[];S.foes=[];S.nodes=[];if(S.gate){R.scene.remove(S.gate.root);S.gate=null}
  for(const k of['tele','proj','haz','loot','debris','lob'])S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.g||o.o));for(const k in S.fx)if(k!=='nums')S.fx[k]=[];
  S.fx.nums.forEach(n=>n.el.remove());S.fx.nums=[];R.world.children.slice().forEach(m=>{m.geometry.dispose();R.world.remove(m)});if(S.chest){R.scene.remove(S.chest.root);S.chest=null}}
-function startRun(){const def=DB.DUNGEONS[S.sel.d],depth=S.save.sigil[def.id]||1,seed=S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0;
+const zoneDef=i=>{const Z=DB.ZONES[i],D0=DB.DUNGEONS[Z.d];return{...D0,...DB.ZONE,id:Z.id,name:Z.name,zone:1,pal:{...D0.pal,...Z.pal}}}; // a zone borrows its dungeon's palette and foes, with the shared outdoor layout
+function startRun(zone){const def=zone?zoneDef(S.sel.d):DB.DUNGEONS[S.sel.d],depth=S.save.sigil[DB.DUNGEONS[S.sel.d].id]||1,seed=zone?(hashStr(def.id)^S.save.world)>>>0:S.sel.mode==='charted'?(hashStr(def.id)^Math.imul(week(),2654435761))>>>0:(Math.random()*4e9)>>>0; // a zone is fixed by the save's world seed
  $('#load').hidden=false;$('#lobby').hidden=true;$('#title').classList.add('out');setTimeout(()=>{
   const D=genDungeon(def,seed);S.D=D;S.nav=navBuild(D);R.lobby.visible=false;(R.lobbyRigs||[]).forEach(q=>R.scene.remove(q.root));meshVox(D.W,R.world);setEnv(def.pal,def.lay.amb);R.cut.on.value=1;
-  S.run={def,depth,seed,t:0,limit:def.timer,dread:0,dreadReq:1,deaths:0,bossLeft:1,done:false,loot:[],scale:CFG.depthScale**(depth-1),omens:DB.OMENS.filter(o=>depth>=o.depth)};
+  S.run={def,depth,seed,t:0,limit:def.timer,dread:0,dreadReq:1,deaths:0,bossLeft:zone?0:1,done:false,loot:[],scale:CFG.depthScale**(depth-1)*(zone?def.foes:1),omens:zone?[]:DB.OMENS.filter(o=>depth>=o.depth)};
   const st=D.start,v=CFG.vox,cl=S.sel.cls;S.run.solo=!S.save.party;[cl,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==cl).slice(0,2):[])].forEach((c,i)=>spawnMember(c,!i,(st.cx+(i-1)*12)*v,(st.cz+8)*v));
   let tot=0,pk=0;const addPack=(cx,cz,types)=>{pk++;types.forEach((ty,i)=>{const a=i/types.length*TAU+D.r.r();let x=cx*v+Math.sin(a)*1.4,z=cz*v+Math.cos(a)*1.4;if(!reach(x,z)){x=cx*v;z=cz*v}if(reach(x,z)){const f=spawnFoe(ty,x,z,pk);f.run0=S.run;tot+=f.dread}})};
   const comp=()=>D.r.chance(.25)?['brute','warrior','warrior']:[...Array(D.r.int(2,3)).fill('warrior'),...Array(D.r.int(0,2)).fill('archer'),...(D.r.chance(.45)?['caster']:[])];
-  for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
+  for(const q of D.rooms){if(q.type!=='room')continue;const n=q.w*q.h>=6&&!zone?2:1;for(let i=0;i<n;i++){const ox=n>1?(i?1:-1)*q.w*CFG.cell*.22:0;addPack(q.cx+ox,q.cz+(n>1?(i?1:-1)*8:0),comp())}}
   D.corr.forEach(m=>D.r.chance(.4)&&Math.hypot(m[0]-st.cx,m[1]-st.cz)*v>CFG.aggroR+4&&addPack(m[0],m[1],['warrior','warrior']));S.run.dreadReq=Math.max(1,Math.round(tot*CFG.dreadReq));
-  const b=spawnBoss(D.boss.cx*v,D.boss.cz*v);b.bossLight=def.boss==='rider';if(b.bossLight){R.bossLight.color.set(def.bp.lantern);R.bossLight.intensity=2.2}
-  const p=S.party[0];S.cam.x=p.x;S.cam.z=p.z;S.mode='run';$('#load').hidden=true;buildHud();toast(`${def.name} · Depth ${depth}`)},40)}
-function checkDone(){const r=S.run;if(r.done||r.bossLeft>0)return;if(r.dread<r.dreadReq){if(!r.warned){r.warned=1;toast(`Boss slain. Dread ${Math.floor(r.dread/r.dreadReq*100)}%: clear more packs`)}return}
+  S.nodes=D.nodes.map(o=>{const N=DB.NODES[o.kind],rg=MODEL.node(o.kind,def.pal);rg.root.position.set(o.x,o.kind==='fish'?-.08:0,o.z);rg.root.rotation.y=o.x*7;R.scene.add(rg.root);return{...o,radius:.8,left:N.hauls,t:0,rig:rg}});
+  if(zone){S.gate=MODEL.gate(def.pal);S.gate.root.position.set(D.boss.cx*v,0,D.boss.cz*v);R.scene.add(S.gate.root);S.run.gateAt={x:D.boss.cx*v,z:D.boss.cz*v};D.lights.push({x:D.boss.cx*v,y:2,z:D.boss.cz*v+.6,c:def.pal.rune,i:2})}
+  else{const b=spawnBoss(D.boss.cx*v,D.boss.cz*v);b.bossLight=def.boss==='rider';if(b.bossLight){R.bossLight.color.set(def.bp.lantern);R.bossLight.intensity=2.2}}
+  const p=S.party[0];S.cam.x=p.x;S.cam.z=p.z;S.mode='run';$('#load').hidden=true;buildHud();toast(zone?`${def.name}: find the dungeon gate`:`${def.name} · Depth ${depth}`)},40)}
+function checkDone(){const r=S.run,pl=S.party.find(m=>m.isPlayer);if(r.gateAt){if(pl&&!pl.dead&&dist(pl,r.gateAt)<1.3&&S.mode==='run'){S.mode='load';save();clearRun();startRun()}return} // walking into the gate descends into this biome's dungeon
+ if(r.done||r.bossLeft>0)return;if(r.dread<r.dreadReq){if(!r.warned){r.warned=1;toast(`Boss slain. Dread ${Math.floor(r.dread/r.dreadReq*100)}%: clear more packs`)}return}
  if(!S.chest){const b=S.D.boss,v=CFG.vox;S.chest=MODEL.chest();S.chest.root.position.set(b.cx*v,0,b.cz*v);R.scene.add(S.chest.root);toast('Run complete! Open the reliquary chest');r.chestAt={x:b.cx*v,z:b.cz*v}}
  const p=S.party.find(m=>m.isPlayer);if(p&&dist(p,r.chestAt)<2)finishRun()}
 function finishRun(){const r=S.run;r.done=true;const inTime=r.t<=r.limit,up=inTime?(r.limit-r.t>=r.limit*.4?2:1):-1,id=r.def.id;
@@ -1198,7 +1238,7 @@ function wipeReset(){const v=CFG.vox,st=S.D.start,bossHit=!S.run.solo&&S.foes.so
   if(!f.dead&&f.aggro){Object.assign(f,{hp:f.boss&&S.run.solo?f.hp:f.maxHp,x:f.home.x,z:f.home.z,aggro:false,cast:null,buffs:[],taunt:null,path:null});f.threat.clear()}return true});
  if(bossHit){const b=spawnBoss(S.D.boss.cx*v,S.D.boss.cz*v);b.bossLight=S.run.def.boss==='rider';R.bossLight.intensity=b.bossLight?2.2:0}
  for(const k of['tele','haz','proj','lob']){S.fx[k].forEach(o=>R.scene.remove(o.mesh||o.m||o.o));S.fx[k]=[]}S.party.forEach(m=>m.strike=null)}
-function updateRun(dt){const r=S.run,v=CFG.vox,st=S.D.start;if(!r.done)r.t+=dt;
+function updateRun(dt){const r=S.run,v=CFG.vox,st=S.D.start;if(!r.done&&!r.def.zone)r.t+=dt;for(const n of S.nodes)if(n.left<=0&&(n.t-=dt)<=0){n.left=DB.NODES[n.kind].hauls;n.rig.root.visible=true}
  const dead=S.party.filter(m=>m.dead);if(dead.length===S.party.length){r.wipe=(r.wipe??CFG.wipeDelay)-dt;if(r.wipe<=0){r.wipe=undefined;wipeReset()}}
  else dead.forEach(m=>{m.respawnT-=dt;if(m.respawnT<=0)revive(m,st.cx*v,(st.cz+8)*v)});checkDone()}
 
@@ -1206,12 +1246,12 @@ function updateRun(dt){const r=S.run,v=CFG.vox,st=S.D.start;if(!r.done)r.t+=dt;
 const rarSpan=it=>`<span style="color:${DB.RARITY[it.rar].col}">${it.name}</span>`;
 function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sigil[d.id]||1,sel=S.sel,g=S.save.gear[sel.member],it=sel.item;
  const om=DB.OMENS.filter(o=>dep>=o.depth);L.hidden=false;
- L.innerHTML=`<section><span class="lbl">Reliquary Table</span><h2>Choose a dungeon</h2>
+ L.innerHTML=`<section><span class="lbl">The country round Morrowgate</span><h2>Where to?</h2>
  ${DB.DUNGEONS.map((x,i)=>`<button class="dun ${i===sel.d?'on':''}" data-d="${i}"><span class="sw" style="background:${x.pal.wall[0]};box-shadow:inset 0 -12px ${x.pal.light}"></span>
-  <span><b>${x.name}</b><span class="muted">${x.biome} · ${x.bossName}</span></span><span class="num" style="color:var(--gold)">D${S.save.sigil[x.id]||1}${S.save.best[x.id]?`<br><small class="muted">${fmt(S.save.best[x.id].t)}</small>`:''}</span></button>`).join('')}
+  <span><b>${DB.ZONES[i].name}</b><span class="muted">${x.name} · ${x.bossName}</span></span><span class="num" style="color:var(--gold)">D${S.save.sigil[x.id]||1}${S.save.best[x.id]?`<br><small class="muted">${fmt(S.save.best[x.id].t)}</small>`:''}</span></button>`).join('')}
  <div class="lbl">Layout</div><div class="row"><button data-m="charted" class="${sel.mode==='charted'?'on':''}">Charted (weekly seed)</button><button data-m="uncharted" class="${sel.mode==='uncharted'?'on':''}">Uncharted</button></div>
  <div class="det"><b>Depth ${dep}</b> · foes ×${(CFG.depthScale**(dep-1)).toFixed(2)} · timer ${fmt(d.timer)}<br>${om.length?om.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join(''):'<span class="muted">No omens yet. They begin at Depth 3.</span>'}</div>
- <button class="enter" id="go">Enter the ${d.biome.split(' ').pop()}</button>
+ <button class="enter" id="go">Set out for ${DB.ZONES[sel.d].name}</button><button id="dive">Go straight down into the dungeon</button>
  <div class="help">WASD or hold left click to move. Hold left click on a foe to attack it; you also strike anything that comes into reach. Space attacks toward the cursor. Keys 1–4 use skills. The wheel zooms. Finish in time to raise your Sigil Depth.</div></section>
  <header><h1>Grave Lantern</h1><div class="lbl">Morrowgate · party level ${S.save.lvl}</div></header>
  <section><span class="lbl">Your party</span><h2>Choose your role</h2>
@@ -1220,6 +1260,8 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  <span class="lbl">Gear</span><div class="row">${Object.keys(DB.CLASSES).map(k=>`<button data-g="${k}" class="${sel.member===k?'on':''}">${k===sel.cls?'You':DB.CLASSES[k].name}</button>`).join('')}</div>
  ${DB.SLOTS.map(s=>`<div class="item" data-u="${s}"><span class="muted">${s}</span>${g[s]?rarSpan(g[s]):'<span class="muted">empty</span>'}</div>`).join('')}
  <div class="muted num">${Object.entries(gearStats(g)).map(([k,v])=>`${DB.STATS[k].name} +${v}`).join(' · ')}</div>
+ <span class="lbl">Forge and fire</span><div class="muted num">${Object.entries(DB.MATS).map(([k,n])=>n+' '+(S.save.mats[k]||0)).join(' · ')}</div>
+ ${DB.RECIPES.map(q=>`<button data-r="${q.id}" ${canCraft(q)?'':'disabled'} title="${q.tip||''}">${q.name} <span class="muted">(${Object.entries(q.need).map(([k,n])=>n+' '+DB.MATS[k]).join(', ')}) · ${DB.TRADES[q.trade]} ${S.save.trades[q.trade].lvl}</span></button>`).join('')}
  <span class="lbl">Bag (${S.save.bag.length}/${CFG.bagMax})</span>
  ${S.save.bag.map(x=>`<div class="item ${it&&it.id===x.id?'sel':''}" data-i="${x.id}">${rarSpan(x)}<span class="muted num">${x.slot} · ${x.ilvl}</span></div>`).join('')||'<div class="muted">Empty. Loot drops in dungeons.</div>'}
  ${it?`<div class="det">${rarSpan(it)}<div class="muted">${DB.RARITY[it.rar].name} ${it.slot}${it.cls?' · '+DB.CLASSES[it.cls].name+' only':''} · ilvl ${it.ilvl}</div>
@@ -1229,7 +1271,7 @@ function renderLobby(){const L=$('#lobby'),d=DB.DUNGEONS[S.sel.d],dep=S.save.sig
  L.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{sel.item=S.save.bag.find(x=>x.id===b.dataset.i);renderLobby()});
  L.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{const s=b.dataset.u,cur=S.save.gear[sel.member][s];if(cur&&S.save.bag.length<CFG.bagMax){S.save.bag.push(cur);delete S.save.gear[sel.member][s];save();lobbyParty();renderLobby()}});
  L.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const k=b.dataset.e,cur=S.save.gear[k][it.slot];S.save.bag=S.save.bag.filter(x=>x.id!==it.id);if(cur)S.save.bag.push(cur);S.save.gear[k][it.slot]=it;sel.item=null;sel.member=k;save();lobbyParty();renderLobby()});
- L.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{S.save.bag=S.save.bag.filter(x=>x.id!==it.id);sel.item=null;save();renderLobby()});$('#go').onclick=startRun}
+ L.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{S.save.bag=S.save.bag.filter(x=>x.id!==it.id);sel.item=null;save();renderLobby()});$('#go').onclick=()=>startRun(1);$('#dive').onclick=()=>startRun();L.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{craft(b.dataset.r);save();renderLobby()})}
 function lobbyParty(){(R.lobbyRigs||[]).forEach(r=>R.scene.remove(r.root));R.lobbyRigs=[S.sel.cls,...(S.save.party?['templar','sister','reaver'].filter(c=>c!==S.sel.cls).slice(0,2):[])].map((k,i)=>{const C0=DB.CLASSES[k],r=MODEL[C0.model||k](S.save.gear[k],undefined,C0.look);r.a={moveAmt:0,ph:0,atkT:0,castT:0,flash:0,stun:0,seed:i*2.3};r.root.position.set(8.6+i*1.4,0,16.4+(i===1?.4:0));r.root.rotation.y=.15*(1-i);R.scene.add(r.root);return r})}
 const ICON=new Map(),icon=(rows,col)=>{const k=rows+col;if(!ICON.has(k)){const c=document.createElement('canvas'),g=c.getContext('2d');c.width=c.height=5;g.fillStyle=col;rows.forEach((r,y)=>[...r].forEach((ch,x)=>ch==='#'&&g.fillRect(x,y,1,1)));ICON.set(k,`url(${c.toDataURL()})`)}return ICON.get(k)};
 function pix(cv,rows,fr,col){const g=cv.g||(cv.g=cv.getContext('2d')),h=rows.length,w=rows[0].length,on=(x,y)=>rows[y]&&rows[y][x]==='#',lv=h*(1-clamp(fr,0,1)); // pixel gauge: glyph drains from the top, lit top-left, black outline
@@ -1242,12 +1284,13 @@ function minimap(cv,p){const U=S.ui,N=S.nav,C=CFG.ui,g=cv.g||(cv.g=cv.getContext
  g.save();g.fillStyle='#08070b';g.fillRect(0,0,n,n);g.translate(n/2,n/2);g.rotate(Math.PI/4);g.scale(sc/k,sc/k);g.imageSmoothingEnabled=false;g.drawImage(U.mm,-p.x*k,-p.z*k);g.restore(); // 45° = camera heading
  const at=(a,pin)=>{let u=(a.x-p.x-(a.z-p.z))/Math.SQRT2*sc,v=(a.x-p.x+a.z-p.z)/Math.SQRT2*sc,l=Math.max(Math.abs(u),Math.abs(v));if(l>R-5){if(!pin)return null;u*=(R-5)/l;v*=(R-5)/l}return[n/2+u,n/2+v]};
  const dot=(a,c,r,pin)=>{const q=at(a,pin);if(!q)return;r=Math.round(r);g.fillStyle='#000';g.fillRect(q[0]-r-1|0,q[1]-r-1|0,r*2+2,r*2+2);g.fillStyle=c;g.fillRect(q[0]-r|0,q[1]-r|0,r*2,r*2)};
- S.fx.loot.forEach(l=>dot(l,'#ffd36a',2.5));if(S.run.chestAt)dot(S.run.chestAt,'#ffd36a',5,1);for(const f of S.foes)if(!f.dead&&(f.boss||f.aggro||U.seen[Math.floor(f.z/N.cs)*N.NX+Math.floor(f.x/N.cs)]))dot(f,f.boss?'#ff2a1a':f.aggro?'#ff6a5a':'#9a4038',f.boss?6:3,f.boss);
+ S.fx.loot.forEach(l=>dot(l,'#ffd36a',2.5));if(S.run.chestAt)dot(S.run.chestAt,'#ffd36a',5,1);if(S.run.gateAt)dot(S.run.gateAt,'#c07aff',5,1);for(const o of S.nodes)if(o.left>0)dot(o,DB.NODES[o.kind].col,2.5);for(const f of S.foes)if(!f.dead&&(f.boss||f.aggro||U.seen[Math.floor(f.z/N.cs)*N.NX+Math.floor(f.x/N.cs)]))dot(f,f.boss?'#ff2a1a':f.aggro?'#ff6a5a':'#9a4038',f.boss?6:3,f.boss);
  for(const m of S.party)if(!m.dead&&!m.isPlayer)dot(m,'#7fdc96',3.5,1);
  g.save();g.translate(n/2,n/2);g.rotate(Math.atan2(Math.sin(p.face)+Math.cos(p.face),Math.sin(p.face)-Math.cos(p.face)));g.beginPath();g.moveTo(8,0);g.lineTo(-5,5);g.lineTo(-2,0);g.lineTo(-5,-5);g.closePath();g.fillStyle='#fff';g.fill();g.lineWidth=1.5;g.strokeStyle='#000';g.stroke();g.restore()} // player arrow shows facing
 const kv=([k,v])=>`<div class="kv"><span class="muted">${k}</span><span class="num">${v}</span></div>`,itemTip=it=>`${it.name}: ${DB.RARITY[it.rar].name} ${it.slot}, ilvl ${it.ilvl}. ${Object.entries(it.stats).map(([k,v])=>`+${v} ${DB.STATS[k].name}`).join(', ')}${it.perk?'. Grants '+DB.PERKS[it.perk].name+': '+DB.PERKS[it.perk].tip:''}`.replace(/"/g,'&quot;');
 const ORDER={hold:()=>S.cmd.hold=!S.cmd.hold,assist:()=>S.cmd.assist=!S.cmd.assist,leave:()=>{save();toLobby()}};
 const PANEL={ // menu ribbon windows, keyed by DB.MENU id
+ skills:()=>`<h3>Trades</h3>`+Object.entries(DB.TRADES).map(([id,n])=>{const T=S.save.trades[id];return kv([n+' '+T.lvl,T.xp+' / '+tradeNeed(T.lvl)+' xp'])}).join('')+`<h3>Materials</h3>`+(Object.entries(DB.MATS).filter(([k])=>S.save.mats[k]>0).map(([k,n])=>kv([n,S.save.mats[k]])).join('')||'<div class="muted">Hold left click on ore, deadwood or a fishing spot.</div>')+`<div class="muted">Q eats a ration. Craft in town.</div>`,
  bag:()=>`<h3>Backpack ${S.save.bag.length}/${CFG.bagMax}</h3><div class="grid">${[...Array(CFG.bagMax)].map((_,i)=>{const it=S.save.bag[i],c=it&&DB.RARITY[it.rar].col;return it?`<div class="cell" style="color:${c};box-shadow:inset 0 0 0 1px ${c}" title="${itemTip(it)}">${it.slot.slice(0,2)}</div>`:'<div class="cell"></div>'}).join('')}</div><div class="muted">Equip at the lobby between runs.</div>`,
  gear:()=>S.party.map(m=>`<h3>${m.name} · ${DB.CLASSES[m.cls].name}</h3>`+DB.SLOTS.map(sl=>{const it=S.save.gear[m.cls][sl];return`<div class="kv" title="${it?itemTip(it):''}"><span class="muted">${sl}</span>${it?rarSpan(it):'<span class="muted">empty</span>'}</div>`}).join('')).join(''),
  stats:()=>{const p=S.party.find(m=>m.isPlayer),C0=DB.CLASSES[p.cls],g=gearStats(S.save.gear[p.cls]),r=S.run;return`<h3>${C0.name} · ${DB.ROLES[C0.role]}</h3>`+[['Level',S.save.lvl+(S.save.lvl<DB.LEVEL.max?' ('+S.save.xp+' / '+xpNeed(S.save.lvl)+' xp)':' (max)')],['Health',Math.ceil(p.hp)+' / '+p.maxHp],['Mana',Math.floor(p.mp)+' / '+p.maxMp+' (+'+CFG.mana+'/s)'],['Armor',p.armor],
@@ -1259,7 +1302,7 @@ function buildHud(){const H=$('#hud'),pl=S.party.find(m=>m.isPlayer),U=S.ui,sk=i
  H.innerHTML=`<div class="vig"></div><div class="tl"><div class="rib">${DB.MENU.map(m=>`<button class="slot" data-t="${m.id}" style="background-image:${icon(m.ico,'#e8e0d0')}" title="${m.name}"><kbd>${m.key}</kbd></button>`).join('')}</div><div class="win vx" hidden></div></div>
  <div class="party"${S.party.length<2?" hidden":""}>${S.party.map(m=>`<div class="m"><i class="po" style="background-image:${icon(sk(DB.CLASSES[m.cls].skills[0]).ico,sk(DB.CLASSES[m.cls].skills[0]).col)}"></i><div>${m.name} <span class="rs"></span></div><div class="bar hp"><i></i></div><div class="bar mp"><i></i></div></div>`).join('')}</div>
  <div class="tr"><div class="mapb"><canvas class="map" width="176" height="176"></canvas><div class="mz"><button data-z="1">−</button><button data-z="-1">+</button></div></div><div class="hint"><kbd>N</kbd>Toggle</div>
-  <div class="quest"><div class="q1"><span>${d.name}</span><span class="t"></span></div><div class="ob"></div><div class="ob"></div><div class="ob"></div><div class="tip">Slay the boss, raise Dread, then open the chest before time runs out.</div></div>
+  <div class="quest"><div class="q1"><span>${d.name}</span><span class="t"></span></div><div class="ob"></div><div class="ob"></div><div class="ob"></div><div class="tip">${S.run.def.zone?'Open country. Hold left click on ore, deadwood or a fishing spot to gather. The gate leads down.':'Slay the boss, raise Dread, then open the chest before time runs out.'}</div></div>
   <div class="zone">${d.biome}</div><div class="adv">Depth ${S.run.depth} · foes ×${S.run.scale.toFixed(2)}</div><div class="lives"></div><div>${S.run.omens.map(o=>`<span class="chip" title="${o.tip}">${o.name}</span>`).join('')}</div></div>
  <div class="boss" hidden><b class="bp"><i style="background-image:${icon(P.skull,'#f3c36a')}"></i></b><div class="nm"></div><div class="bar"><i></i></div><div class="hpn"></div><div class="wn" hidden><span></span><div class="bar cast"><i></i></div></div></div>
  <div class="belt"><div class="slots"><button class="slot" data-t="bag" style="background-image:${icon(DB.MENU[0].ico,'#c9a26a')}"><kbd>Tab</kbd></button>${slot(ids[0],0)}${slot(ids[1],1)}
@@ -1274,8 +1317,8 @@ const V3=new THREE.Vector3(),scr=(x,y,z)=>{V3.set(x,y,z).project(R.cam);return[(
 function updateHud(dt){if(S.mode!=='run')return;const r=S.run,H=$('#hud'),U=S.ui,C0=CFG.ui,pl=S.party.find(m=>m.isPlayer),left=r.limit-r.t,dr=Math.min(100,r.dread/r.dreadReq*100),q=s=>H.querySelector(s);
  S.party.forEach((m,i)=>{const e=U.rows[i];e.classList.toggle('dead',m.dead);e.children[2].firstChild.style.width=m.hp/m.maxHp*100+'%';e.children[3].firstChild.style.width=m.mp/m.maxMp*100+'%';e.querySelector('.rs').textContent=m.dead?Math.ceil(m.respawnT)+'s':''});
  pix(U.hp,DB.PIX.heart,pl.hp/pl.maxHp,C0.hp);pix(U.mp,DB.PIX.gem,pl.mp/pl.maxMp,C0.mp);U.tx[0].textContent=Math.ceil(pl.hp);U.tx[1].textContent=Math.floor(pl.mp);if(!q('.mapb').hidden)minimap(U.map,pl);
- const T=q('.quest .t');T.textContent=(left<0?'+':'')+fmt(Math.abs(left));T.style.color=left<0?'#ff6a5a':'';
- [[!r.bossLeft,`Defeat ${r.def.bossName} ${r.bossLeft?0:1}/1`],[dr>=100,`Dread ${Math.floor(dr)}%`],[r.done,'Open the reliquary']].forEach(([ok,t],i)=>{U.ob[i].textContent=(ok?'☑ ':'☐ ')+t;U.ob[i].className='ob'+(ok?' ok':'')});
+ const T=q('.quest .t');T.textContent=r.def.zone?'':(left<0?'+':'')+fmt(Math.abs(left));T.style.color=left<0?'#ff6a5a':'';
+ (r.def.zone?[[0,'Find the dungeon gate'],[0,`Nodes here: ${S.nodes.filter(n=>n.left>0).length}`],[0,`Rations: ${S.save.mats.ration||0} (Q)`]]:[[!r.bossLeft,`Defeat ${r.def.bossName} ${r.bossLeft?0:1}/1`],[dr>=100,`Dread ${Math.floor(dr)}%`],[r.done,'Open the reliquary']]).forEach(([ok,t],i)=>{U.ob[i].textContent=(ok?'☑ ':'☐ ')+t;U.ob[i].className='ob'+(ok?' ok':'')});
  q('.lives').textContent=`☠ ${r.deaths} deaths (+${CFG.deathPenalty}s each)`;q('.coin b').textContent=r.loot.length;const sv=S.save,mx=sv.lvl>=DB.LEVEL.max;q('.lv').textContent='LV '+sv.lvl;q('.dr>i').style.width=(mx?100:sv.xp/xpNeed(sv.lvl)*100)+'%';q('.dr>span').textContent=mx?'Max level':sv.xp+' / '+xpNeed(sv.lvl)+' XP';if(U.tab&&U.tab!=='orders'&&(U.t-=dt)<=0){U.t=.5;openTab()}
  H.querySelectorAll('[data-s]').forEach(b=>{const c=Math.max(0,pl.cd[b.dataset.s]||0);b.querySelector('.cd').textContent=c>0?c<10?c.toFixed(1):Math.ceil(c):'';b.classList.toggle('wait',c>0);b.classList.toggle('oom',pl.mp<DB.SKILLS[b.dataset.s].cost)});
  const bosses=S.foes.filter(f=>f.boss&&!f.dead&&f.aggro),bb=H.querySelector('.boss');bb.hidden=!bosses.length;if(bosses.length){bb.querySelector('.nm').textContent=bosses.map(b=>b.name).join(' & ');
@@ -1296,7 +1339,7 @@ function initInput(){const c=$('#c'),I=S.in; // WASD or hold left = move; hold l
  c.addEventListener('pointermove',e=>{if(S.mode==='run')I.ground=ground(e.clientX,e.clientY)});addEventListener('pointerup',()=>{I.down=false});
  c.addEventListener('wheel',e=>{S.cam.dist=clamp(S.cam.dist+Math.sign(e.deltaY)*1.5,CFG.cam.min,CFG.cam.max)},{passive:true});addEventListener('contextmenu',e=>e.preventDefault());
  addEventListener('keydown',e=>{const k=e.key.toLowerCase();I.keys[k]=true;if(S.mode==='title')return enterLobby();if(S.mode!=='run')return;const pl=S.party.find(m=>m.isPlayer),i='1234'.indexOf(k),mn=DB.MENU.find(m=>m.key===k);
-  if(S.pick)return void(S.pick[i]&&pickPerk(S.pick[i]));if(k===' ')e.preventDefault();
+  if(S.pick)return void(S.pick[i]&&pickPerk(S.pick[i]));if(k==='q')eat(pl);if(k===' ')e.preventDefault();
   if(i>=0&&pl)useSkill(pl,DB.CLASSES[pl.cls].skills[i]);if(mn)openTab(mn.id);if(k==='tab'){e.preventDefault();openTab('bag')}if(k==='n'){const mb=$('.mapb');mb.hidden=!mb.hidden}});
  addEventListener('keyup',e=>I.keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{I.keys={};I.down=false});addEventListener('resize',resize)}
 
@@ -1341,7 +1384,7 @@ function animate(dt){const all=[...S.party,...S.foes];for(const a of all){const 
   r.root.rotation.x=-1.48*k*k*(1+Math.max(0,.25-Math.abs(d-.75))*.5);for(const n of['shinL','shinR'])J(n,1.1*(1-k));for(const n of['armL','armR'])J(n,-.6,0,n==='armL'?.5:-.5);J('head',.4);
   if(a.team==='foe'&&d>6){R.scene.remove(r.root)}continue}
  ANIM[r.kind](r,a,dt);const hv=S.in.hover===a;r.mat.emissive.setRGB(a.flash>0?.22:hv?.4:0,a.flash>0?.12:hv?.1:0,a.flash>0?.1:hv?.06:0)}
- const h=S.mode==='run'&&S.in.hover&&!S.in.hover.dead?S.in.hover:null;R.mark.visible=!!h;if(h){R.mark.position.set(h.x,.14,h.z);R.mark.scale.setScalar(h.radius+.55);R.mark.rotation.z=S.t*1.5} // hovered foe glows and gets a turning target bracket
+ const h=S.mode==='run'&&(S.in.hover&&!S.in.hover.dead?S.in.hover:S.in.node);R.mark.visible=!!h;R.mark.material.color.set(h&&h.kind?'#ffd36a':'#ff4a2a');for(const n of S.nodes)ANIM.static(n.rig,ONE,dt);if(S.gate)ANIM.static(S.gate,ONE,dt);if(h){R.mark.position.set(h.x,.14,h.z);R.mark.scale.setScalar(h.radius+.55);R.mark.rotation.z=S.t*1.5} // hovered foe glows and gets a turning target bracket
  if(S.mode==='lobby'||S.mode==='title')(R.lobbyRigs||[]).forEach(r=>ANIM.hum(r,r.a,dt))}
 function updateCam(dt){let tx,tz;if(S.mode==='title'){const K=key(CFG.title,S.t/CFG.titleT%1);R.cam.position.set(K[1],K[2],K[3]);R.cam.lookAt(K[4],K[5],K[6]);tx=K[4];tz=K[6]}
  else if(S.mode==='lobby'){const a=-.55+Math.sin(S.t*.08)*.25;tx=10;tz=15;R.cam.position.set(tx+Math.sin(a)*17,9+Math.sin(S.t*.1),tz+Math.cos(a)*17);R.cam.lookAt(10,5.5,12)}
